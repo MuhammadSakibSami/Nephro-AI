@@ -1,0 +1,8 @@
+Copy your notebook-generated model package here:
+
+joint_s1_rfbalanced_k19_s2_rfbalanced_k12_stage2_thr050_model_package.joblib
+
+Expected notebook output location after running the final notebook:
+nhanes_FINAL_CLEAR_STAGE2_THR050_outputs/model_package/joint_s1_rfbalanced_k19_s2_rfbalanced_k12_stage2_thr050_model_package.joblib
+
+Alternative: set CKD_MODEL_PATH environment variable to the full path of your .joblib file.
