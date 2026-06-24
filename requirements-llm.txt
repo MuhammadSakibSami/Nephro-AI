@@ -1,0 +1,23 @@
+# =============================================================================
+# OPTIONAL — Production LLM dependencies (GPU / Colab only)
+# -----------------------------------------------------------------------------
+# NOT needed for the thesis MVP / local demo. Install these ONLY if you want to
+# run the real Qwen3-4B model + BGE-M3 retrieval (CKD_LLM_MODEL=qwen):
+#
+#   pip install -r requirements.txt
+#   pip install -r requirements-llm.txt
+#   python -m llm.rag.embed_index        # build the BGE-M3 + FAISS index
+#
+# These are large (PyTorch + a ~8 GB model download) and need a CUDA GPU.
+# On Colab, torch is preinstalled — you can usually skip the torch line there.
+# =============================================================================
+
+torch                         # CUDA build recommended (see pytorch.org)
+transformers>=4.44
+accelerate>=0.33
+sentence-transformers>=3.0    # BGE-M3 embeddings
+faiss-cpu>=1.8                # vector index (or faiss-gpu)
+
+# Optional, only for the deferred Phase-7 data-generation extension:
+# google-genai>=0.3            # Gemini free-tier teacher
+# textstat>=0.7                # readability scoring in evaluation

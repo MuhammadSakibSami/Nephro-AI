@@ -1,11 +1,22 @@
 from __future__ import annotations
 
+# Load backend .env (repo-root/.env) BEFORE importing model_service, so that
+# CKD_MODEL_PATH / CKD_LLM_MODEL are available at import time. Safe no-op if
+# python-dotenv is not installed (env vars can still be set in the shell).
+try:
+    from pathlib import Path as _Path
+    from dotenv import load_dotenv as _load_dotenv
+    _load_dotenv(_Path(__file__).resolve().parents[1] / ".env")
+except Exception:
+    pass
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from .feature_config import MODEL_FEATURES, FEATURE_METADATA, NUMERIC_FEATURES, BINARY_FEATURES
 from .schemas import PatientFeatures, PredictionResponse
 from .model_service import service, ModelNotLoadedError
+from .llm_endpoint import build_guidance_response, health as llm_health
 
 
 def _runtime_versions():
@@ -40,6 +51,7 @@ def root():
         "docs": "/docs",
         "health": "/health",
         "predict": "/predict",
+        "generate_guidance": "/generate-guidance",
         "llm_context": "returned inside /predict response",
     }
 
@@ -86,3 +98,25 @@ def predict(features: PatientFeatures):
         raise HTTPException(status_code=503, detail=str(exc))
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Prediction failed: {exc}")
+
+
+@app.get("/generate-guidance/health")
+def generate_guidance_health():
+    return llm_health()
+
+
+@app.post("/generate-guidance")
+def generate_guidance(features: PatientFeatures):
+    """Run ML screening, then produce safe, guideline-grounded kidney-risk education.
+
+    Pipeline: /predict → RAG retrieval → prompt → LLM (Qwen3 or local-demo) →
+    safety validator. The response carries `mode` ("production" | "local_demo"),
+    a `disclaimer`, the guidance `sections`, `provenance`, and the safety `status`.
+    """
+    try:
+        prediction = service.predict(features.model_dump())
+        return build_guidance_response(prediction)
+    except ModelNotLoadedError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Guidance generation failed: {exc}")

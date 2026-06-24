@@ -1,11 +1,34 @@
+# =============================================================================
+# Backend (Python) dependencies — kidney-risk screening API
+# -----------------------------------------------------------------------------
+# Install into a virtual environment:
+#   python -m venv venv
+#   venv\Scripts\activate            (Windows)   |   source venv/bin/activate (mac/Linux)
+#   pip install -r requirements.txt
+#
+# This installs everything needed for the THESIS MVP:
+#   - FastAPI backend + ML two-stage cascade (/predict)
+#   - LLM /generate-guidance in LOCAL-DEMO mode (no GPU; pure-Python RAG + validator)
+#
+# For PRODUCTION Qwen3 + BGE-M3 (GPU / Colab), ALSO install: requirements-llm.txt
+# =============================================================================
+
+# --- Web API ---
 fastapi==0.115.6
 uvicorn[standard]==0.34.0
-streamlit==1.41.1
-requests==2.32.3
+pydantic==2.10.4
+python-dotenv==1.0.1          # loads the backend .env file
+
+# --- ML model (two-stage cascade) ---
 pandas==2.2.3
 numpy==2.0.2
 scipy==1.14.1
 scikit-learn==1.6.1
 imbalanced-learn==0.13.0
 joblib==1.4.2
-pydantic==2.10.4
+
+# --- Utilities ---
+requests==2.32.3              # used by scripts/test_api_request.py
+
+# NOTE: the React frontend (frontend/) uses npm, not pip — see SETUP.md.
+# The old Streamlit UI is deprecated and intentionally not required here.
