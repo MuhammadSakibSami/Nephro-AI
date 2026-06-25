@@ -1,15 +1,19 @@
 # =============================================================================
-# OPTIONAL — Production LLM dependencies (GPU / Colab only)
+# OPTIONAL — Production LLM dependencies (CKD_LLM_MODEL=qwen / Colab / GPU server)
 # -----------------------------------------------------------------------------
-# NOT needed for the thesis MVP / local demo. Install these ONLY if you want to
-# run the real Qwen3-4B model + BGE-M3 retrieval (CKD_LLM_MODEL=qwen):
+# NOT needed for local_demo mode OR for the Ollama path (CKD_LLM_MODEL=ollama).
 #
+# Install these ONLY for CKD_LLM_MODEL=qwen (HuggingFace transformers path):
 #   pip install -r requirements.txt
 #   pip install -r requirements-llm.txt
 #   python -m llm.rag.embed_index        # build the BGE-M3 + FAISS index
 #
-# These are large (PyTorch + a ~8 GB model download) and need a CUDA GPU.
+# Requires: CUDA GPU with ≥8 GB VRAM  (~8 GB model download on first run).
 # On Colab, torch is preinstalled — you can usually skip the torch line there.
+#
+# Laptop alternative (RTX 3050 Ti or any 4 GB+ GPU card):
+#   Use CKD_LLM_MODEL=ollama instead — no pip installs beyond requirements.txt.
+#   See SETUP.md §5a.
 # =============================================================================
 
 torch                         # CUDA build recommended (see pytorch.org)

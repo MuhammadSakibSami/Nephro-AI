@@ -5,8 +5,10 @@ response builder used by the FastAPI `/generate-guidance` endpoint and by the
 supervisor demo.
 
 Model selection (env `CKD_LLM_MODEL`, default "auto"):
-  * "auto" / "qwen"  -> Qwen3-4B if torch+transformers are present  -> mode "production"
-  * falls back to the deterministic MockGuidanceModel               -> mode "local_demo"
+  * "qwen"   -> Qwen3-4B via HuggingFace transformers (GPU / Colab)  -> mode "production"
+  * "ollama" -> Qwen3-4B via Ollama REST API (laptop GPU, no ML stack) -> mode "production"
+  * "auto"   -> qwen if transformers available, else ollama if running, else mock
+  * falls back to the deterministic MockGuidanceModel                -> mode "local_demo"
 
 **Local demo mode** lets the app run with no GPU: guidance is produced by a
 deterministic safe generator, still passed through the SAME safety validator, and
@@ -57,7 +59,10 @@ def get_runtime() -> GuidanceRuntime:
 
 
 def runtime_mode(rt: GuidanceRuntime) -> str:
-    return "production" if rt.model.spec.startswith("qwen") else "local_demo"
+    spec = rt.model.spec
+    if spec.startswith("qwen") or spec.startswith("ollama"):
+        return "production"
+    return "local_demo"
 
 
 def build_guidance_response(predict_response: Union[Dict[str, Any], LLMInput],

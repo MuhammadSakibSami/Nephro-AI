@@ -1,17 +1,26 @@
 """LLM Component — Model Backends (LLM_PLAN.md Phase 5).
 
-Two interchangeable chat models behind one interface (`generate(messages) -> str`):
+Three interchangeable chat models behind one interface (`generate(messages) -> str`):
 
-  * QwenChatModel    — production. Qwen3-4B-Instruct-2507 via transformers.
-                       Runs in Colab/GPU. The MVP uses the BASE (un-fine-tuned)
-                       model; Phase 8 swaps in the QLoRA adapter / merged model.
+  * QwenChatModel     — production A. Qwen3-4B-Instruct-2507 via HuggingFace
+                        transformers. GPU / Colab path. Phase 8 swaps in the
+                        QLoRA adapter. Set CKD_LLM_MODEL=qwen.
+
+  * OllamaChatModel   — production B. Any Ollama-served model via its local REST
+                        API (no Python ML stack needed). Recommended for local
+                        laptops with ≥4 GB VRAM (e.g. RTX 3050 Ti): pull
+                        qwen3:4b-instruct-2507-q4_K_M (~3 GB) and set
+                        CKD_LLM_MODEL=ollama. Switch to QwenChatModel later with
+                        a one-line env change — same interface, no other edits.
+
   * MockGuidanceModel — deterministic, dependency-free. Produces a well-formed,
-                       safe guidance answer from the prompt so the full runtime
-                       (retrieve -> prompt -> generate -> validate) is testable
-                       offline. NOT a quality stand-in for Qwen3.
+                        safe guidance answer so the full runtime (retrieve →
+                        prompt → generate → validate) is testable offline. NOT
+                        a quality stand-in for either production backend.
 
-`get_model(spec)` selects: "qwen" | "mock" | "auto" (qwen if transformers+torch
-are importable, else mock).
+`get_model(spec)` selects:
+  "qwen" | "ollama" | "mock" | "auto" (qwen if transformers+torch available,
+  else ollama if Ollama is running locally, else mock).
 """
 from __future__ import annotations
 
@@ -119,6 +128,73 @@ class QwenChatModel:
 
 
 # ---------------------------------------------------------------------------
+# Production B: any Ollama-served model via local REST API
+# ---------------------------------------------------------------------------
+class OllamaChatModel:
+    """Qwen3-4B (or any model) served by Ollama via its local REST API.
+
+    No Python ML stack required — Ollama handles model loading and GPU offload.
+    Ideal for local laptops with limited VRAM (e.g. RTX 3050 Ti / 4 GB):
+      Q4_K_M of Qwen3-4B needs ~3 GB VRAM, leaving 1 GB headroom.
+
+    Setup (one-time):
+      1. Install Ollama from https://ollama.com
+      2. ollama pull qwen3:4b-instruct-2507-q4_K_M
+      3. Set CKD_LLM_MODEL=ollama in .env  (Ollama serve starts automatically)
+
+    To switch to the HuggingFace backend later (e.g. on a Colab/GPU server):
+      change CKD_LLM_MODEL=qwen — no other code changes needed.
+
+    Optional env vars (read by get_model):
+      OLLAMA_MODEL    override the default model tag (default: qwen3:4b-instruct-2507-q4_K_M)
+      OLLAMA_BASE_URL override the Ollama server URL (default: http://localhost:11434)
+    """
+
+    DEFAULT_MODEL = "qwen3:4b-instruct-2507-q4_K_M"
+    DEFAULT_BASE_URL = "http://localhost:11434"
+
+    def __init__(
+        self,
+        model: str = DEFAULT_MODEL,
+        base_url: str = DEFAULT_BASE_URL,
+        max_tokens: int = 700,
+        temperature: float = 0.3,
+        top_p: float = 0.9,
+    ):
+        import requests as _r  # already in requirements.txt
+        self._requests = _r
+        self.model = model
+        self.base_url = base_url.rstrip("/")
+        self.max_tokens = max_tokens
+        self.temperature = temperature
+        self.top_p = top_p
+
+    @property
+    def spec(self) -> str:
+        return f"ollama:{self.model}"
+
+    def generate(self, messages: List[Dict[str, str]]) -> str:
+        """POST to Ollama /api/chat (non-streaming) and return the assistant reply."""
+        payload = {
+            "model": self.model,
+            "messages": messages,
+            "stream": False,
+            "options": {
+                "num_predict": self.max_tokens,
+                "temperature": self.temperature,
+                "top_p": self.top_p,
+            },
+        }
+        resp = self._requests.post(
+            f"{self.base_url}/api/chat",
+            json=payload,
+            timeout=120,
+        )
+        resp.raise_for_status()
+        return resp.json()["message"]["content"].strip()
+
+
+# ---------------------------------------------------------------------------
 # Offline: deterministic mock that returns a safe, well-formed answer
 # ---------------------------------------------------------------------------
 _RISK_RE = re.compile(r"Risk level:\s*.*\(([a-z]+)\)", re.I)
@@ -191,19 +267,52 @@ class MockGuidanceModel:
 # Factory
 # ---------------------------------------------------------------------------
 def get_model(spec: str = "auto", **kwargs):
+    """Return a model backend for the given spec string.
+
+    Specs / aliases
+    ---------------
+    qwen         : QwenChatModel (HuggingFace transformers, GPU/Colab)
+                   aliases: qwen3, production, prod
+    ollama       : OllamaChatModel (local Ollama REST API, laptop GPU)
+                   Reads OLLAMA_MODEL / OLLAMA_BASE_URL from env if set.
+    mock         : MockGuidanceModel (offline, deterministic)
+                   aliases: local_demo, demo, local
+    auto         : try qwen → try ollama → fall back to mock
+    """
+    import os
+
     spec = (spec or "auto").strip().lower()
-    # Friendly aliases: the deployment "mode" names map to model specs.
+
     if spec in {"mock", "local_demo", "demo", "local"}:
         return MockGuidanceModel(**kwargs)
+
     if spec in {"qwen", "qwen3", "production", "prod"}:
         return QwenChatModel(**kwargs)
+
+    if spec == "ollama":
+        model = kwargs.pop("model", os.getenv("OLLAMA_MODEL", OllamaChatModel.DEFAULT_MODEL))
+        base_url = kwargs.pop("base_url", os.getenv("OLLAMA_BASE_URL", OllamaChatModel.DEFAULT_BASE_URL))
+        return OllamaChatModel(model=model, base_url=base_url, **kwargs)
+
     if spec == "auto":
+        # Priority: HuggingFace transformers → Ollama (if running) → mock
         try:
             import torch  # noqa: F401
             import transformers  # noqa: F401
             return QwenChatModel(**kwargs)
         except Exception as exc:
-            print(f"[model] Qwen3 unavailable ({type(exc).__name__}); using MockGuidanceModel "
-                  f"(offline, test-only).")
-            return MockGuidanceModel()
+            print(f"[model] Qwen3 (transformers) unavailable ({type(exc).__name__}); trying Ollama.")
+        try:
+            import requests as _r
+            if _r.get(f"{OllamaChatModel.DEFAULT_BASE_URL}/api/tags", timeout=2).ok:
+                print("[model] Ollama is running — using OllamaChatModel.")
+                return OllamaChatModel(
+                    model=os.getenv("OLLAMA_MODEL", OllamaChatModel.DEFAULT_MODEL),
+                    base_url=os.getenv("OLLAMA_BASE_URL", OllamaChatModel.DEFAULT_BASE_URL),
+                )
+        except Exception:
+            pass
+        print("[model] Neither transformers nor Ollama available; using MockGuidanceModel (offline, test-only).")
+        return MockGuidanceModel()
+
     raise ValueError(f"Unknown model spec: {spec!r}")

@@ -120,8 +120,10 @@ Open **http://localhost:5173**.
 
 | Variable | Values | Purpose |
 |---|---|---|
-| `CKD_LLM_MODEL` | `local_demo` (default) · `auto` · `qwen` | LLM backend / mode |
-| `CKD_MODEL_PATH` | path (optional) | override the model `.joblib` location |
+| `CKD_LLM_MODEL` | `local_demo` · `ollama` · `qwen` · `auto` | LLM backend / mode |
+| `OLLAMA_MODEL` | model tag (optional) | Ollama model to use (default: `qwen3:4b-instruct-2507-q4_K_M`) |
+| `OLLAMA_BASE_URL` | URL (optional) | Ollama server URL (default: `http://localhost:11434`) |
+| `CKD_MODEL_PATH` | path (optional) | override the ML model `.joblib` location |
 | `GEMINI_API_KEY` | key (optional) | only for the deferred Phase-7 data scripts |
 
 **Frontend** — `frontend/.env` (see `frontend/.env.example`):
@@ -132,9 +134,33 @@ Open **http://localhost:5173**.
 
 ---
 
-## 5. Optional: production Qwen3 + BGE-M3 (GPU / Colab)
+## 5. Optional: production Qwen3 (two paths)
 
-Local-demo mode is enough for the thesis demo. For the real model:
+Local-demo mode is enough for the thesis demo. When you want the real model,
+choose the path that matches your hardware:
+
+### 5a. Ollama — local laptop with a 4 GB GPU (e.g. RTX 3050 Ti)
+
+No Python ML libraries needed. Ollama handles model loading and GPU offload.
+The Q4_K_M quantization of Qwen3-4B needs ~3 GB VRAM — fits a 4 GB card.
+
+```powershell
+# 1. Install Ollama (one-time): https://ollama.com/download
+# 2. Pull the model (~2.4 GB download, one-time):
+ollama pull qwen3:4b-instruct-2507-q4_K_M
+# 3. Edit .env:
+#      CKD_LLM_MODEL=ollama
+# 4. Start the backend normally — it connects to Ollama automatically.
+```
+
+Ollama starts its server automatically on Windows once installed.
+To switch back to local-demo: change `.env` to `CKD_LLM_MODEL=local_demo` and
+restart the backend. No other code changes.
+
+> Use the **official Ollama library model** (`ollama pull qwen3:4b-instruct-2507-q4_K_M`),
+> not community-uploaded variants — the library version is quantized by the Ollama team.
+
+### 5b. HuggingFace transformers — Colab or dedicated GPU server (≥8 GB VRAM)
 
 ```bash
 pip install -r requirements-llm.txt        # torch, transformers, sentence-transformers, faiss
@@ -142,8 +168,10 @@ python -m llm.rag.embed_index              # build the BGE-M3 + FAISS index
 # set CKD_LLM_MODEL=qwen in .env, then start the backend
 ```
 
-This needs a CUDA GPU and downloads ~8 GB on first run. The frontend is unchanged;
-the UI badge switches from `local demo` to `qwen`.
+Downloads the full Qwen3-4B-Instruct-2507 model (~8 GB) on first run.
+Requires a CUDA GPU with ≥8 GB VRAM (or CPU offload in Colab with enough RAM).
+The frontend and safety pipeline are unchanged; the UI badge switches from
+`local demo` to the model spec.
 
 ---
 
@@ -154,7 +182,9 @@ the UI badge switches from `local demo` to `qwen`.
 | `attempted relative import beyond top-level package` | Start the backend from the **repo root** with `uvicorn backend.main:app` (not from inside `backend/`). |
 | `Model package not found` | Put the `.joblib` in `model_package/`, or set `CKD_MODEL_PATH` in `.env`. |
 | Frontend shows "Could not reach the screening service" | Backend not running, or `VITE_API_BASE_URL` wrong. Restart `npm run dev` after editing `frontend/.env`. |
+| LLM badge says `local demo` but you wanted `ollama` | Install Ollama, run `ollama pull qwen3:4b-instruct-2507-q4_K_M`, set `CKD_LLM_MODEL=ollama`, restart backend. |
 | LLM badge says `local demo` but you wanted `qwen` | Install `requirements-llm.txt`, build the index, set `CKD_LLM_MODEL=qwen`. |
+| Ollama connection refused (`ConnectionError`) | Ollama server isn't running. Start it: `ollama serve` (or reopen the Ollama desktop app). |
 | `uvicorn`/`npm` not found | Activate the venv (`venv\Scripts\activate`) / install Node.js. |
 | PowerShell won't run the script | `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` |
 
