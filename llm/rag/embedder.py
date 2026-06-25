@@ -166,18 +166,98 @@ class BGEM3Embedder:
 
 
 # ---------------------------------------------------------------------------
+# Production (laptop): BGE-M3 served by Ollama  (no torch / sentence-transformers)
+# ---------------------------------------------------------------------------
+class OllamaEmbedder:
+    """Dense embeddings from an Ollama-served embedding model (e.g. bge-m3).
+
+    Same quality family as BGEM3Embedder, but the model runs inside Ollama via
+    its local REST API — no Python ML stack, no torch. Ideal for the same laptop
+    that already runs the chat model through Ollama.
+
+    Setup (one-time, on the machine that BUILDS or QUERIES the index):
+        ollama pull bge-m3
+    Then build the index with this embedder:
+        python -m llm.rag.embed_index --embedder ollama-bge-m3
+
+    The query-time retriever rebuilds this embedder from the index spec, so the
+    same Ollama model must be available wherever the backend runs.
+
+    Env overrides: OLLAMA_BASE_URL (default http://localhost:11434).
+    """
+
+    DEFAULT_MODEL = "bge-m3"
+    DEFAULT_BASE_URL = "http://localhost:11434"
+
+    def __init__(self, model: str = DEFAULT_MODEL, base_url: Optional[str] = None,
+                 timeout: int = 120):
+        import os
+        import requests as _r  # already in requirements.txt
+        self._requests = _r
+        self.model = model
+        self.base_url = (base_url or os.getenv("OLLAMA_BASE_URL", self.DEFAULT_BASE_URL)).rstrip("/")
+        self.timeout = timeout
+        self.dim: Optional[int] = None
+
+    @property
+    def spec(self) -> str:
+        # Round-trips through the index meta; keep the model name in the spec.
+        return f"ollama-{self.model}"
+
+    def fit(self, texts: Sequence[str]) -> "OllamaEmbedder":
+        return self  # pretrained; nothing to fit
+
+    def state(self) -> Optional[Dict]:
+        return None
+
+    def load_state(self, state: Optional[Dict]) -> None:
+        return None
+
+    def _embed_one_raw(self, text: str) -> List[float]:
+        resp = self._requests.post(
+            f"{self.base_url}/api/embeddings",
+            json={"model": self.model, "prompt": text},
+            timeout=self.timeout,
+        )
+        resp.raise_for_status()
+        vec = resp.json().get("embedding")
+        if not vec:
+            raise RuntimeError(
+                f"Ollama returned no embedding for model {self.model!r}. "
+                f"Did you run `ollama pull {self.model}`?")
+        return [float(x) for x in vec]
+
+    def embed(self, texts: Sequence[str]) -> List[List[float]]:
+        out: List[List[float]] = []
+        for text in texts:
+            vec = _l2(self._embed_one_raw(text))  # normalize: cosine == dot
+            if self.dim is None:
+                self.dim = len(vec)
+            out.append(vec)
+        return out
+
+    def embed_one(self, text: str) -> List[float]:
+        return self.embed([text])[0]
+
+
+# ---------------------------------------------------------------------------
 # Factory
 # ---------------------------------------------------------------------------
 def get_embedder(spec: str = "auto"):
     """Build an embedder from a spec string.
 
     spec:
-      "bge-m3"             -> BGEM3Embedder (raises if sentence-transformers missing)
+      "bge-m3"             -> BGEM3Embedder (sentence-transformers; raises if missing)
+      "ollama-bge-m3"      -> OllamaEmbedder (BGE-M3 via Ollama REST; no torch)
+      "ollama-<model>"     -> OllamaEmbedder with that Ollama embedding model
       "hashing-tfidf[-<d>]"-> HashingTfidfEmbedder (IDF-weighted, default fallback)
       "hashing[-<d>]"      -> HashingEmbedder (raw TF)
       "auto"               -> BGE-M3 if available, else HashingTfidfEmbedder
     """
     spec = (spec or "auto").strip().lower()
+    if spec.startswith("ollama-"):
+        model = spec[len("ollama-"):] or OllamaEmbedder.DEFAULT_MODEL
+        return OllamaEmbedder(model=model)
     if spec.startswith("hashing-tfidf"):
         parts = spec.split("-")
         dim = int(parts[-1]) if parts[-1].isdigit() else 4096

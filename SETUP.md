@@ -160,6 +160,23 @@ restart the backend. No other code changes.
 > Use the **official Ollama library model** (`ollama pull qwen3:4b-instruct-2507-q4_K_M`),
 > not community-uploaded variants — the library version is quantized by the Ollama team.
 
+#### Sharper, more personalized retrieval (recommended with Ollama)
+
+By default the RAG index uses a lightweight pure-Python (TF-IDF) embedder. It runs
+anywhere but retrieves coarsely, so the guideline grounding — and therefore the
+generated education — can look similar across patients. For noticeably more
+**personalized** output, rebuild the index with **BGE-M3 served by Ollama** (no
+PyTorch needed):
+
+```powershell
+ollama pull bge-m3
+python -m llm.rag.embed_index --embedder ollama-bge-m3   # one-time rebuild
+```
+
+The embedder used is recorded in the index, so the backend automatically uses
+BGE-M3 for queries too (keep `bge-m3` pulled wherever the backend runs). To
+revert: `python -m llm.rag.embed_index --embedder hashing-tfidf`.
+
 ### 5b. HuggingFace transformers — Colab or dedicated GPU server (≥8 GB VRAM)
 
 ```bash
