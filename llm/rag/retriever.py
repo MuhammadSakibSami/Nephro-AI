@@ -51,8 +51,39 @@ FACTOR_QUERY_TERMS: Dict[str, str] = {
     "income_poverty_ratio": "",
 }
 
-_BASE_INTENT = ("kidney health lifestyle education: diet, physical activity, "
-                "blood pressure, blood sugar, weight, smoking, follow-up testing")
+# Map ML feature names -> knowledge-base TOPIC (see KB chunk `topic` field:
+# bp / diabetes / nutrition / weight / activity / followup / smoking / sleep / general).
+# Used to guarantee that the chunks retrieved for a patient actually reflect THEIR
+# top risk factors, instead of collapsing to the same generic chunks for everyone
+# (which happens with the weak offline TF-IDF embedder + a generic query).
+FACTOR_TOPIC: Dict[str, Optional[str]] = {
+    "mean_sbp": "bp",
+    "mean_dbp": "bp",
+    "hypertension_doctor_told": "bp",
+    "taking_bp_medicine": "bp",
+    "hba1c": "diabetes",
+    "glucose": "diabetes",
+    "diabetes_yes": "diabetes",
+    "borderline_diabetes": "diabetes",
+    "bmi": "weight",
+    "waist": "weight",
+    "blood_urea_nitrogen": "nutrition",
+    "uric_acid": "nutrition",
+    "serum_albumin": "nutrition",
+    "hemoglobin": "nutrition",
+    "sodium": "nutrition",
+    "potassium": "nutrition",
+    "high_cholesterol_told": "nutrition",
+    "taking_cholesterol_medicine": "nutrition",
+    "mean_pulse": "activity",
+    "age": None,
+    "sex_female": None,
+    "income_poverty_ratio": None,
+}
+
+# A short, low-weight anchor. Kept brief on purpose: a long generic intent
+# dominates the weak TF-IDF embedding and washes out the factor-specific terms.
+_BASE_INTENT = "kidney health lifestyle education"
 
 
 class Retriever:
@@ -92,6 +123,27 @@ class Retriever:
         phrases = inp.top_factor_phrases(3)
         return self.build_query(inp.risk_class, feats, phrases)
 
+    @staticmethod
+    def priority_topics(inp) -> List[str]:
+        """Ordered KB topics that matter for THIS patient, from their key factors.
+
+        Factors that *raise* the risk come first (most relevant to the education),
+        then the rest, preserving the model's factor-importance order. For an
+        at-risk result we always append 'followup' so a lab/clinician chunk is in
+        the pool. This drives per-patient retrieval diversity even when the
+        offline embedder's raw scores are weak and bunched.
+        """
+        supporting = [f for f in inp.key_factors if f.direction == "supports_prediction"]
+        others = [f for f in inp.key_factors if f.direction != "supports_prediction"]
+        topics: List[str] = []
+        for f in supporting + others:
+            t = FACTOR_TOPIC.get(f.feature)
+            if t and t not in topics:
+                topics.append(t)
+        if getattr(inp, "is_at_risk", False) and "followup" not in topics:
+            topics.append("followup")
+        return topics
+
     # ----- retrieval ------------------------------------------------------
     def retrieve(self, query: str, k: int = 4,
                  drop_restricted: bool = False,
@@ -121,8 +173,58 @@ class Retriever:
                 break
         return results
 
-    def retrieve_for_llm_input(self, inp, k: int = 4, **kwargs) -> List[Dict]:
-        return self.retrieve(self.build_query_from_llm_input(inp), k=k, **kwargs)
+    def retrieve_for_llm_input(self, inp, k: int = 4,
+                               drop_restricted: bool = False,
+                               max_restricted: Optional[int] = None) -> List[Dict]:
+        """Factor-aware retrieval: pick chunks that reflect THIS patient's top
+        risk-factor topics, so different patients get different (personalized)
+        guideline grounding instead of the same generic chunks every time.
+
+        Strategy:
+          1. Score a large candidate pool against the patient's query.
+          2. Take the single best-scoring chunk from each of the patient's
+             priority topics (BP, diabetes, nutrition, ... in importance order).
+          3. Fill any remaining slots with the best-scoring leftover chunks.
+        Falls back to plain top-k if the patient has no usable factor topics.
+        """
+        query = self.build_query_from_llm_input(inp)
+        topics = self.priority_topics(inp)
+        if not topics:
+            return self.retrieve(query, k=k, drop_restricted=drop_restricted,
+                                 max_restricted=max_restricted)
+
+        # 1) Over-fetch a generous, score-ordered candidate pool (respecting the
+        #    same restricted-chunk policy as plain retrieve()).
+        pool_k = min(len(self.store.chunks), max(k * 8, 24))
+        pool = self.retrieve(query, k=pool_k, drop_restricted=drop_restricted,
+                             max_restricted=max_restricted)
+
+        chosen: List[Dict] = []
+        used: set = set()
+
+        # 2) One best chunk per priority topic, in factor-importance order.
+        for topic in topics:
+            if len(chosen) >= k:
+                break
+            for c in pool:  # pool is already sorted best-first
+                if c.get("chunk_id") in used:
+                    continue
+                if c.get("topic") == topic:
+                    chosen.append(c)
+                    used.add(c.get("chunk_id"))
+                    break
+
+        # 3) Fill remaining slots with the best leftover chunks overall.
+        for c in pool:
+            if len(chosen) >= k:
+                break
+            if c.get("chunk_id") not in used:
+                chosen.append(c)
+                used.add(c.get("chunk_id"))
+
+        # Re-rank the final set best-first for a stable, score-ordered prompt.
+        chosen.sort(key=lambda c: c.get("score", 0.0), reverse=True)
+        return chosen[:k]
 
     @staticmethod
     def _format(hit: SearchHit) -> Dict:
