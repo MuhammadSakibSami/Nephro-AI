@@ -258,25 +258,90 @@ def scan_unsafe(text: str, context: Dict) -> List[Violation]:
 # ---------------------------------------------------------------------------
 def fallback_text(context: Dict) -> str:
     risk_display = _risk_display(context)
-    at_risk = context.get("risk_class") in AT_RISK_CLASSES
-    summary = (f"This is general kidney-health information, not a diagnosis. Your "
-               f"screening result is {risk_display.lower()}. Small, steady, healthy "
-               f"habits can help support your kidneys.")
+    risk_class = str(context.get("risk_class") or "low").lower()
+    at_risk = risk_class in AT_RISK_CLASSES
+    pi = context.get("patient_inputs") or {}
+
+    def _flag(key: str) -> bool:
+        v = pi.get(key)
+        try:
+            return bool(float(v)) if v is not None else False
+        except (TypeError, ValueError):
+            return False
+
+    def _num(key: str) -> Optional[float]:
+        v = pi.get(key)
+        try:
+            f = float(v)
+            return None if f != f else f
+        except (TypeError, ValueError):
+            return None
+
+    has_dm    = _flag("diabetes_yes")
+    has_pre   = _flag("borderline_diabetes")
+    has_htn   = _flag("hypertension_doctor_told")
+    on_bp     = _flag("taking_bp_medicine")
+    has_chol  = _flag("high_cholesterol_told")
+    sbp       = _num("mean_sbp")
+    bmi_val   = _num("bmi")
+    any_dm    = has_dm or has_pre
+    high_bp   = has_htn or (sbp is not None and sbp > 130)
+
+    summary = (f"Your screening shows a {risk_display.lower()} risk level for kidney "
+               f"problems. This is not a diagnosis — it is a screening result to help "
+               f"guide your next steps and healthy habits.")
     if is_emergency(context):
         summary = _URGENT_LINE + " " + summary
-    follow = (_lab_reminder(risk_display) if at_risk else
-              "Keep up regular check-ups, and ask your clinician about routine kidney "
-              "checks if you have concerns.")
+
+    # Food habits — condition-aware
+    food_parts = ["Eat balanced meals with plenty of vegetables, fruits, and whole grains."]
+    if any_dm:
+        food_parts.append(
+            "Since your blood sugar is a concern, limit sugary and processed foods and "
+            "choose lower-sugar options where you can.")
+    if high_bp:
+        food_parts.append(
+            "To support your blood pressure, try to limit added salt and salty packaged foods.")
+    if has_chol:
+        food_parts.append(
+            "For your cholesterol, favour healthy fats like fish, olive oil, and nuts.")
+    if bmi_val is not None and bmi_val >= 25:
+        food_parts.append(
+            "Keeping portion sizes moderate and choosing filling whole foods can help "
+            "support a healthy weight.")
+    food_parts.append(
+        "For a personalized eating plan, speak with a clinician or a registered dietitian.")
+    food_habits = " ".join(food_parts)
+
+    # Daily routine — condition-aware
+    routine_parts = ["Try to move your body each day, even with a 20-30 minute walk."]
+    if on_bp or has_htn:
+        routine_parts.append(
+            "Check your blood pressure regularly and keep a log to share with your doctor.")
+    if has_dm:
+        routine_parts.append("Track your blood sugar daily.")
+    routine_parts.append("Drink enough water throughout the day to stay well hydrated.")
+    daily_routine = " ".join(routine_parts)
+
+    # Follow-up — condition-aware
+    follow_parts = []
+    if at_risk:
+        follow_parts.append(_lab_reminder(risk_display))
+    if any_dm:
+        follow_parts.append("Ask your doctor about an HbA1c test to check blood sugar control.")
+    if high_bp:
+        follow_parts.append("Have your blood pressure reviewed by your doctor.")
+    if not follow_parts:
+        follow_parts.append(
+            "Keep up regular check-ups and ask your clinician about routine kidney checks.")
+    follow = " ".join(follow_parts)
+
     out = GuidanceOutput(
         summary=summary,
-        food_habits=("Aim for balanced meals with plenty of vegetables, fruits, and "
-                     "whole foods, and go easy on very salty and heavily processed foods. "
-                     "For a personalized eating plan, talk with a clinician or a "
-                     "registered or renal dietitian."),
-        rest_and_sleep=("Aim for a regular sleep routine of about 7 to 9 hours, with "
-                        "consistent times to sleep and wake."),
-        daily_routine=("Stay active most days with activities you enjoy, drink water "
-                       "through the day, and take short breaks to manage stress."),
+        food_habits=food_habits,
+        rest_and_sleep=("Aim for a regular sleep routine of about 7 to 9 hours each night, "
+                        "with consistent times to sleep and wake."),
+        daily_routine=daily_routine,
         follow_up_reminder=follow,
         grounding=[],
     )

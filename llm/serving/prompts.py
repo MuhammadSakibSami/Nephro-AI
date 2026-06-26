@@ -18,7 +18,7 @@ Pure-Python (stdlib only) so it imports without torch / transformers.
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from .contract import (
     GROUNDING_LABEL,
@@ -50,9 +50,13 @@ SAFETY_RULES: List[str] = [
     "protein, potassium, phosphorus, or sodium. If diet is relevant, suggest "
     "discussing a personalized plan with a clinician or registered/renal dietitian.",
     "Do not replace clinician judgment, eGFR testing, or urine albumin (UACR) testing.",
-    "Only give general wellness education: balanced food habits, hydration "
-    "habits, sleep and rest, physical activity, daily routine, and when to seek "
-    "professional review.",
+    "Give wellness education that is tailored to the patient's specific "
+    "conditions and risk factors shown in the patient profile. You MAY and SHOULD "
+    "reference their actual conditions (e.g., 'because you have high blood "
+    "pressure' or 'since your blood sugar is elevated') when giving food, "
+    "activity, or monitoring advice. Do NOT diagnose, prescribe, or treat — "
+    "but do personalize the wellness guidance to what this specific patient "
+    "reported.",
     "For a moderate or high screening result, always include a reminder to "
     "confirm the result with a clinician and appropriate lab tests.",
     "If the inputs suggest an urgent problem (for example chest pain, severe "
@@ -159,6 +163,161 @@ def _render_factors(inp: LLMInput, k: int = 6) -> str:
     return "\n".join(lines)
 
 
+# Human-readable labels/units for the raw patient input fields.
+_PATIENT_FIELD_META: Dict[str, Tuple[str, str]] = {
+    "age":                       ("Age",                                    "years"),
+    "sex_female":                ("Sex",                                    ""),
+    "mean_sbp":                  ("Systolic blood pressure",                "mmHg"),
+    "mean_dbp":                  ("Diastolic blood pressure",               "mmHg"),
+    "bmi":                       ("BMI",                                    "kg/m²"),
+    "waist":                     ("Waist circumference",                    "cm"),
+    "hba1c":                     ("HbA1c (blood sugar control)",            "%"),
+    "glucose":                   ("Fasting blood glucose",                  "mg/dL"),
+    "blood_urea_nitrogen":       ("Blood urea nitrogen (BUN)",              "mg/dL"),
+    "uric_acid":                 ("Uric acid",                              "mg/dL"),
+    "serum_albumin":             ("Serum albumin (nutrition marker)",       "g/dL"),
+    "hemoglobin":                ("Hemoglobin",                             "g/dL"),
+    "sodium":                    ("Serum sodium",                           "mEq/L"),
+    "potassium":                 ("Serum potassium",                        "mEq/L"),
+    "mean_pulse":                ("Resting pulse rate",                     "bpm"),
+    "diabetes_yes":              ("Has diabetes (diagnosed)",               ""),
+    "borderline_diabetes":       ("Has prediabetes / borderline diabetes",  ""),
+    "hypertension_doctor_told":  ("Has high blood pressure (diagnosed)",    ""),
+    "taking_bp_medicine":        ("Currently on blood pressure medicine",   ""),
+    "high_cholesterol_told":     ("Has high cholesterol (diagnosed)",       ""),
+    "taking_cholesterol_medicine": ("Currently on cholesterol medicine",    ""),
+    "income_poverty_ratio":      ("Income-to-poverty ratio",                ""),
+}
+
+_BINARY_FIELDS = {
+    "sex_female", "diabetes_yes", "borderline_diabetes",
+    "hypertension_doctor_told", "taking_bp_medicine",
+    "high_cholesterol_told", "taking_cholesterol_medicine",
+}
+
+
+def _render_patient_profile(inp: "LLMInput") -> str:
+    """Render the patient's raw input values as human-readable bullet lines."""
+    pi = getattr(inp, "patient_inputs", None) or {}
+    if not pi:
+        return "  (patient profile not available)"
+    lines = []
+    for key, raw_val in pi.items():
+        if raw_val is None:
+            continue
+        try:
+            fval = float(raw_val)
+            if fval != fval:  # NaN
+                continue
+        except (TypeError, ValueError):
+            continue
+
+        label, unit = _PATIENT_FIELD_META.get(key, (key.replace("_", " ").title(), ""))
+        if key == "sex_female":
+            display = "Female" if fval else "Male"
+        elif key in _BINARY_FIELDS:
+            display = "Yes" if fval else "No"
+        elif isinstance(raw_val, float) or (isinstance(raw_val, int) and key not in _BINARY_FIELDS):
+            display = f"{fval:.1f}"
+        else:
+            display = str(raw_val)
+        if unit:
+            display = f"{display} {unit}"
+        lines.append(f"  - {label}: {display}")
+    return "\n".join(lines) if lines else "  (no patient profile data)"
+
+
+def _build_personalization_cues(inp: "LLMInput") -> str:
+    """Derive explicit per-section personalization hints from the patient profile.
+
+    Returns a short bulleted list that is injected into the user prompt so the
+    model knows exactly WHAT to reference in each section for THIS patient.
+    """
+    pi = getattr(inp, "patient_inputs", None) or {}
+
+    def flag(key: str) -> bool:
+        v = pi.get(key)
+        try:
+            return bool(float(v)) if v is not None else False
+        except (TypeError, ValueError):
+            return False
+
+    def num(key: str) -> Optional[float]:
+        v = pi.get(key)
+        try:
+            f = float(v)
+            return None if f != f else f  # reject NaN
+        except (TypeError, ValueError):
+            return None
+
+    has_diabetes      = flag("diabetes_yes")
+    has_prediabetes   = flag("borderline_diabetes")
+    has_htn           = flag("hypertension_doctor_told")
+    on_bp_meds        = flag("taking_bp_medicine")
+    has_chol          = flag("high_cholesterol_told")
+    sbp               = num("mean_sbp")
+    hba1c             = num("hba1c")
+    bmi_val           = num("bmi")
+    age_val           = num("age")
+
+    elevated_bp  = has_htn or (sbp is not None and sbp > 130)
+    elevated_bmi = bmi_val is not None and bmi_val >= 25
+    any_dm       = has_diabetes or has_prediabetes or (hba1c is not None and hba1c > 5.7)
+
+    cues: List[str] = []
+
+    # Summary
+    factor_phrases = inp.top_factor_phrases(2)
+    summary_cue = f"Name the {inp.risk_class} risk level in plain terms."
+    if factor_phrases:
+        summary_cue += f" Briefly mention: {'; '.join(factor_phrases)}."
+    cues.append(f"- Summary: {summary_cue}")
+
+    # Food habits
+    food_parts: List[str] = []
+    if any_dm:
+        food_parts.append("focus on low-sugar, low-refined-carb choices because of elevated blood sugar")
+    if elevated_bp:
+        food_parts.append("suggest reducing salt intake because of high blood pressure")
+    if has_chol:
+        food_parts.append("recommend heart-healthy foods (less saturated fat) because of high cholesterol")
+    if elevated_bmi:
+        food_parts.append("encourage balanced portions and whole foods to support a healthy weight")
+    cues.append("- Food habits: " + ("; ".join(food_parts) if food_parts
+                else "Tailor to the patient's specific risk factors listed in the profile."))
+
+    # Rest and sleep — kept brief and general
+    cues.append("- Rest and sleep: Give concise, general sleep-hygiene advice (7-9 hours, consistent schedule). Keep this section brief.")
+
+    # Daily routine
+    routine_parts: List[str] = []
+    if has_htn or on_bp_meds:
+        routine_parts.append("remind them to monitor blood pressure regularly and log the readings")
+    if has_diabetes:
+        routine_parts.append("encourage daily blood-sugar checks")
+    if elevated_bmi:
+        routine_parts.append("suggest starting with gentle daily walks to support weight management")
+    if age_val is not None and age_val >= 60:
+        routine_parts.append("suggest low-impact activities appropriate for their age")
+    cues.append("- Daily routine: " + ("; ".join(routine_parts) if routine_parts
+                else "Tailor movement and monitoring habits to the patient's conditions."))
+
+    # Follow-up reminder
+    followup_parts: List[str] = []
+    if inp.risk_class in ("moderate", "high"):
+        followup_parts.append("recommend a urine test (for protein) and blood test for kidney function soon")
+    if has_diabetes or any_dm:
+        followup_parts.append("mention asking the doctor about an HbA1c check")
+    if has_htn or elevated_bp:
+        followup_parts.append("suggest a blood pressure review with their doctor")
+    if sbp is not None and sbp >= 160:
+        followup_parts.append("note that their blood pressure reading is very high and they should see a doctor promptly")
+    cues.append("- Follow-up reminder: " + ("; ".join(followup_parts) if followup_parts
+                else "Remind them to follow up with a clinician given the screening result."))
+
+    return "\n".join(cues)
+
+
 def render_retrieved_chunks(chunks: Optional[List[Dict[str, Any]]]) -> str:
     """Render retrieved guideline excerpts for the prompt.
 
@@ -197,6 +356,7 @@ def build_user_prompt(
         else "All expected inputs were provided."
     )
 
+    personalization_cues = _build_personalization_cues(inp)
     return (
         "SCREENING RESULT\n"
         f"- Risk level: {inp.risk_class_display} ({inp.risk_class})\n"
@@ -205,13 +365,18 @@ def build_user_prompt(
         f"- Reliability: {inp.reliability_level}\n"
         f"- Input completeness: {missing}\n"
         f"- Note: {at_risk_note}\n\n"
-        "TOP FACTORS THAT INFLUENCED THIS RESULT\n"
+        "PATIENT PROFILE (actual health values for this person — use these to personalize every section)\n"
+        f"{_render_patient_profile(inp)}\n\n"
+        "TOP FACTORS THAT MOST INFLUENCED THIS RESULT\n"
         f"{_render_factors(inp)}\n\n"
         "GUIDELINE EXCERPTS (use these to ground the education; cite their ids in the grounding line)\n"
         f"{render_retrieved_chunks(retrieved_chunks)}\n\n"
-        "Now write the kidney-risk education for this person using the required "
-        "output format. Personalize it to the risk level and the top factors above. "
-        "Follow every safety rule."
+        "Now write the kidney-risk education for this person using the required output format.\n"
+        "PERSONALIZATION REQUIREMENTS — tailor EACH section to this specific patient:\n"
+        f"{personalization_cues}\n\n"
+        "Important: Do NOT write generic advice that could apply to any patient. "
+        "Reference the patient's actual conditions and values from the PATIENT PROFILE "
+        "above in each section where relevant. Follow every safety rule."
     )
 
 

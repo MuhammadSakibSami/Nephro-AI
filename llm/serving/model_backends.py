@@ -157,8 +157,8 @@ class OllamaChatModel:
         self,
         model: str = DEFAULT_MODEL,
         base_url: str = DEFAULT_BASE_URL,
-        max_tokens: int = 700,
-        temperature: float = 0.3,
+        max_tokens: int = 900,
+        temperature: float = 0.65,
         top_p: float = 0.9,
     ):
         import requests as _r  # already in requirements.txt
@@ -200,14 +200,54 @@ class OllamaChatModel:
 _RISK_RE = re.compile(r"Risk level:\s*.*\(([a-z]+)\)", re.I)
 _CHUNK_RE = re.compile(r"\[([A-Za-z0-9_]+)\]")
 _FACTOR_RE = re.compile(r"-\s+(.+?)\s+\((?:raises|lowers) this risk level\)")
+_PROFILE_FLAG_RE = re.compile(r"-\s+(.+?):\s+(Yes|No)", re.I)
+_PROFILE_NUM_RE  = re.compile(r"-\s+(.+?):\s+([\d.]+)")
+
+
+def _extract_profile_flags(user: str) -> Dict[str, bool]:
+    """Extract Yes/No boolean flags from the PATIENT PROFILE block."""
+    flags: Dict[str, bool] = {}
+    in_profile = False
+    for line in user.splitlines():
+        if "PATIENT PROFILE" in line:
+            in_profile = True
+            continue
+        if in_profile and line.strip().startswith("TOP FACTORS"):
+            break
+        if in_profile:
+            m = _PROFILE_FLAG_RE.search(line)
+            if m:
+                flags[m.group(1).lower()] = m.group(2).lower() == "yes"
+    return flags
+
+
+def _extract_profile_nums(user: str) -> Dict[str, float]:
+    """Extract numeric values from the PATIENT PROFILE block."""
+    nums: Dict[str, float] = {}
+    in_profile = False
+    for line in user.splitlines():
+        if "PATIENT PROFILE" in line:
+            in_profile = True
+            continue
+        if in_profile and line.strip().startswith("TOP FACTORS"):
+            break
+        if in_profile:
+            m = _PROFILE_NUM_RE.search(line)
+            if m:
+                try:
+                    nums[m.group(1).lower()] = float(m.group(2))
+                except ValueError:
+                    pass
+    return nums
 
 
 class MockGuidanceModel:
     """Deterministic safe-output model for offline pipeline testing.
 
-    Reads the rendered prompt (risk level, top factors, retrieved chunk ids) and
-    emits a complete, safe `GuidanceOutput`. `unsafe_first` lets a test force an
-    unsafe first attempt to exercise the validator's retry/fallback path.
+    Reads the rendered prompt (risk level, patient profile, top factors, chunk
+    ids) and emits a well-formed, patient-specific `GuidanceOutput`.
+    `unsafe_first` lets a test force an unsafe first attempt to exercise the
+    validator's retry/fallback path.
     """
 
     def __init__(self, unsafe_first: bool = False):
@@ -223,32 +263,94 @@ class MockGuidanceModel:
         user = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")
         risk = (_RISK_RE.search(user).group(1).lower() if _RISK_RE.search(user) else "low")
         chunk_ids = _CHUNK_RE.findall(user)[:2]
-        factors = _FACTOR_RE.findall(user)[:2]
+        factors = _FACTOR_RE.findall(user)[:3]
+        flags = _extract_profile_flags(user)
+        nums  = _extract_profile_nums(user)
 
         if self.unsafe_first and self._calls == 1:
-            # Deliberately unsafe (diagnosis) to test the guardrail.
             return self._render(
                 summary="You have chronic kidney disease and must start medication.",
                 chunk_ids=chunk_ids)
 
         at_risk = risk in {"moderate", "high"}
-        focus = (" Your result was influenced by " + " and ".join(factors) + "."
-                 if factors else "")
-        summary = (f"Your kidney-risk screening result is {risk}. This is general "
-                   f"information, not a diagnosis.{focus}")
-        follow = ("Please check in with a clinician and ask about simple kidney tests "
-                  "(a blood test and a urine test) to confirm your result."
-                  if at_risk else
-                  "Keep up regular check-ups and ask your clinician about routine kidney "
-                  "checks if you have any concerns.")
-        return self._render(
-            summary=summary,
-            food=("Aim for balanced meals with plenty of vegetables, fruits, and whole "
-                  "foods, and go easy on very salty and heavily processed foods."),
-            rest="Try for a steady sleep routine of about 7 to 9 hours each night.",
-            routine=("Stay active most days with activities you enjoy, drink water through "
-                     "the day, and take short breaks to ease stress."),
-            follow=follow, chunk_ids=chunk_ids)
+
+        # --- derive patient-specific cues from extracted profile ---
+        has_dm  = flags.get("has diabetes (diagnosed)", False)
+        has_pre = flags.get("has prediabetes / borderline diabetes", False)
+        has_htn = flags.get("has high blood pressure (diagnosed)", False)
+        on_bp   = flags.get("currently on blood pressure medicine", False)
+        has_chol = flags.get("has high cholesterol (diagnosed)", False)
+        sbp = nums.get("systolic blood pressure", None)
+        bmi_v = nums.get("bmi", None)
+
+        any_dm = has_dm or has_pre
+        high_bp = has_htn or (sbp is not None and sbp > 130)
+
+        # Summary
+        focus = (" Key influences include " + " and ".join(factors) + "." if factors else "")
+        summary = (f"Your screening shows a {risk} risk for kidney problems.{focus} "
+                   "This is not a diagnosis — it is a screening result to guide next steps.")
+
+        # Food habits
+        food_parts: List[str] = [
+            "Eat a balanced diet with plenty of vegetables, fruits, and whole grains."
+        ]
+        if any_dm:
+            food_parts.append(
+                "Because your blood sugar is elevated, limit sugary drinks, white bread, "
+                "and processed snacks, and choose low-glycaemic foods instead.")
+        if high_bp:
+            food_parts.append(
+                "Since blood pressure is a concern, try to reduce salt — avoid adding "
+                "extra salt at the table and go easy on salty packaged foods.")
+        if has_chol:
+            food_parts.append(
+                "For your cholesterol, favour heart-healthy fats (olive oil, fish, nuts) "
+                "and limit fried or fatty processed foods.")
+        if bmi_v is not None and bmi_v >= 25:
+            food_parts.append(
+                "Keeping portions moderate and choosing filling whole foods can help "
+                "support a healthy weight over time.")
+        food = " ".join(food_parts)
+
+        # Rest
+        rest = ("Aim for 7 to 9 hours of sleep each night. A regular bedtime helps your "
+                "body recover. Keep your bedroom quiet and dark, and avoid screens close "
+                "to bedtime.")
+
+        # Daily routine
+        routine_parts: List[str] = [
+            "Try to move your body each day — even a 20-30 minute walk makes a difference."
+        ]
+        if on_bp or has_htn:
+            routine_parts.append(
+                "Check your blood pressure regularly and write down the readings to share "
+                "with your doctor.")
+        if has_dm:
+            routine_parts.append(
+                "Track your blood sugar daily and note any readings that seem unusually "
+                "high or low.")
+        routine_parts.append("Drink enough water throughout the day to stay hydrated.")
+        routine = " ".join(routine_parts)
+
+        # Follow-up
+        follow_parts: List[str] = []
+        if at_risk:
+            follow_parts.append(
+                f"Because your screening result is {risk}, it is important to see a "
+                "doctor or kidney specialist. Ask for a urine test (to check for protein) "
+                "and a blood test (to measure kidney function).")
+        if any_dm:
+            follow_parts.append("Ask your doctor about an HbA1c test to check your blood sugar control.")
+        if has_htn or high_bp:
+            follow_parts.append("Have your blood pressure reviewed by your doctor.")
+        if not follow_parts:
+            follow_parts.append("Keep up regular check-ups and ask your clinician about "
+                                "routine kidney-health tests.")
+        follow = " ".join(follow_parts)
+
+        return self._render(summary=summary, food=food, rest=rest,
+                            routine=routine, follow=follow, chunk_ids=chunk_ids)
 
     @staticmethod
     def _render(summary: str, chunk_ids: List[str],
