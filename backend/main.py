@@ -10,6 +10,8 @@ try:
 except Exception:
     pass
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -17,6 +19,7 @@ from .feature_config import MODEL_FEATURES, FEATURE_METADATA, NUMERIC_FEATURES, 
 from .schemas import PatientFeatures, PredictionResponse
 from .model_service import service, ModelNotLoadedError
 from .llm_endpoint import build_guidance_response, health as llm_health
+from .database import init_db, db_status, save_screening, count_screenings
 
 
 def _runtime_versions():
@@ -29,10 +32,19 @@ def _runtime_versions():
             versions[mod_name] = f"not available: {exc}"
     return versions
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Best-effort: connects to PostgreSQL if DATABASE_URL is set. If it isn't
+    # reachable, the API still runs and persistence is skipped (see /db/health).
+    init_db()
+    yield
+
+
 app = FastAPI(
     title="CKD Risk Screening API",
     description="FastAPI backend for the final NHANES two-stage kidney-risk screening cascade.",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -64,7 +76,16 @@ def health():
         "model_path": str(service.model_path),
         "load_error": service.load_error,
         "runtime_versions": _runtime_versions(),
+        "database": db_status(),
     }
+
+
+@app.get("/db/health")
+def db_health():
+    """Database connectivity + stored-record count (best-effort)."""
+    status = db_status()
+    status["stored_screenings"] = count_screenings()
+    return status
 
 
 @app.post("/reload-model")
@@ -93,7 +114,11 @@ def model_info():
 @app.post("/predict", response_model=PredictionResponse)
 def predict(features: PatientFeatures):
     try:
-        return service.predict(features.model_dump())
+        inputs = features.model_dump()
+        prediction = service.predict(inputs)
+        # Best-effort persistence; never blocks or fails the response.
+        save_screening(source="predict", input_features=inputs, prediction=prediction)
+        return prediction
     except ModelNotLoadedError as exc:
         raise HTTPException(status_code=503, detail=str(exc))
     except Exception as exc:
@@ -114,8 +139,13 @@ def generate_guidance(features: PatientFeatures):
     a `disclaimer`, the guidance `sections`, `provenance`, and the safety `status`.
     """
     try:
-        prediction = service.predict(features.model_dump())
-        return build_guidance_response(prediction)
+        inputs = features.model_dump()
+        prediction = service.predict(inputs)
+        response = build_guidance_response(prediction)
+        # Best-effort persistence: full record (inputs + prediction + guidance).
+        save_screening(source="generate-guidance", input_features=inputs,
+                       prediction=prediction, guidance_response=response)
+        return response
     except ModelNotLoadedError as exc:
         raise HTTPException(status_code=503, detail=str(exc))
     except Exception as exc:

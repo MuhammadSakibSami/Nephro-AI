@@ -123,6 +123,8 @@ Open **http://localhost:5173**.
 | `CKD_LLM_MODEL` | `local_demo` · `ollama` · `qwen` · `auto` | LLM backend / mode |
 | `OLLAMA_MODEL` | model tag (optional) | Ollama model to use (default: `qwen3:4b-instruct-2507-q4_K_M`) |
 | `OLLAMA_BASE_URL` | URL (optional) | Ollama server URL (default: `http://localhost:11434`) |
+| `DATABASE_URL` | SQLAlchemy URL (optional) | PostgreSQL connection for saving screenings. Unset = persistence off (see §6) |
+| `CKD_DB_AUTO_CREATE` | `true` (default) · `false` | auto-create tables on startup vs. manage with Alembic |
 | `CKD_MODEL_PATH` | path (optional) | override the ML model `.joblib` location |
 | `GEMINI_API_KEY` | key (optional) | only for the deferred Phase-7 data scripts |
 
@@ -192,7 +194,69 @@ The frontend and safety pipeline are unchanged; the UI badge switches from
 
 ---
 
-## 6. Troubleshooting
+## 6. Database (PostgreSQL) — saving the research dataset
+
+Persistence is **optional and best-effort**: if `DATABASE_URL` is not set (or the
+database is unreachable), the API still runs and screening works — saving is just
+skipped. When configured, **every `/predict` and `/generate-guidance` call is
+stored** (patient inputs + ML prediction + LLM guidance) in a `screenings` table.
+
+### 6a. One-time setup
+
+```sql
+-- In psql (or pgAdmin), create a database and a user:
+CREATE DATABASE ckd_research;
+CREATE USER ckd_user WITH PASSWORD 'change_me';
+GRANT ALL PRIVILEGES ON DATABASE ckd_research TO ckd_user;
+```
+
+Then set the connection string in `./.env` (repo root):
+
+```ini
+DATABASE_URL=postgresql+psycopg2://ckd_user:change_me@localhost:5432/ckd_research
+```
+
+The PostgreSQL driver (`psycopg2-binary`) ships in `requirements.txt`. Start the
+backend — on startup it connects, creates the table (because `CKD_DB_AUTO_CREATE`
+defaults to `true`), and begins saving. Verify:
+
+```
+GET http://localhost:8000/db/health
+  -> { "available": true, "configured": true, "stored_screenings": <n>, ... }
+```
+
+### 6b. Migrations with Alembic (recommended for the final research)
+
+For controlled schema changes (instead of auto-create), use the bundled Alembic
+setup. Set `CKD_DB_AUTO_CREATE=false`, then from the repo root (venv active):
+
+```bash
+alembic upgrade head                                   # apply the schema
+# after you edit backend/database/models.py:
+alembic revision --autogenerate -m "describe change"   # generate a migration
+alembic upgrade head                                   # apply it
+```
+
+`DATABASE_URL` is read from `.env`/the environment — it is never stored in
+`alembic.ini`.
+
+### 6c. What gets stored
+
+One row per screening call in `screenings`: `created_at`, `source`
+(`predict` | `generate-guidance`), the raw `input_features` (JSONB), `risk_class`
+/ `confidence` / `probabilities`, the full `prediction`, and (for guidance calls)
+the `guidance` sections + `safety_status` + `llm_mode` + `model_spec`. JSON
+columns mean new fields can be added later without a migration; to add new
+**tables** (e.g. patients, feedback), add a model in
+`backend/database/models.py` and generate a migration.
+
+> A typical UI run calls `/generate-guidance` (which screens internally). If the
+> admin view also calls `/predict`, you'll get two rows — distinguishable by the
+> `source` column. That's intended: one row per API call.
+
+---
+
+## 7. Troubleshooting
 
 | Symptom | Fix |
 |---|---|
@@ -204,14 +268,19 @@ The frontend and safety pipeline are unchanged; the UI badge switches from
 | Ollama connection refused (`ConnectionError`) | Ollama server isn't running. Start it: `ollama serve` (or reopen the Ollama desktop app). |
 | `uvicorn`/`npm` not found | Activate the venv (`venv\Scripts\activate`) / install Node.js. |
 | PowerShell won't run the script | `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` |
+| `/db/health` shows `available: false` | Check `DATABASE_URL` in `.env` and that PostgreSQL is running. The `error` field explains why. Screening still works without it. |
+| `psycopg2` / driver build errors | `requirements.txt` uses `psycopg2-binary` (no build needed). Ensure the venv deps are installed. |
+| Alembic: "DATABASE_URL is not set" | Set it in `.env` (or the shell) before running `alembic`. |
 
 ---
 
-## 7. Project layout (relevant parts)
+## 8. Project layout (relevant parts)
 
 ```
 <repo root>/
 ├── backend/                # FastAPI: /predict, /generate-guidance, /health
+│   └── database/           # SQLAlchemy models + repository + Alembic migrations
+├── alembic.ini             # Alembic config (reads DATABASE_URL from env)
 ├── llm/                    # RAG + prompts + safety validator + runtime
 ├── frontend/               # React + Vite + Tailwind UI  (npm)
 │   ├── .env / .env.example # VITE_API_BASE_URL
