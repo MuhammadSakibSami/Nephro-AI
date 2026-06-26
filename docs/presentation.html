@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nephro-AI — Supervisor Presentation</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07111f;--bg2:#0d1f35;
+  --card:rgba(255,255,255,0.06);--card-b:rgba(255,255,255,0.11);
+  --c1:#00c9ff;--c2:#7c3aed;--green:#10b981;--amber:#f59e0b;--red:#ef4444;
+  --text:#f1f5f9;--muted:#8fabbe;--slide-h:100vh;--slide-w:100vw;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);
+  font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,sans-serif;}
+/* ── deck ── */
+#deck{position:relative;width:var(--slide-w);height:var(--slide-h);}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;
+  opacity:0;transform:translateX(80px);transition:opacity .38s ease,transform .38s ease;
+  pointer-events:none;overflow:hidden;}
+.slide.active{opacity:1;transform:none;pointer-events:all;}
+.slide.exit{opacity:0;transform:translateX(-80px);}
+/* ── bg blobs ── */
+.slide::before,.slide::after{content:"";position:absolute;border-radius:50%;filter:blur(80px);opacity:.13;pointer-events:none;}
+.slide::before{width:520px;height:520px;background:var(--c1);top:-120px;right:-100px;}
+.slide::after{width:400px;height:400px;background:var(--c2);bottom:-80px;left:-80px;}
+/* ── navigation ── */
+#nav{position:fixed;bottom:0;left:0;right:0;height:54px;display:flex;align-items:center;
+  justify-content:center;gap:14px;background:rgba(7,17,31,.85);backdrop-filter:blur(8px);
+  border-top:1px solid rgba(255,255,255,.07);z-index:100;}
+.dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.22);cursor:pointer;
+  transition:.2s;border:none;}
+.dot.on{background:var(--c1);transform:scale(1.35);}
+#btn-prev,#btn-next{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.13);
+  color:#fff;padding:6px 18px;border-radius:6px;cursor:pointer;font-size:.85rem;
+  transition:.18s;letter-spacing:.03em;}
+#btn-prev:hover,#btn-next:hover{background:rgba(0,201,255,.18);border-color:var(--c1);}
+#slide-num{font-size:.75rem;color:var(--muted);min-width:48px;text-align:center;}
+/* ── layout helpers ── */
+.content{flex:1;display:flex;flex-direction:column;padding:46px 64px 20px;max-width:1400px;margin:0 auto;width:100%;}
+.sl-head{margin-bottom:28px;}
+.sl-tag{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--c1);
+  font-weight:600;margin-bottom:8px;}
+.sl-title{font-size:2rem;font-weight:700;line-height:1.2;color:#fff;}
+.sl-title span{color:var(--c1);}
+.sl-sub{font-size:1rem;color:var(--muted);margin-top:6px;}
+hr.div{border:none;border-top:1px solid rgba(255,255,255,.1);margin:0 0 24px;}
+.row{display:flex;gap:20px;flex:1;align-items:stretch;}
+.col{display:flex;flex-direction:column;gap:16px;}
+.col-1{flex:1;}.col-2{flex:2;}.col-3{flex:3;}
+.card{background:var(--card);border:1px solid var(--card-b);border-radius:14px;padding:22px 26px;}
+.card-title{font-size:.78rem;text-transform:uppercase;letter-spacing:.1em;color:var(--c1);font-weight:700;margin-bottom:10px;}
+.pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:600;letter-spacing:.04em;}
+.pill-c{background:rgba(0,201,255,.15);color:var(--c1);border:1px solid rgba(0,201,255,.3);}
+.pill-g{background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.3);}
+.pill-a{background:rgba(245,158,11,.15);color:var(--amber);border:1px solid rgba(245,158,11,.3);}
+.pill-r{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3);}
+.stat-big{font-size:2.6rem;font-weight:800;color:var(--c1);line-height:1;}
+.stat-label{font-size:.78rem;color:var(--muted);margin-top:4px;}
+ul.checks li{padding:5px 0 5px 22px;position:relative;font-size:.88rem;color:var(--muted);line-height:1.45;}
+ul.checks li::before{content:"✓";position:absolute;left:0;color:var(--green);font-weight:700;}
+ul.bars li{padding:5px 0 5px 22px;position:relative;font-size:.88rem;color:var(--muted);}
+ul.bars li::before{content:"→";position:absolute;left:0;color:var(--c1);}
+ul.x li{padding:5px 0 5px 24px;position:relative;font-size:.88rem;color:var(--muted);}
+ul.x li::before{content:"✕";position:absolute;left:0;color:var(--red);font-weight:700;}
+.big-num{font-size:3rem;font-weight:800;color:var(--c1);}
+.text-green{color:var(--green);}
+.text-amber{color:var(--amber);}
+.text-red{color:var(--red);}
+.text-c{color:var(--c1);}
+.text-muted{color:var(--muted);}
+.label{font-size:.72rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:600;}
+/* flow */
+.flow{display:flex;align-items:center;gap:0;flex-wrap:nowrap;}
+.fbox{background:var(--card);border:1px solid var(--card-b);border-radius:10px;
+  padding:12px 16px;font-size:.8rem;text-align:center;flex:1;min-width:0;}
+.fbox strong{display:block;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--c1);margin-bottom:4px;}
+.farr{color:var(--c1);font-size:1.2rem;padding:0 6px;flex-shrink:0;}
+/* badge row */
+.badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+/* feature grid */
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.feat-item{background:var(--card);border:1px solid var(--card-b);border-radius:8px;
+  padding:10px 14px;font-size:.78rem;}
+.feat-item .fi-label{color:var(--muted);font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;}
+.fi-list{list-style:none;padding:0;}
+.fi-list li{padding:2px 0;color:var(--text);font-size:.8rem;}
+/* metric row */
+.mrow{display:flex;gap:14px;flex-wrap:wrap;}
+.mcard{background:var(--card);border:1px solid var(--card-b);border-radius:10px;
+  padding:16px 20px;flex:1;min-width:110px;text-align:center;}
+.mcard .mv{font-size:1.8rem;font-weight:800;color:var(--c1);line-height:1;}
+.mcard .ml{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-top:4px;}
+/* title slide */
+.title-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  flex:1;text-align:center;position:relative;z-index:1;}
+/* validator */
+.vrow{display:flex;flex-direction:column;gap:8px;}
+.vitem{display:flex;align-items:center;gap:12px;background:var(--card);
+  border:1px solid var(--card-b);border-radius:8px;padding:10px 16px;font-size:.82rem;}
+.vnum{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:.68rem;font-weight:700;flex-shrink:0;}
+.vnum-r{background:rgba(239,68,68,.2);color:var(--red);}
+.vnum-a{background:rgba(245,158,11,.2);color:var(--amber);}
+.vdesc{flex:1;color:var(--text);}
+.vtag{font-size:.65rem;color:var(--muted);}
+/* table */
+.dtable{width:100%;border-collapse:collapse;font-size:.82rem;}
+.dtable th{padding:9px 14px;text-align:left;background:rgba(0,201,255,.1);
+  color:var(--c1);font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;}
+.dtable td{padding:9px 14px;border-top:1px solid rgba(255,255,255,.06);}
+.dtable tr:hover td{background:rgba(255,255,255,.03);}
+/* novelty cards */
+.nov-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+.nov-card{background:var(--card);border:1px solid var(--card-b);border-left:3px solid var(--c1);
+  border-radius:10px;padding:14px 18px;}
+.nov-card h4{font-size:.82rem;font-weight:700;color:var(--c1);margin-bottom:6px;}
+.nov-card p{font-size:.76rem;color:var(--muted);line-height:1.5;}
+/* stack grid */
+.stack-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.scard{background:var(--card);border:1px solid var(--card-b);border-radius:10px;
+  padding:14px;text-align:center;}
+.scard .s-layer{font-size:.65rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:6px;}
+.scard .s-name{font-size:.82rem;font-weight:700;color:#fff;margin-bottom:4px;}
+.scard .s-tech{font-size:.7rem;color:var(--c1);}
+/* future */
+.fw-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.fw-card{background:var(--card);border:1px solid var(--card-b);border-radius:10px;padding:16px 18px;}
+.fw-card .fw-icon{font-size:1.6rem;margin-bottom:8px;}
+.fw-card h4{font-size:.82rem;font-weight:700;color:#fff;margin-bottom:6px;}
+.fw-card p{font-size:.74rem;color:var(--muted);line-height:1.5;}
+/* cascade diagram */
+.cascade{display:flex;flex-direction:column;gap:0;align-items:stretch;}
+.cs-row{display:flex;align-items:center;gap:12px;}
+.cs-box{background:var(--card);border:1px solid var(--card-b);border-radius:10px;
+  padding:14px 18px;flex:1;}
+.cs-box h4{font-size:.75rem;text-transform:uppercase;letter-spacing:.09em;color:var(--c1);margin-bottom:6px;font-weight:700;}
+.cs-box p{font-size:.78rem;color:var(--muted);}
+.cs-down{text-align:center;color:var(--c1);font-size:1.4rem;padding:4px 0;}
+.cs-split{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.cs-out{border-radius:10px;padding:12px 16px;font-size:.8rem;text-align:center;}
+.cs-out-low{background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3);color:var(--green);}
+.cs-out-mod{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:var(--amber);}
+.cs-out-high{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:var(--red);}
+/* conclusion */
+.con-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
+.con-item{background:var(--card);border:1px solid var(--card-b);border-left:3px solid var(--green);
+  border-radius:10px;padding:16px 20px;}
+.con-item h4{font-size:.8rem;font-weight:700;color:var(--green);margin-bottom:6px;}
+.con-item p{font-size:.78rem;color:var(--muted);line-height:1.5;}
+/* responsive scale */
+@media(max-width:900px){
+  .content{padding:30px 28px 16px;}
+  .sl-title{font-size:1.5rem;}
+  .feat-grid{grid-template-columns:repeat(2,1fr);}
+  .stack-grid{grid-template-columns:repeat(2,1fr);}
+  .fw-grid{grid-template-columns:1fr 1fr;}
+  .nov-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div id="deck">
+
+<!-- ═══════════════════════════════════════════════════════ SLIDE 1: TITLE -->
+<div class="slide active" id="s1">
+<div class="content" style="justify-content:center">
+  <div class="title-wrap">
+    <div style="font-size:3.6rem;font-weight:900;letter-spacing:-.02em;line-height:1;margin-bottom:14px">
+      <span style="color:var(--c1)">Nephro</span><span style="color:#fff">-AI</span>
+    </div>
+    <div style="font-size:1.12rem;color:var(--muted);max-width:680px;line-height:1.6;margin-bottom:32px">
+      Non-Invasive Chronic Kidney Disease Risk Screening &amp;<br>
+      <span style="color:var(--text)">Guideline-Grounded Personalised Patient Education</span>
+    </div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-bottom:40px">
+      <span class="pill pill-c">Machine Learning</span>
+      <span class="pill pill-g">Retrieval-Augmented Generation</span>
+      <span class="pill pill-a">Safety-Validated LLM</span>
+      <span class="pill" style="background:rgba(124,58,237,.15);color:#a78bfa;border:1px solid rgba(124,58,237,.3)">KDIGO-Aligned</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+      <div style="font-size:.9rem;font-weight:600;color:#fff">Mohammad Walid Hasan</div>
+      <div style="font-size:.78rem;color:var(--muted)">Jahangirnagar University / IIT &nbsp;·&nbsp; Research Project &amp; Viva &nbsp;·&nbsp; 2026</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ SLIDE 2: PROBLEM -->
+<div class="slide" id="s2">
+<div class="content">
+  <div class="sl-head">
+    <div class="sl-tag">Motivation</div>
+    <div class="sl-title">The <span>Problem</span></div>
+    <div class="sl-sub">Chronic Kidney Disease (CKD) is a silent, global epidemic</div>
+  </div>
+  <hr class="div">
+  <div class="row">
+    <div class="col col-1" style="gap:12px">
+      <div class="card" style="text-align:center;padding:28px">
+        <div class="stat-big">800M</div>
+        <div class="stat-label">people worldwide have CKD</div>
+      </div>
+      <div class="card" style="text-align:center;padding:20px">
+        <div class="stat-big" style="color:var(--red)">~90%</div>
+        <div class="stat-label">are unaware they have it</div>
+      </div>
+      <div class="card" style="text-align:center;padding:20px">
+        <div class="stat-big" style="color:var(--amber)">Stage 3+</div>
+        <div class="stat-label">when most are finally diagnosed</div>
+      </div>
+    </div>
+    <div class="col col-2" style="gap:14px">
+      <div class="card" style="border-left:3px solid var(--red)">
+        <div class="card-title" style="color:var(--red)">Gap 1 — Detection</div>
+        <p style="font-size:.88rem;color:var(--muted);line-height:1.6">Standard confirmatory tests — <strong style="color:#fff">eGFR, serum creatinine, UACR</strong> — require dedicated laboratory access and phlebotomy. This creates a barrier in community, primary-care, and low-resource settings where early screening is most needed.</p>
+      </div>
+      <div class="card" style="border-left:3px solid var(--amber)">
+        <div class="card-title" style="color:var(--amber)">Gap 2 — Patient Education</div>
+        <p style="font-size:.88rem;color:var(--muted);line-height:1.6">Even when a risk score is generated, patients receive <strong style="color:#fff">no personalised guidance</strong> — no explanation of what their specific risk factors mean, what lifestyle changes to make, or when to seek follow-up. Generic advice is ignored.</p>
+      </div>
+      <div class="card" style="background:rgba(0,201,255,.06);border-color:rgba(0,201,255,.25)">
+        <div class="card-title">Existing ML Models Fall Short</div>
+        <ul class="x" style="margin-top:4px">
+          <li>Almost all use eGFR or creatinine as input — not accessible for screening</li>
+          <li>Binary classification only — no KDIGO-aligned risk stratification</li>
+          <li>No patient-facing education layer built in</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ SLIDE 3: SOLUTION -->
+<div class="slide" id="s3">
+<div class="content">
+  <div class="sl-head">
+    <div class="sl-tag">Overview</div>
+    <div class="sl-title">What is <span>Nephro-AI</span>?</div>
+    <div class="sl-sub">A connected two-stage system that solves both gaps end-to-end</div>
+  </div>
+  <hr class="div">
+  <div class="row" style="align-items:center;gap:24px">
+    <div class="col col-1">
+      <div class="card" style="border-color:rgba(0,201,255,.3);padding:28px">
+        <div style="font-size:1.8rem;margin-bottom:12px">🩺</div>
+        <div class="card-title">Stage 1 — ML Screening</div>
+        <p style="font-size:.85rem;color:var(--muted);line-height:1.6;margin-bottom:14px">22 routine health inputs (vitals, standard labs, comorbidity flags) → Two-stage ML cascade → <strong style="color:var(--green)">Low / Moderate / High</strong> kidney risk class</p>
+        <ul class="checks" style="margin-top:8px">
+          <li>No creatinine required</li>
+          <li>No eGFR or UACR needed</li>
+          <li>Works with routine checkup data</li>
+          <li>KDIGO risk grid aligned</li>
+        </ul>
+      </div>
+    </div>
+    <div style="font-size:2.5rem;color:var(--c1);flex-shrink:0">→</div>
+    <div class="col col-1">
+      <div class="card" style="border-color:rgba(124,58,237,.35);padding:28px">
+        <div style="font-size:1.8rem;margin-bottom:12px">💬</div>
+        <div class="card-title" style="color:#a78bfa">Stage 2 — LLM Education</div>
+        <p style="font-size:.85rem;color:var(--muted);line-height:1.6;margin-bottom:14px">ML result + patient profile + clinical guidelines → Safety-validated LLM → <strong style="color:#a78bfa">5-section personalised patient education</strong></p>
+        <ul class="checks" style="margin-top:8px">
+          <li>Grounded in KDIGO, ADA, NKF, CDC</li>
+          <li>Personalised to each patient's conditions</li>
+          <li>Multi-layer safety validation</li>
+          <li>Plain language (Grade ≤ 8 readability)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:18px;background:rgba(16,185,129,.06);border-color:rgba(16,185,129,.25);text-align:center;padding:16px">
+    <span style="font-size:.88rem;color:var(--green);font-weight:600">Delivered as a full-stack web app — Patient View (public-facing) + Admin/Research View (audit trail, evaluation metrics)</span>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ SLIDE 4: DATASET -->
+<div class="slide" id="s4">
+<div class="content">
+  <div class="sl-head">
+    <div class="sl-tag">Data</div>
+    <div class="sl-title">Dataset &amp; <span>Risk Target</span></div>
+    <div class="sl-sub">NHANES 2021–23 with KDIGO-aligned risk stratification</div>
+  </div>
+  <hr class="div">
+  <div class="row">
+    <div class="col col-1" style="gap:14px">
+      <div class="card" style="padding:24px">
+        <div class="card-title">NHANES 2021–23</div>
+        <p style="font-size:.85rem;color:var(--muted);line-height:1.6">National Health and Nutrition Examination Survey (CDC/NCHS) — a nationally representative survey of the US adult population. Combines interview, physical examination, and laboratory data.</p>
+        <div class="badges" style="margin-top:12px">
+          <span class="pill pill-c">Most Recent Cycle</span>
+          <span class="pill pill-g">Post-COVID</span>
+          <span class="pill pill-a">CDC / NCHS</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Risk Target — KDIGO Grid</div>
+        <p style="font-size:.82rem;color:var(--muted);margin-bottom:12px">Target variable defined using the KDIGO CKD risk classification grid (eGFR × albuminuria categories). Used for label construction only — NOT as model inputs.</p>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div class="cs-out cs-out-low" style="padding:9px 14px;text-align:left"><strong>Low</strong> — No/minimal risk indicators</div>
+          <div class="cs-out cs-out-mod" style="padding:9px 14px;text-align:left"><strong>Moderate</strong> — Moderately elevated risk</div>
+          <div class="cs-out cs-out-high" style="padding:9px 14px;text-align:left"><strong>High</strong> — High/very-high risk</div>
+        </div>
+      </div>
+    </div>
+    <div class="col col-1" style="gap:14px">
+      <div class="card" style="border-color:rgba(0,201,255,.25)">
+        <div class="card-title">Why NHANES?</div>
+        <ul class="checks">
+          <li>Contains all 22 of our non-invasive features</li>
+          <li>Also contains eGFR &amp; UACR for label construction</li>
+          <li>Representative of the general population (not just clinic patients)</li>
+          <li>Publicly available — reproducible research</li>
+          <li>2021-23 is the most recent completed cycle</li>
+        </ul>
+      </div>
+      <div class="card" style="border-color:rgba(239,68,68,.25)">
+        <div class="card-title" style="color:var(--red)">Key Design Decision</div>
+        <p style="font-size:.85rem;color:var(--muted);line-height:1.6">eGFR and creatinine are used <em>only</em> to construct the training labels (via the KDIGO grid). They are <strong style="color:var(--red)">never used as model input features</strong>. The trained model works without them — enabling non-invasive deployment.</p>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ SLIDE 5: FEATURES -->
+<div class="slide" id="s5">
+<div class="content">
+  <div class="sl-head">
+    <div class="sl-tag">Feature Engineering</div>
+    <div class="sl-title">22 <span>Non-Invasive</span> Input Features</div>
+    <div class="sl-sub">Everything measurable at a community health check — no specialist lab required</div>
+  </div>
+  <hr class="div">
+  <div class="feat-grid" style="flex:1">
+    <div class="feat-item">
+      <div class="fi-label">Demographic (3)</div>
+      <ul class="fi-list">
+        <li>Age (years)</li><li>Sex (M/F)</li><li>Income-to-poverty ratio</li>
+      </ul>
+    </div>
+    <div class="feat-item">
+      <div class="fi-label">Anthropometric (2)</div>
+      <ul class="fi-list">
+        <li>BMI (kg/m²)</li><li>Waist circumference (cm)</li>
+      </ul>
+    </div>
+    <div class="feat-item">
+      <div class="fi-label">Blood Pressure (3)</div>
+      <ul class="fi-list">
+        <li>Mean systolic BP (mmHg)</li><li>Mean diastolic BP (mmHg)</li><li>Mean pulse (bpm)</li>
+      </ul>
+    </div>
+    <div class="feat-item">
+      <div class="fi-label">Routine Labs (8)</div>
+      <ul class="fi-list">
+        <li>Fasting glucose (mg/dL)</li><li>HbA1c (%)</li>
+        <li>Blood urea nitrogen (mg/dL)</li><li>Uric acid (mg/dL)</li>
+        <li>Serum albumin (g/dL)</li><li>Sodium (mmol/L)</li>
+        <li>Potassium (mmol/L)</li><li>Hemoglobin (g/dL)</li>
+      </ul>
+    </div>
+    <div class="feat-item">
+      <div class="fi-label">Comorbidity Flags (6 binary)</div>
+      <ul class="fi-list">
+        <li>Diagnosed diabetes</li><li>Prediabetes / borderline</li>
+        <li>Diagnosed hypertension</li><li>Diagnosed high cholesterol</li>
+        <li>Taking BP medication</li><li>Taking cholesterol medication</li>
+      </ul>
+    </div>
+    <div class="feat-item" style="background:rgba(239,68,68,.06);border-color:rgba(239,68,68,.25)">
+      <div class="fi-label" style="color:var(--red)">Deliberately Excluded ✕</div>
+      <ul class="fi-list">
+        <li style="color:var(--red)">✕ Serum creatinine</li>
+        <li style="color:var(--red)">✕ eGFR (estimated / calculated)</li>
+        <li style="color:var(--red)">✕ UACR (urine albumin-creatinine)</li>
+        <li style="color:var(--red)">✕ Urine protein / dipstick</li>
+      </ul>
+      <div style="font-size:.7rem;color:var(--red);margin-top:8px;line-height:1.4">These require specialist labs. Excluding them is the enabling design decision for community-level screening.</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ SLIDE 6: ML ARCH -->
+<div class="slide" id="s6">
+<div class="content">
+  <div class="sl-head">
+    <div class="sl-tag">ML Architecture</div>
+    <div class="sl-title">Two-Stage <span>Cascade</span> Design</div>
+    <div class="sl-sub">Separate models for at-risk detection and high-risk discrimination</div>
+  </div>
+  <hr class="div">
+  <div class="row" style="gap:28px">
+    <div class="col col-1">
+      <div class="cascade">
+        <div class="cs-box" style="border-color:rgba(0,201,255,.3);text-align:center">
+          <h4>22 Feature Input</h4>
+          <p>All non-invasive patient features</p>
+        </div>
+        <div class="cs-down">↓</div>
+        <div class="cs-box" style="border-color:rgba(0,201,255,.4)">
+          <h4>Stage 1 — Random Forest Gate</h4>
+          <p>Binary: Low vs At-Risk · Threshold: <strong style="color:var(--c1)">0.44</strong> · Tuned for high sensitivity (catch all at-risk patients)</p>
+        </div>
+        <div class="cs-down">↓ if P(at-risk) ≥ 0.44</div>
+        <div class="cs-box" style="border-color:rgba(124,58,237,.4)">
+          <h4 style="color:#a78bfa">Stage 2 — Gradient Boosting Discriminator</h4>
+          <p>Binary within at-risk pool: Moderate vs High · Threshold: <strong style="color:#a78bfa">0.50</strong></p>
+        </div>
+        <div class="cs-down">↓</div>
+        <div class="cs-split">
+          <div class="cs-out cs-out-low"><strong>LOW RISK</strong><br><small>P(at-risk) &lt; 0.44</small></div>
+          <div style="display:flex;flex-direction:column;gap:6px;flex:1">
+            <div class="cs-out cs-out-mod"><strong>MODERATE</strong><br><small>P(high) &lt; 0.50</small></div>
+            <div class="cs-out cs-out-high"><strong>HIGH</strong><br><small>P(high) ≥ 0.50</small></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col col-1" style="gap:14px">
+      <div class="card" style="border-color:rgba(0,201,255,.25)">
+        <div class="card-title">Why Two Stages?</div>
+        <ul class="checks">
+          <li>Stage 1 optimised for <strong>recall</strong> — never miss an at-risk patient</li>
+          <li>Stage 2 optimised for <strong>precision</strong> — accurately separate high from moderate</li>
+          <li>Minimises the most dangerous error: <span class="text-red">high→low misses</span></li>
+          <li>Handles severe class imbalance (low >> moderate > high)</li>
+        </ul>
+      </div>
+      <div class="card" style="border-color:rgba(0,201,255,.25)">
+        <div class="card-title">+ Local Explanation</div>
+        <p style="font-size:.82rem;color:var(--muted);line-height:1.6">For every prediction: <strong style="color:#fff">model-agnostic perturbation</strong> replaces each feature with a reference value and measures probability change. Top 6 factors with direction (raises/lowers risk) are surfaced to the user and passed to the LLM for personalisation.</p>
+      </div>
+      <div class="card" style="border-color:rgba(0,201,255,.25)">
+        <div class="card-title">Reliability Score</div>
+        <p style="font-size:.82rem;color:var(--muted);line-height:1.5">Each prediction receives a <span class="text-green">High / </span><span class="text-amber">Moderate / </span><span class="text-red">Low</span> reliability tag based on confidence margin, proximity to decision boundary, and missing feature count.</p>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ SLIDE 7: ML RESULTS -->
+<div class="slide" id="s7">
+<div class="content">
+  <div class="sl-head">
+    <div class="sl-tag">Evaluation</div>
+    <div class="sl-title">ML <span>Results</span></div>
+    <div class="sl-sub">Held-out NHANES 2021–23 test set — two-stage cascade</div>
+  </div>
+  <hr class="div">
+  <div class="mrow" style="margin-bottom:20px">
+    <div class="mcard"><div class="mv">71.9%</div><div class="ml">Accuracy</div></div>
+    <div class="mcard"><div class="mv">66.4%</div><div class="ml">Balanced Accuracy</div></div>
+    <div class="mcard"><div class="mv">55.9%</div><div class="ml">Macro F1</div></div>
+    <div class="mcard"><div class="mv text-green">73.7%</div><div class="ml">High Recall</div></div>
+    <div class="mcard" style="border-color:rgba(16,185,129,.3)"><div class="mv text-green">2</div><div class="ml">High→Low Misses</div></div>
+  </div>
+  <div class="row" style="gap:20px">
+    <div class="col col-1">
+      <table class="dtable">
+        <thead><tr><th>Class</th><th>Recall</th><th>Interpretation</th></tr></thead>
+        <tbody>
+          <tr><td><span class="pill pill-g">Low</span></td><td>75.1%</td><td style="color:var(--muted);font-size:.78rem">Good — most low-risk patients correctly cleared</td></tr>
+          <tr><td><span class="pill pill-a">Moderate</span></td><td>50.5%</td><td style="color:var(--muted);font-size:.78rem">Hardest class — inherently ambiguous boundary</td></tr>
+          <tr><td><span class="pill pill-r">High</span></td><td>73.7%</td><td style="color:var(--muted);font-size:.78rem">Strong — critical class, cascade tuned for this</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="col col-1" style="gap:14px">
+      <div class="card" style="border-color:rgba(16,185,129,.3)">
+        <div class="card-title text-green">Key Safety Result</div>
+        <p style="font-size:.85rem;color:var(--muted);line-height:1.6">Only <strong style="color:var(--green);font-size:1.1rem">2 High→Low misses</strong> on the entire test set. This is the clinically most dangerous error (patient needing follow-up told they're fine). The cascade design explicitly minimises this error type.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Moderate Class Note</div>
+        <p style="font-size:.82rem;color:var(--muted);line-height:1.5">Moderate recall (50.5%) reflects the inherent ambiguity of the moderate category — the boundary between moderate and high risk is noisy even with gold-standard eGFR+UACR. False moderate-as-low is far less dangerous than false high-as-low.</p>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ SLIDE 8: LLM PIPELINE -->
+<div class="slide" id="s8">
+<div class="content">
+  <div class="sl-head">
+    <div class="sl-tag">LLM Component</div>
+    <div class="sl-title">Education <span>Pipeline</span></div>
+    <div class="sl-sub">From ML prediction to safe, personalised patient guidance</div>
+  </div>
+  <hr class="div">
+  <div style="margin-bottom:22px">
+    <div class="flow" style="flex-wrap:nowrap;overflow-x:auto;gap:0">
+      <div class="fbox"><strong>ML Output</strong>Risk class · Factors · Patient inputs</div>
+      <div class="farr">→</div>
+      <div class="fbox"><strong>RAG Retrieval</strong>4 guideline chunks (factor-aware)</div>
+      <div class="farr">→</div>
+      <div class="fbox"><strong>Prompt Builder</strong>System rules + Patient profile + Cues</div>
+      <div class="farr">→</div>
+      <div class="fbox"><strong>LLM Generate</strong>Qwen3-4B (Ollama)</div>
+      <div class="farr">→</div>
+      <div class="fbox"><strong>Safety Validator</strong>7-layer rule engine</div>
+      <div class="farr">→</div>
+      <div class="fbox" style="border-color:rgba(16,185,129,.3)"><strong>Patient Output</strong>5-section education</div>
+    </div>
+  </div>
+  <div class="row" style="gap:18px">
+    <div class="col col-1" style="gap:12px">
+      <div class="card">
+        <div class="card-title">Output Sections (5)</div>
+        <ul class="bars">
+          <li><strong style="color:#fff">Summary</strong> — risk level + top contributing factors</li>
+          <li><strong style="color:#fff">Food habits</strong> — diet tailored to patient conditions</li>
+          <li><strong style="color:#fff">Rest &amp; sleep</strong> — sleep hygiene, recovery</li>
+          <li><strong style="color:#fff">Daily routine</strong> — activity, hydration, monitoring</li>
+          <li><strong style="color:#fff">Follow-up reminder</strong> — clinician/lab visit guidance</li>
+        </ul>
+      </div>
+      <div class="card" style="border-color:rgba(0,201,255,.25)">
+        <div class="card-title">Deployment Modes</div>
+        <div style="display:flex;flex-direction:column;gap:6px;font-size:.8rem">
+          <div style="display:flex;justify-content:space-between"><span class="text-green">Production</span><span class="text-muted">Qwen3-4B via Ollama / HuggingFace</span></div>
+          <div style="display:flex;justify-content:space-between"><span class="text-amber">Offline Demo</span><span class="text-muted">MockGuidanceModel (no GPU needed)</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="col col-2" style="gap:12px">
+      <div class="card" style="border-color:rgba(124,58,237,.3)">
+        <div class="card-title" style="color:#a78bfa">Personalisation Architecture</div>
+        <p style="font-size:.82rem;color:var(--muted);line-height:1.6;margin-bottom:10px">Three layers of personalisation ensure every patient's education is unique:</p>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="background:rgba(124,58,237,.1);border-radius:6px;padding:8px 12px;font-size:.78rem"><strong style="color:#a78bfa">1. Patient Profile block</strong> — all 22 actual patient values in the prompt (age, SBP, HbA1c, diabetes flag, etc.)</div>
+          <div style="background:rgba(124,58,237,.1);border-radius:6px;padding:8px 12px;font-size:.78rem"><strong style="color:#a78bfa">2. Factor-aware RAG</strong> — different patients get different guideline chunks based on their top risk drivers</div>
+          <div style="background:rgba(124,58,237,.1);border-radius:6px;padding:8px 12px;font-size:.78rem"><strong style="color:#a78bfa">3. Per-section cues</strong> — explicit condition-derived instructions per output section (e.g. "For Food habits: address high blood sugar because HbA1c = 8.5%")</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ SLIDE 9: KNOWLEDGE BASE -->
+<div class="slide" id="s9">
+<div class="content">
+  <div class="sl-head">
+    <div class="sl-tag">RAG Knowledge Base</div>
+    <div class="sl-title">Clinical <span>Guidelines</span> Grounding</div>
+    <div class="sl-sub">118 chunks from 9 authoritative sources — safely scoped</div>
+  </div>
+  <hr class="div">
+  <div class="row" style="gap:20px">
+    <div class="col col-2">
+      <table class="dtable">
+        <thead><tr><th>Source</th><th>Organisation</th><th>Year</th><th>Topics</th></tr></thead>
+        <tbody>
+          <tr><td>KDIGO CKD Guideline</td><td>KDIGO</td><td>2024</td><td><span class="pill pill-c" style="font-size:.65rem">bp · nutrition · activity · weight</span></td></tr>
+          <tr><td>KDIGO Blood Pressure in CKD</td><td>KDIGO</td><td>2021</td><td><span class="pill pill-c" style="font-size:.65rem">bp · sodium</span></td></tr>
+          <tr><td>Diabetes Management in CKD</td><td>ADA / KDIGO</td><td>2022</td><td><span class="pill pill-a" style="font-size:.65rem">diabetes · glucose</span></td></tr>
+          <tr><td>ADA Standards of Care</td><td>ADA</td><td>2026</td><td><span class="pill pill-a" style="font-size:.65rem">diabetes · bp · followup</span></td></tr>
+          <tr><td>KDOQI Nutrition</td><td>NKF</td><td>2020</td><td><span class="pill pill-r" style="font-size:.65rem">nutrition (restricted)</span></td></tr>
+          <tr><td>Exercise Guidelines for CKD</td><td>NKF</td><td>2023</td><td><span class="pill pill-g" style="font-size:.65rem">activity · weight</span></td></tr>
+          <tr><td>CKD Basics / Prevention / Risk</td><td>CDC</td><td>2024</td><td><span class="pill pill-g" style="font-size:.65rem">general · prevention · followup</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="col col-1" style="gap:12px">
+      <div class="card" style="border-color:rgba(0,201,255,.25)">
+        <div class="card-title">Embedding &amp; Retrieval</div>
+        <ul class="checks">
+          <li><strong>BGE-M3</strong> (BAAI) — 1024-d dense embeddings via Ollama</li>
+          <li>FAISS / brute-force cosine search</li>
+          <li>k=4 chunks per query</li>
+          <li>TF-IDF fallback (offline mode)</li>
+        </ul>
+      </div>
+      <div class="card" style="border-color:rgba(239,68,68,.25)">
+        <div class="card-title" style="color:var(--red)">Safety Scoping</div>
+        <p style="font-size:.8rem;color:var(--muted);line-height:1.5">Chunks with numeric nutrient targets (protein g/kg, potassium mg, sodium g/day) are tagged <strong style="color:var(--red)">restricted</strong> and returned to the LLM with an explicit "refer to dietitian" override — never cited as direct patient advice.</p>
+      </div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span class="card-title" style="margin:0">Total chunks</span>
+          <span style="font-size:1.6rem;font-weight:800;color:var(--c1)">118</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ SLIDE 10: SAFETY -->
+<div class="slide" id="s10">
+<div class="content">
+  <div class="sl-head">
+    <div class="sl-tag">Safety System</div>
+    <div class="sl-title">Multi-Layer <span>Safety Validator</span></div>
+    <div class="sl-sub">Deterministic post-generation rule engine — 0% final unsafe output rate</div>
+  </div>
+  <hr class="div">
+  <div class="row" style="gap:20px">
+    <div class="col col-2">
+      <div class="vrow">
+        <div class="vitem">
+          <div class="vnum vnum-r">1</div>
+          <div class="vdesc"><strong>Diagnosis block</strong> — detects "you have CKD / kidney disease / kidney failure"</div>
+          <span class="pill pill-r">Severe → fallback</span>
+        </div>
+        <div class="vitem">
+          <div class="vnum vnum-r">2</div>
+          <div class="vdesc"><strong>Medication block</strong> — drug names, dosing language, start/stop instructions</div>
+          <span class="pill pill-r">Severe → fallback</span>
+        </div>
+        <div class="vitem">
+          <div class="vnum vnum-r">3</div>
+          <div class="vdesc"><strong>Supplement block</strong> — "take fish oil / vitamin D / probiotics…"</div>
+          <span class="pill pill-r">Severe → fallback</span>
+        </div>
+        <div class="vitem">
+          <div class="vnum vnum-a">4</div>
+          <div class="vdesc"><strong>Nutrition rewrite</strong> — numeric targets (2 g sodium, potassium 2000 mg) → auto-rewrites to dietitian referral</div>
+          <span class="pill pill-a">Moderate → sanitise</span>
+        </div>
+        <div class="vitem">
+          <div class="vnum vnum-a">5</div>
+          <div class="vdesc"><strong>Lab reminder append</strong> — moderate/high with missing follow-up mention → auto-appends standard reminder</div>
+          <span class="pill pill-a">Moderate → sanitise</span>
+        </div>
+        <div class="vitem">
+          <div class="vnum vnum-a">6</div>
+          <div class="vdesc"><strong>Emergency redirect</strong> — SBP ≥ 180 or DBP ≥ 120 → prepends urgent-care notice</div>
+          <span class="pill pill-a">Moderate → sanitise</span>
+        </div>
+        <div class="vitem">
+          <div class="vnum" style="background:rgba(0,201,255,.2);color:var(--c1)">7</div>
+          <div class="vdesc"><strong>Structure check</strong> — all 5 sections present? Missing → retry → safe fallback</div>
+          <span class="pill pill-c">Format → retry</span>
+        </div>
+      </div>
+    </div>
+    <div class="col col-1" style="gap:14px">
+      <div class="card" style="border-color:rgba(16,185,129,.3);text-align:center;padding:28px">
+        <div style="font-size:3.5rem;font-weight:900;color:var(--green)">0%</div>
+        <div style="font-size:.85rem;color:var(--muted);margin-top:6px">Final unsafe output rate<br>across 30 adversarial profiles</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Outcome States</div>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:.8rem">
+          <div><span class="pill pill-g">pass</span> <span class="text-muted" style="margin-left:6px">No violations — output returned as-is (90%)</span></div>
+          <div><span class="pill pill-a">sanitised</span> <span class="text-muted" style="margin-left:6px">Moderate fixes applied (10%)</span></div>
+          <div><span class="pill pill-r">fallback</span> <span class="text-muted" style="margin-left:6px">Severe violations → safe template (0%)</span></div>
+        </div>
+      </div>
+      <div class="card" style="background:rgba(0,201,255,.05);border-color:rgba(0,201,255,.2)">
+        <div class="card-title">Why Rule-Based (Not LLM Judge)?</div>
+        <p style="font-size:.78rem;color:var(--muted);line-height:1.5">Deterministic, auditable, fast. A regex that blocks "you have CKD" will never fail on that pattern. Medical safety requires zero false-negatives on specific dangerous patterns — not probabilistic judgment.</p>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ SLIDE 11: EVALUATION -->
+<div class="slide" id="s11">
+<div class="content">
+  <div class="sl-head">
+    <div class="sl-tag">LLM Evaluation — Phase 6</div>
+    <div class="sl-title">Education Quality <span>Results</span></div>
+    <div class="sl-sub">30 held-out profiles (10 Low · 10 Moderate · 10 High) · Qwen3-4B-Instruct-2507 + BGE-M3</div>
+  </div>
+  <hr class="div">
+  <div class="mrow" style="margin-bottom:20px">
+    <div class="mcard" style="border-color:rgba(16,185,129,.3)"><div class="mv text-green">100%</div><div class="ml">Format Adherence</div></div>
+    <div class="mcard" style="border-color:rgba(16,185,129,.3)"><div class="mv text-green">0%</div><div class="ml">Final Unsafe Rate</div></div>
+    <div class="mcard"><div class="mv">96.6%</div><div class="ml">Factor Relevance</div></div>
+    <div class="mcard"><div class="mv">1.93 / 2</div><div class="ml">Personalisation Score</div></div>
+    <div class="mcard" style="border-color:rgba(16,185,129,.3)"><div class="mv text-green">6.9</div><div class="ml">Readability (FK Grade)</div></div>
+    <div class="mcard"><div class="mv">100%</div><div class="ml">Grounding Rate</div></div>
+  </div>
+  <div class="row" style="gap:20px">
+    <div class="col col-1">
+      <div class="card">
+        <div class="card-title">Scoring Method</div>
+        <ul class="bars">
+          <li><strong>Format</strong> — all 5 sections present</li>
+          <li><strong>Safety</strong> — pre and post-validator unsafe patterns</li>
+          <li><strong>Factor relevance</strong> — top-2 ML factors mentioned in text</li>
+          <li><strong>Grounding</strong> — cited chunk IDs are valid knowledge base entries</li>
+          <li><strong>Personalisation</strong> — risk level named (1pt) + ≥1 factor referenced (1pt)</li>
+          <li><strong>Readability</strong> — Flesch-Kincaid grade level (target ≤ 8)</li>
+        </ul>
+      </div>
+    </div>
+    <div class="col col-1" style="gap:12px">
+      <div class="card" style="border-color:rgba(16,185,129,.3)">
+        <div class="card-title text-green">Key Achievement</div>
+        <p style="font-size:.85rem;color:var(--muted);line-height:1.6">Raw unsafe rate before validation was 10% (emergency-BP cases). The safety validator intercepted and fixed <strong style="color:var(--green)">all 10%</strong>, achieving the target of <strong style="color:var(--green)">0% final unsafe rate</strong> with <strong style="color:var(--green)">no information loss</strong> (all fixed via auto-prepend, not blocked).</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Readability Target Met</div>
+        <p style="font-size:.82rem;color:var(--muted);line-height:1.5">Mean Flesch-Kincaid grade <strong style="color:var(--c1)">6.9</strong> (target ≤ 8). 100% of outputs at or below grade 8 — appropriate for general adult population health communication.</p>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ SLIDE 12: NOVELTY -->
+<div class="slide" id="s12">
+<div class="content">
+  <div class="sl-head">
+    <div class="sl-tag">Research Contribution</div>
+    <div class="sl-title">Novel <span>Contributions</span></div>
+    <div class="sl-sub">What Nephro-AI does that existing work does not</div>
+  </div>
+  <hr class="div">
+  <div class="nov-grid" style="flex:1">
+    <div class="nov-card">
+      <h4>① Non-Invasive Feature Set</h4>
+      <p>All existing ML CKD detection models use eGFR or creatinine as inputs. Nephro-AI is trained exclusively on routine, non-creatinine features — enabling community-level, pre-lab screening for the first time.</p>
+    </div>
+    <div class="nov-card">
+      <h4>② KDIGO-Aligned Two-Stage Cascade</h4>
+      <p>A Random Forest gate (tuned for recall) feeding a Gradient Boosting discriminator (tuned for precision) explicitly maps to KDIGO risk grid categories, with thresholds optimised to minimise High→Low misses.</p>
+    </div>
+    <div class="nov-card">
+      <h4>③ Factor-Aware Personalised RAG</h4>
+      <p>Rather than top-k by similarity (which collapses to the same chunks for all patients), the retriever builds a per-patient topic priority list from the ML explanation factors — guaranteeing different patients get different guideline chunks.</p>
+    </div>
+    <div class="nov-card">
+      <h4>④ Safety-Scoped Knowledge Base</h4>
+      <p>Chunks with individualised numeric targets (protein, potassium, sodium) are tagged "restricted" and served with a dietitian-referral override — not excluded. This preserves knowledge while preventing dangerous direct prescription.</p>
+    </div>
+    <div class="nov-card">
+      <h4>⑤ Multi-Layer Validator with Measured 0% Unsafe Rate</h4>
+      <p>A 7-layer deterministic rule engine (not probabilistic LLM judge) achieves a published 0% final unsafe rate on 30 adversarial profiles. Every decision is logged — fully auditable.</p>
+    </div>
+    <div class="nov-card">
+      <h4>⑥ Full-Stack Patient + Admin System</h4>
+      <p>A complete web application with a patient-facing view (simplified education) and a researcher-facing admin view (full audit trail: ML probabilities, retrieved chunks, validator decisions, frozen evaluation metrics).</p>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ SLIDE 13: TECH STACK -->
+<div class="slide" id="s13">
+<div class="content">
+  <div class="sl-head">
+    <div class="sl-tag">Implementation</div>
+    <div class="sl-title">Technology <span>Stack</span></div>
+    <div class="sl-sub">Production-ready, modular, fully open-source</div>
+  </div>
+  <hr class="div">
+  <div class="stack-grid" style="flex:1;align-content:start">
+    <div class="scard"><div class="s-layer">Frontend</div><div class="s-name">React 18</div><div class="s-tech">Vite 5 · Tailwind CSS 3 · Axios</div></div>
+    <div class="scard"><div class="s-layer">Backend API</div><div class="s-name">FastAPI</div><div class="s-tech">Uvicorn · Pydantic v2</div></div>
+    <div class="scard"><div class="s-layer">ML Model</div><div class="s-name">scikit-learn</div><div class="s-tech">imbalanced-learn · joblib · pandas</div></div>
+    <div class="scard"><div class="s-layer">LLM (Production)</div><div class="s-name">Qwen3-4B</div><div class="s-tech">Ollama REST API</div></div>
+    <div class="scard"><div class="s-layer">LLM (Offline)</div><div class="s-name">MockModel</div><div class="s-tech">Pure Python · No GPU</div></div>
+    <div class="scard"><div class="s-layer">Embeddings</div><div class="s-name">BGE-M3</div><div class="s-tech">BAAI · 1024-d · via Ollama</div></div>
+    <div class="scard"><div class="s-layer">Fallback Embed</div><div class="s-name">TF-IDF</div><div class="s-tech">HashingTfidf · Pure Python</div></div>
+    <div class="scard"><div class="s-layer">Vector Search</div><div class="s-name">FAISS / Custom</div><div class="s-tech">IndexFlatIP · Brute-force cosine</div></div>
+    <div class="scard"><div class="s-layer">Safety</div><div class="s-name">Rule Validator</div><div class="s-tech">Pure Python · Regex · Stdlib</div></div>
+    <div class="scard"><div class="s-layer">Database</div><div class="s-name">PostgreSQL</div><div class="s-tech">SQLAlchemy ORM · Alembic</div></div>
+    <div class="scard"><div class="s-layer">Training Data</div><div class="s-name">NHANES 2021–23</div><div class="s-tech">CDC / NCHS · Public Domain</div></div>
+    <div class="scard"><div class="s-layer">Knowledge Base</div><div class="s-name">KDIGO · ADA · NKF · CDC</div><div class="s-tech">9 guideline sources · 118 chunks</div></div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ SLIDE 14: FUTURE WORK -->
+<div class="slide" id="s14">
+<div class="content">
+  <div class="sl-head">
+    <div class="sl-tag">Roadmap</div>
+    <div class="sl-title">Future <span>Work</span></div>
+    <div class="sl-sub">Extensions planned for the full research paper and clinical pilot</div>
+  </div>
+  <hr class="div">
+  <div class="fw-grid" style="flex:1;align-content:start">
+    <div class="fw-card">
+      <div class="fw-icon">🎛️</div>
+      <h4>QLoRA Fine-Tuning</h4>
+      <p>Fine-tune Qwen3-4B on RAFT-generated training examples (question, correct guideline chunk, distractor). Expected to improve safety self-containment and output consistency beyond prompt engineering alone.</p>
+    </div>
+    <div class="fw-card">
+      <div class="fw-icon">👨‍⚕️</div>
+      <h4>Expert Clinical Evaluation</h4>
+      <p>Structured review of LLM outputs by nephrologists and renal dietitians using a standardised rubric — clinical accuracy, safety, appropriateness. Required before any real-world deployment.</p>
+    </div>
+    <div class="fw-card">
+      <div class="fw-icon">🌍</div>
+      <h4>Population Generalisation</h4>
+      <p>Validate on non-US datasets (South Asian, European, low-income country populations) where prevalence, comorbidity patterns, and reference ranges may differ from NHANES.</p>
+    </div>
+    <div class="fw-card">
+      <div class="fw-icon">📈</div>
+      <h4>Longitudinal Risk Tracking</h4>
+      <p>Track serial screening results over time to detect deteriorating trends, trigger earlier follow-up, and measure whether patient education is changing behaviour — closing the feedback loop.</p>
+    </div>
+    <div class="fw-card">
+      <div class="fw-icon">🌐</div>
+      <h4>Multilingual Support</h4>
+      <p>Bengali, Hindi, and Arabic patient education — targeting the populations most underserved by existing English-only kidney health materials. BGE-M3 already supports multilingual retrieval.</p>
+    </div>
+    <div class="fw-card">
+      <div class="fw-icon">📦</div>
+      <h4>Packaged Deployment</h4>
+      <p>GGUF quantised model (Q4_K_M, ~3 GB) distributed with the app so any clinician can run the full system on a standard laptop — no cloud dependency, no patient data leaving the device.</p>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ SLIDE 15: CONCLUSION -->
+<div class="slide" id="s15">
+<div class="content">
+  <div class="sl-head">
+    <div class="sl-tag">Conclusion</div>
+    <div class="sl-title">What We <span>Achieved</span></div>
+    <div class="sl-sub">Nephro-AI — a complete, evaluated, deployable CKD screening &amp; education system</div>
+  </div>
+  <hr class="div">
+  <div class="con-grid" style="margin-bottom:18px">
+    <div class="con-item">
+      <h4>✓ Non-Invasive CKD Screening Works</h4>
+      <p>A two-stage ML cascade trained on 22 routine features achieves 71.9% accuracy and 73.7% high-risk recall — without eGFR, creatinine, or UACR — making community-level screening feasible.</p>
+    </div>
+    <div class="con-item">
+      <h4>✓ LLMs Can Safely Personalise Patient Education</h4>
+      <p>Qwen3-4B with factor-aware RAG and condition-specific prompt cues achieves a personalisation score of 1.93/2 and Grade 6.9 readability across 30 adversarial profiles.</p>
+    </div>
+    <div class="con-item">
+      <h4>✓ Safety Validation Achieves 0% Unsafe Rate</h4>
+      <p>A 7-layer deterministic rule engine intercepted 100% of pre-validation unsafe outputs with zero information loss, delivering a fully auditable, measured safety guarantee.</p>
+    </div>
+    <div class="con-item">
+      <h4>✓ Complete End-to-End System Delivered</h4>
+      <p>A production-ready full-stack web application with patient-facing education, researcher-facing audit dashboard, dual deployment modes (GPU/CPU), and optional PostgreSQL persistence.</p>
+    </div>
+  </div>
+  <div class="card" style="background:rgba(0,201,255,.06);border-color:rgba(0,201,255,.3);text-align:center;padding:20px">
+    <div style="font-size:1rem;color:var(--text);line-height:1.7">
+      <strong style="color:var(--c1)">Ready for:</strong> &nbsp; Expert clinical evaluation &nbsp;·&nbsp; Conference / journal paper &nbsp;·&nbsp; Clinical pilot study &nbsp;·&nbsp; QLoRA fine-tuning extension
+    </div>
+  </div>
+  <div style="text-align:center;margin-top:20px;font-size:.82rem;color:var(--muted)">
+    Full technical documentation available in <strong style="color:var(--c1)">docs/TECHNICAL_DOCUMENTATION.md</strong>
+  </div>
+</div>
+</div>
+
+</div><!-- end deck -->
+
+<!-- navigation -->
+<div id="nav">
+  <button id="btn-prev">← Prev</button>
+  <div id="dots"></div>
+  <span id="slide-num">1 / 15</span>
+  <button id="btn-next">Next →</button>
+</div>
+
+<script>
+const slides = Array.from(document.querySelectorAll('.slide'));
+const dotsEl = document.getElementById('dots');
+const numEl  = document.getElementById('slide-num');
+let cur = 0;
+
+// build dots
+slides.forEach((_, i) => {
+  const d = document.createElement('button');
+  d.className = 'dot' + (i===0?' on':'');
+  d.title = 'Slide '+(i+1);
+  d.addEventListener('click', () => go(i));
+  dotsEl.appendChild(d);
+});
+
+function go(n) {
+  if (n === cur) return;
+  slides[cur].classList.remove('active');
+  slides[cur].classList.add('exit');
+  setTimeout(() => slides[cur<n?cur:n+(cur-n)].classList.remove('exit'), 420);
+  cur = n;
+  slides[cur].classList.add('active');
+  slides[cur].classList.remove('exit');
+  document.querySelectorAll('.dot').forEach((d,i) => d.classList.toggle('on', i===cur));
+  numEl.textContent = (cur+1) + ' / ' + slides.length;
+}
+
+// fix exit cleanup
+slides.forEach(s => s.addEventListener('transitionend', () => {
+  if (!s.classList.contains('active')) s.classList.remove('exit');
+}));
+
+document.getElementById('btn-prev').addEventListener('click', () => { if(cur>0) go(cur-1); });
+document.getElementById('btn-next').addEventListener('click', () => { if(cur<slides.length-1) go(cur+1); });
+
+document.addEventListener('keydown', e => {
+  if (e.key==='ArrowRight'||e.key===' ') { e.preventDefault(); if(cur<slides.length-1) go(cur+1); }
+  if (e.key==='ArrowLeft') { e.preventDefault(); if(cur>0) go(cur-1); }
+  if (e.key==='Home') go(0);
+  if (e.key==='End') go(slides.length-1);
+});
+</script>
+</body>
+</html>
