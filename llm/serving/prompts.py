@@ -72,11 +72,11 @@ SAFETY_RULES: List[str] = [
 # Output format block (literal instruction shown to the model).
 # ---------------------------------------------------------------------------
 _SECTION_HINTS = {
-    "Summary": "one or two plain sentences naming the screening risk level and what it means in everyday terms (not a diagnosis)",
-    "Food habits": "general, balanced eating habits relevant to the person's risk factors; no numeric nutrient targets or restrictions",
-    "Rest and sleep": "simple sleep and rest habits",
-    "Daily routine": "general daily activity, movement, hydration, and routine habits",
-    "Follow-up reminder": "when and why to check in with a clinician and which routine tests to ask about; required for moderate/high",
+    "Summary": "one or two plain sentences naming the screening risk level and what it means in everyday terms (not a diagnosis); mention the one or two factors that most influenced it",
+    "Food habits": "balanced eating habits tied to THIS person's specific factors (e.g. salt for blood pressure, balanced carbohydrates for blood sugar, weight-friendly choices); no numeric nutrient targets or restrictions",
+    "Rest and sleep": "simple, practical sleep and rest habits, and briefly how good rest supports THIS person's situation (for example steadier blood pressure or blood sugar when those are factors)",
+    "Daily routine": "daily movement, hydration, and routine habits chosen for THIS person's factors (e.g. activity level for weight or blood pressure, hydration habits)",
+    "Follow-up reminder": "when and why to check in with a clinician and which routine tests to ask about, framed around this person's risk level and factors; required for moderate/high",
 }
 
 def _output_format_block() -> str:

@@ -408,8 +408,11 @@ def validate(text: str, context: Dict, judge_fn: Optional[JudgeFn] = None,
         violations = list(severe)
         if missing:
             violations.append(Violation("schema", SEVERE, "schema", f"missing sections: {missing}"))
-        result = ValidationResult("fallback", "regenerate", fallback_text(context),
-                                  violations, parsed)
+        fb_text = fallback_text(context)
+        # parsed MUST describe the fallback text we return (not the rejected
+        # original), so downstream callers get the populated fallback sections.
+        result = ValidationResult("fallback", "regenerate", fb_text,
+                                  violations, parse_guidance(fb_text))
         _log(result, log_path)
         return result
 
@@ -435,8 +438,9 @@ def enforce(generate_fn: Callable[[int], str], context: Dict, max_retries: int =
             return last
     # Exhausted retries on severe -> guarantee a safe fallback.
     if last is None or last.status != "fallback":
-        last = ValidationResult("fallback", "accept", fallback_text(context),
-                                last.violations if last else [], last.parsed if last else None)
+        fb_text = fallback_text(context)
+        last = ValidationResult("fallback", "accept", fb_text,
+                                last.violations if last else [], parse_guidance(fb_text))
     else:
         last.recommendation = "accept"
     _log(last, log_path)

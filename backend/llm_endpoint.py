@@ -66,7 +66,7 @@ def runtime_mode(rt: GuidanceRuntime) -> str:
 
 
 def build_guidance_response(predict_response: Union[Dict[str, Any], LLMInput],
-                            k: int = 4) -> Dict[str, Any]:
+                            k: int = 5) -> Dict[str, Any]:
     """Run the LLM runtime and shape an API-ready response.
 
     `predict_response` is a `/predict` response dict (or an `LLMInput`).

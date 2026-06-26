@@ -7,8 +7,12 @@ Production (Colab/GPU):
     pip install -q sentence-transformers faiss-cpu
     python -m ckd_risk_app.llm.rag.embed_index            # uses BGE-M3 + FAISS
 
-Local / offline (no torch): falls back to the pure-Python hashing embedder so
-the retriever and relevance gate still run:
+Laptop with Ollama (no torch, real semantic quality): build with BGE-M3 served
+by Ollama. Run `ollama pull bge-m3` first, then:
+    python -m ckd_risk_app.llm.rag.embed_index --embedder ollama-bge-m3
+
+Local / offline (no torch, no Ollama): falls back to the pure-Python hashing
+embedder so the retriever and relevance gate still run:
     python -m ckd_risk_app.llm.rag.embed_index --embedder hashing
 
 The embedder used is recorded in the index metadata; the retriever reuses it
@@ -65,7 +69,8 @@ def build(embedder_spec: str = "auto", chunks_path: Path = CHUNKS_PATH) -> None:
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(description="Build the RAG vector index from chunks.jsonl")
     p.add_argument("--embedder", default="auto",
-                   help="auto | bge-m3 | hashing | hashing-<dim> (default: auto)")
+                   help="auto | bge-m3 | ollama-bge-m3 | hashing | hashing-<dim> "
+                        "(default: auto)")
     p.add_argument("--chunks", type=Path, default=CHUNKS_PATH)
     args = p.parse_args(argv)
     build(args.embedder, args.chunks)

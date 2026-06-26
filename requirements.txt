@@ -27,6 +27,11 @@ scikit-learn==1.6.1
 imbalanced-learn==0.13.0
 joblib==1.4.2
 
+# --- Database (PostgreSQL persistence for the research dataset) ---
+SQLAlchemy==2.0.36            # ORM + engine (also works with SQLite for local testing)
+alembic==1.14.0              # schema migrations
+psycopg2-binary==2.9.10      # PostgreSQL driver (use psycopg2 source build in prod if preferred)
+
 # --- Utilities ---
 requests==2.32.3              # used by scripts/test_api_request.py
 
