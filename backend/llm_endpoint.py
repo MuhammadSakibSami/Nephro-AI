@@ -34,10 +34,12 @@ try:  # standalone repo layout (backend/ and llm/ at the root)
     from llm.serving.contract import LLMInput
     from llm.serving.llm_runtime import GuidanceRuntime
     from llm.serving.prompts import SCOPE_STATEMENT
+    from llm.serving.citations import build_citations
 except ImportError:  # nested package layout (ckd_risk_app.backend / ckd_risk_app.llm)
     from ..llm.serving.contract import LLMInput
     from ..llm.serving.llm_runtime import GuidanceRuntime
     from ..llm.serving.prompts import SCOPE_STATEMENT
+    from ..llm.serving.citations import build_citations
 
 _runtime: Optional[GuidanceRuntime] = None
 
@@ -82,6 +84,16 @@ def build_guidance_response(predict_response: Union[Dict[str, Any], LLMInput],
         SCOPE_STATEMENT if mode == "production"
         else f"{SCOPE_STATEMENT} {LOCAL_DEMO_NOTE}"
     )
+    # Deterministic IEEE citation layer (runs after the safety validator):
+    # add per-section [n] markers + an ordered reference list from the sources
+    # actually retrieved for each section's topics.
+    try:
+        annotated, references = build_citations(
+            result.sections, result.retrieved_chunks, result.model_cited_grounding)
+        payload["guidance"] = annotated
+        payload["references"] = references
+    except Exception:  # citations must never break guidance delivery
+        payload["references"] = []
     # Include the full ML prediction so the frontend gets everything in one call
     # (admin Prediction/Input-Quality/Explanation panels + patient key signals).
     if isinstance(predict_response, dict):

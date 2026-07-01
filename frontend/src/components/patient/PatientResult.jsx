@@ -114,13 +114,16 @@ function GuidanceCard({ guidance }) {
   const sections = guidance?.guidance || {};
   const order = ["Summary", "Food habits", "Rest and sleep", "Daily routine", "Follow-up reminder"];
   const entries = order.filter((k) => sections[k]).map((k) => [k, sections[k]]);
+  const references = guidance?.references || [];
   return (
     <Card>
       <SectionTitle icon="clipboard" title="Personalized kidney-risk education"
         sub="Guideline-grounded, general wellness guidance based on your result."
-        right={guidance?.provenance?.length
-          ? <span className="text-xs text-ink-400">Based on {guidance.provenance.length} guideline source(s)</span>
-          : null} />
+        right={references.length
+          ? <span className="text-xs text-ink-400">{references.length} source(s) cited</span>
+          : guidance?.provenance?.length
+            ? <span className="text-xs text-ink-400">Based on {guidance.provenance.length} guideline source(s)</span>
+            : null} />
       <div className="space-y-4">
         {entries.length === 0 && <p className="text-ink-400 text-sm">No guidance available.</p>}
         {entries.map(([title, text]) => (
@@ -131,16 +134,51 @@ function GuidanceCard({ guidance }) {
               </span>
               <h4 className="font-semibold text-ink-800">{title}</h4>
             </div>
-            <p className="text-ink-600 leading-relaxed text-[15px]">{text}</p>
+            <p className="text-ink-600 leading-relaxed text-[15px]">{renderWithCitations(text)}</p>
           </div>
         ))}
       </div>
-      {guidance?.provenance?.length > 0 && (
+      {references.length > 0 ? (
+        <div className="mt-5 border-t border-ink-100 pt-3">
+          <p className="text-xs font-semibold text-ink-500 mb-2">References</p>
+          <ol className="space-y-1.5">
+            {references.map((r) => (
+              <li key={r.n} className="text-xs text-ink-500 leading-relaxed">
+                <span className="font-medium text-ink-600">[{r.n}]</span>{" "}
+                {r.citation}
+                {r.url && (
+                  <>
+                    {" "}
+                    <a href={r.url} target="_blank" rel="noreferrer"
+                      className="text-brand-600 hover:underline underline-offset-2 break-all">
+                      [Online]
+                    </a>
+                  </>
+                )}
+              </li>
+            ))}
+          </ol>
+          <p className="text-[11px] text-ink-400 mt-2.5">
+            Citations link each suggestion to the guideline or patient-education source it draws on.
+          </p>
+        </div>
+      ) : guidance?.provenance?.length > 0 ? (
         <p className="text-xs text-ink-400 mt-4">
           Based on guidelines: {guidance.provenance.join(", ")}.
         </p>
-      )}
+      ) : null}
     </Card>
+  );
+}
+
+// Render section text, styling inline [n] / [n], [m] citation markers subtly.
+function renderWithCitations(text) {
+  if (!text) return text;
+  const parts = String(text).split(/(\[\d+\](?:,\s*\[\d+\])*)/g);
+  return parts.map((part, i) =>
+    /^\[\d+\]/.test(part)
+      ? <sup key={i} className="text-brand-600 font-medium ml-0.5">{part}</sup>
+      : <React.Fragment key={i}>{part}</React.Fragment>
   );
 }
 
