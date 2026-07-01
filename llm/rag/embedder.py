@@ -126,7 +126,57 @@ def _l2(vec: List[float]) -> List[float]:
 
 
 # ---------------------------------------------------------------------------
-# Production: BGE-M3
+# Production B: Ollama embedding API (any ollama-served model)
+# ---------------------------------------------------------------------------
+class OllamaEmbedder:
+    """Embeddings via Ollama's local REST API (POST /api/embed).
+
+    Setup (one-time):
+      1. Install Ollama from https://ollama.com
+      2. ollama pull bge-m3
+      3. Pass spec "ollama-bge-m3" (or "ollama-nomic-embed-text", etc.)
+
+    Optional env vars:
+      OLLAMA_BASE_URL  override the server URL (default: http://localhost:11434)
+    """
+
+    DEFAULT_BASE_URL = "http://localhost:11434"
+
+    def __init__(self, model: str = "bge-m3", base_url: str = DEFAULT_BASE_URL):
+        import requests as _r
+        self._requests = _r
+        self.model = model
+        self.base_url = base_url.rstrip("/")
+
+    @property
+    def spec(self) -> str:
+        return f"ollama-{self.model}"
+
+    def fit(self, texts: Sequence[str]) -> "OllamaEmbedder":
+        return self
+
+    def state(self) -> Optional[Dict]:
+        return None
+
+    def load_state(self, state: Optional[Dict]) -> None:
+        return None
+
+    def embed(self, texts: Sequence[str]) -> List[List[float]]:
+        resp = self._requests.post(
+            f"{self.base_url}/api/embed",
+            json={"model": self.model, "input": list(texts)},
+            timeout=120,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        return [list(map(float, v)) for v in data["embeddings"]]
+
+    def embed_one(self, text: str) -> List[float]:
+        return self.embed([text])[0]
+
+
+# ---------------------------------------------------------------------------
+# Production: BGE-M3 (sentence-transformers / local model)
 # ---------------------------------------------------------------------------
 class BGEM3Embedder:
     """BAAI/bge-m3 dense embeddings via sentence-transformers (lazy-loaded)."""
@@ -268,6 +318,11 @@ def get_embedder(spec: str = "auto"):
         return HashingEmbedder(dim=dim)
     if spec == "bge-m3":
         return BGEM3Embedder()
+    if spec.startswith("ollama-"):
+        import os
+        model = spec[len("ollama-"):]
+        base_url = os.getenv("OLLAMA_BASE_URL", OllamaEmbedder.DEFAULT_BASE_URL)
+        return OllamaEmbedder(model=model, base_url=base_url)
     if spec == "auto":
         try:
             return BGEM3Embedder()
