@@ -68,6 +68,16 @@ _PASSAGE_HEADER = re.compile(r"(?m)^\s*##\s+(.*?)\s*$")
 _TOPIC_TAG = re.compile(r"\{topic\s*=\s*([a-zA-Z0-9_\-]+)\s*\}")
 _HTML_COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
 _PAGE_NUMBER_LINE = re.compile(r"(?m)^\s*\d{1,4}\s*$")
+
+# Running header/footer boilerplate that PDF text extraction concatenates into
+# the body (e.g. the free "Save Your Kidneys" patient book repeats a promo
+# footer + chapter running header on every page). Patterns are specific enough
+# not to touch the clinical guideline sources.
+_BOILERPLATE_LINE = [
+    re.compile(r"(?im)^.*(?:kidneyeducation\.com|free kidney book in 35).*$"),
+    re.compile(r"(?im)^\s*\d{0,4}\.?\s*save your kidneys\s*$"),
+    re.compile(r"(?im)^\s*chp\.\s*\d+\..*$"),
+]
 _WS = re.compile(r"[ \t]+")
 _MULTI_NL = re.compile(r"\n{3,}")
 _YEAR = re.compile(r"\b(19|20)\d{2}\b")
@@ -238,6 +248,8 @@ def load_sources(sources_csv: Path = SOURCES_CSV) -> List[SourceRecord]:
 # ---------------------------------------------------------------------------
 def clean_text(text: str) -> str:
     text = _HTML_COMMENT.sub("", text)
+    for pat in _BOILERPLATE_LINE:
+        text = pat.sub("", text)
     text = _PAGE_NUMBER_LINE.sub("", text)
     text = _WS.sub(" ", text)
     text = _MULTI_NL.sub("\n\n", text)
