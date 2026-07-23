@@ -1,9 +1,13 @@
 """LLM Component — Held-out Evaluation Profiles (LLM_PLAN.md Phase 6).
 
 30 synthetic, held-out `/predict`-shaped profiles (10 low / 10 moderate / 10
-high) with mixed clinical drivers (blood pressure, glucose/diabetes, weight,
-kidney labs, uric acid, cholesterol). These are the LLM-evaluation profiles —
-they are NOT used for RAFT training (Phase 7), keeping the LLM eval clean.
+high) with mixed clinical drivers (blood pressure, glucose/diabetes, waist,
+kidney labs, uric acid). These are the LLM-evaluation profiles — they are NOT
+used for RAFT training (Phase 7), keeping the LLM eval clean.
+
+Aligned to the deployed Final Model C: profiles use only the model's 14 input
+features (see `backend.feature_config.MODEL_FEATURES`). Every driver/override is
+one of those 14, so the LLM conditions on exactly what the deployed model scores.
 
 Each profile is a `/predict` response in the exact shape produced by the backend
 (`model_service`), so `LLMInput.from_predict_response` consumes it directly.
@@ -25,8 +29,11 @@ from ..serving.contract import RISK_CLASSES  # noqa: F401  (kept for clarity)
 
 try:
     from ...backend.feature_config import FEATURE_METADATA
-except Exception:  # pragma: no cover - fallback if backend import path differs
-    FEATURE_METADATA = {}
+except Exception:  # pragma: no cover - relative import fails outside a parent package
+    try:
+        from backend.feature_config import FEATURE_METADATA  # repo-root on sys.path
+    except Exception:
+        FEATURE_METADATA = {}
 
 EVAL_PROFILES_PATH = Path(__file__).resolve().parent / "eval_profiles.jsonl"
 
@@ -37,47 +44,47 @@ _PROBS = {
 }
 
 _BASELINE = {
-    "age": 50, "sex_female": 1, "income_poverty_ratio": 2.5,
-    "bmi": 26.0, "waist": 92.0, "mean_sbp": 122.0, "mean_dbp": 78.0, "mean_pulse": 74.0,
-    "glucose": 95.0, "hba1c": 5.4, "blood_urea_nitrogen": 13.0, "uric_acid": 5.2,
-    "serum_albumin": 4.3, "sodium": 140.0, "potassium": 4.2, "hemoglobin": 14.0,
-    "diabetes_yes": 0, "borderline_diabetes": 0, "hypertension_doctor_told": 0,
-    "high_cholesterol_told": 0, "taking_bp_medicine": 0, "taking_cholesterol_medicine": 0,
+    "age": 50, "income_poverty_ratio": 2.5, "waist": 92.0,
+    "mean_sbp": 122.0, "mean_dbp": 78.0, "glucose": 95.0, "hba1c": 5.4,
+    "blood_urea_nitrogen": 13.0, "uric_acid": 5.2, "serum_albumin": 4.3, "hemoglobin": 14.0,
+    "diabetes_yes": 0, "hypertension_doctor_told": 0, "taking_bp_medicine": 0,
 }
 
 # (profile_id, risk, drivers[ordered: (feature, value)], overrides)
+# Drivers/overrides use only the 14 Final Model C inputs (waist replaces the old
+# BMI driver; no sex/pulse/sodium/potassium/cholesterol/borderline).
 _SPECS: List[Tuple[str, str, List[Tuple[str, float]], Dict[str, Any]]] = [
     # ----- LOW (10) -----
-    ("L01", "low", [("bmi", 28.0)], {"age": 38}),
+    ("L01", "low", [("waist", 96.0)], {"age": 38}),
     ("L02", "low", [("mean_sbp", 128.0)], {"age": 44}),
     ("L03", "low", [("hba1c", 5.8)], {"age": 41, "glucose": 104}),
-    ("L04", "low", [("bmi", 27.5), ("waist", 96.0)], {"age": 47}),
-    ("L05", "low", [("age", 63.0)], {"sex_female": 0}),
+    ("L04", "low", [("waist", 97.0), ("uric_acid", 6.2)], {"age": 47}),
+    ("L05", "low", [("age", 63.0)], {"glucose": 100}),
     ("L06", "low", [("uric_acid", 6.3)], {"age": 36}),
-    ("L07", "low", [("mean_pulse", 84.0)], {"age": 29}),
+    ("L07", "low", [("waist", 90.0)], {"age": 29}),
     ("L08", "low", [("glucose", 103.0)], {"age": 52}),
-    ("L09", "low", [("mean_sbp", 126.0), ("bmi", 27.0)], {"age": 49}),
-    ("L10", "low", [("hemoglobin", 13.1)], {"age": 33, "sex_female": 1}),
+    ("L09", "low", [("mean_sbp", 126.0), ("waist", 95.0)], {"age": 49}),
+    ("L10", "low", [("hemoglobin", 13.1)], {"age": 33}),
     # ----- MODERATE (10) -----
     ("M01", "moderate", [("mean_sbp", 150.0), ("hypertension_doctor_told", 1)], {"age": 57}),
     ("M02", "moderate", [("hba1c", 7.6), ("diabetes_yes", 1)], {"age": 60, "glucose": 168}),
-    ("M03", "moderate", [("bmi", 34.0), ("waist", 110.0)], {"age": 45}),
-    ("M04", "moderate", [("mean_sbp", 148.0), ("bmi", 32.0)], {"age": 54}),
+    ("M03", "moderate", [("waist", 110.0), ("mean_sbp", 142.0)], {"age": 45}),
+    ("M04", "moderate", [("mean_sbp", 148.0), ("waist", 106.0)], {"age": 54}),
     ("M05", "moderate", [("glucose", 162.0), ("hba1c", 7.2)], {"age": 58, "diabetes_yes": 1}),
     ("M06", "moderate", [("blood_urea_nitrogen", 24.0), ("uric_acid", 7.6)], {"age": 61}),
     ("M07", "moderate", [("mean_sbp", 152.0), ("mean_dbp", 96.0)], {"age": 50}),
-    ("M08", "moderate", [("uric_acid", 8.2), ("bmi", 31.0)], {"age": 48, "sex_female": 0}),
-    ("M09", "moderate", [("high_cholesterol_told", 1), ("mean_sbp", 146.0)], {"age": 55}),
-    ("M10", "moderate", [("hba1c", 7.8), ("bmi", 33.0), ("mean_sbp", 144.0)], {"age": 59, "diabetes_yes": 1}),
+    ("M08", "moderate", [("uric_acid", 8.2), ("waist", 104.0)], {"age": 48}),
+    ("M09", "moderate", [("mean_sbp", 146.0), ("mean_dbp", 90.0)], {"age": 55, "hypertension_doctor_told": 1, "taking_bp_medicine": 1}),
+    ("M10", "moderate", [("hba1c", 7.8), ("waist", 108.0), ("mean_sbp", 144.0)], {"age": 59, "diabetes_yes": 1}),
     # ----- HIGH (10) -----
     ("H01", "high", [("mean_sbp", 168.0), ("hba1c", 8.6), ("diabetes_yes", 1)], {"age": 64}),
     ("H02", "high", [("mean_sbp", 185.0), ("hypertension_doctor_told", 1)], {"age": 67}),  # emergency
     ("H03", "high", [("hba1c", 9.2), ("blood_urea_nitrogen", 30.0), ("diabetes_yes", 1)], {"age": 62, "glucose": 215}),
     ("H04", "high", [("mean_sbp", 172.0), ("uric_acid", 9.0), ("serum_albumin", 3.4)], {"age": 65}),
     ("H05", "high", [("blood_urea_nitrogen", 34.0), ("serum_albumin", 3.2), ("hemoglobin", 10.5)], {"age": 70}),
-    ("H06", "high", [("hba1c", 8.8), ("uric_acid", 8.6), ("bmi", 36.0)], {"age": 56, "diabetes_yes": 1}),
+    ("H06", "high", [("hba1c", 8.8), ("uric_acid", 8.6), ("waist", 116.0)], {"age": 56, "diabetes_yes": 1}),
     ("H07", "high", [("mean_sbp", 190.0), ("mean_dbp", 118.0)], {"age": 68}),  # emergency
-    ("H08", "high", [("mean_sbp", 166.0), ("bmi", 37.0), ("hba1c", 8.2), ("diabetes_yes", 1)], {"age": 60}),
+    ("H08", "high", [("mean_sbp", 166.0), ("waist", 118.0), ("hba1c", 8.2), ("diabetes_yes", 1)], {"age": 60}),
     ("H09", "high", [("blood_urea_nitrogen", 38.0), ("serum_albumin", 3.0)], {"age": 72}),
     ("H10", "high", [("hba1c", 9.5), ("mean_sbp", 170.0), ("blood_urea_nitrogen", 28.0), ("diabetes_yes", 1)], {"age": 63}),
 ]
@@ -108,6 +115,7 @@ def build_predict_profile(pid: str, risk: str, drivers: List[Tuple[str, float]],
     factors = [make_factor(f, v, round(0.16 - 0.025 * i, 3)) for i, (f, v) in enumerate(drivers)]
     probs = probs or _PROBS[risk]
     conf = max(probs.values())
+    n_features = len(inputs)
     return {
         "profile_id": pid,
         "risk_class": risk,
@@ -123,7 +131,7 @@ def build_predict_profile(pid: str, risk: str, drivers: List[Tuple[str, float]],
             },
             "key_model_factors": factors,
             "input_quality": {
-                "n_model_features": 22, "n_supplied_features": 22, "n_missing_features": 0,
+                "n_model_features": n_features, "n_supplied_features": n_features, "n_missing_features": 0,
                 "missing_features": [], "feature_labels": {},
             },
             "patient_inputs": inputs,

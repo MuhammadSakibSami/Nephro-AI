@@ -26,7 +26,6 @@ _DRIVER_RANGES: Dict[str, Dict[str, Tuple[float, float]]] = {
     "mean_dbp":            {"low": (70, 82),   "moderate": (88, 98),   "high": (100, 122)},
     "hba1c":               {"low": (5.1, 5.9), "moderate": (6.8, 7.9), "high": (8.2, 10.6)},
     "glucose":             {"low": (88, 108),  "moderate": (140, 178), "high": (190, 265)},
-    "bmi":                 {"low": (22, 28),   "moderate": (31, 35),   "high": (35, 43)},
     "waist":               {"low": (78, 96),   "moderate": (101, 114), "high": (112, 132)},
     "blood_urea_nitrogen": {"low": (9, 16),    "moderate": (22, 28),   "high": (30, 44)},
     "uric_acid":           {"low": (4.3, 6.3), "moderate": (7.2, 8.4), "high": (8.6, 10.8)},
@@ -77,7 +76,7 @@ def _make_one(rng: random.Random, pid: str, risk: str) -> Dict[str, Any]:
         feats[0] = "mean_sbp"
 
     drivers: List[Tuple[str, float]] = []
-    over: Dict[str, Any] = {"age": rng.randint(30, 75), "sex_female": rng.randint(0, 1)}
+    over: Dict[str, Any] = {"age": rng.randint(30, 75)}
     for f in feats:
         lo, hi = _DRIVER_RANGES[f][risk]
         val = _round(f, rng.uniform(lo, hi))
