@@ -1,24 +1,16 @@
 {
   "age": 62,
-  "sex_female": 0,
   "income_poverty_ratio": 2.1,
-  "bmi": 30.2,
   "waist": 105.0,
   "mean_sbp": 138.0,
   "mean_dbp": 82.0,
-  "mean_pulse": 76.0,
   "glucose": 118.0,
   "hba1c": 6.4,
   "blood_urea_nitrogen": 22.0,
   "uric_acid": 6.8,
   "serum_albumin": 4.0,
-  "sodium": 140.0,
-  "potassium": 4.4,
   "hemoglobin": 13.2,
   "diabetes_yes": 1,
-  "borderline_diabetes": 0,
   "hypertension_doctor_told": 1,
-  "high_cholesterol_told": 1,
-  "taking_bp_medicine": 1,
-  "taking_cholesterol_medicine": 1
+  "taking_bp_medicine": 1
 }

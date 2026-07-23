@@ -1,12 +1,12 @@
 // Frozen thesis evaluation evidence (static). Sourced from the project's
-// results: the two-stage ML cascade test metrics and the Phase-6 real-Qwen3
-// LLM evaluation (30 held-out profiles).
+// results: the deployed Final Model C two-stage cascade (full-development fit)
+// test metrics and the Phase-6 real-Qwen3 LLM evaluation (30 held-out profiles).
 
 export const ML_METRICS = [
-  { label: "Accuracy", value: 0.7191, fmt: "ratio" },
-  { label: "Balanced accuracy", value: 0.6641, fmt: "ratio" },
-  { label: "Macro F1", value: 0.5591, fmt: "ratio" },
-  { label: "Low recall", value: 0.7507, fmt: "ratio" },
+  { label: "Accuracy", value: 0.7095, fmt: "ratio" },
+  { label: "Balanced accuracy", value: 0.6602, fmt: "ratio" },
+  { label: "Macro F1", value: 0.5561, fmt: "ratio" },
+  { label: "Low recall", value: 0.7391, fmt: "ratio" },
   { label: "Moderate recall", value: 0.5048, fmt: "ratio" },
   { label: "High recall", value: 0.7368, fmt: "ratio" },
   { label: "High → Low miss count", value: 2, fmt: "int", good: "low" },
@@ -26,7 +26,7 @@ export const LLM_METRICS = [
 ];
 
 export const EVAL_META = {
-  mlSource: "NHANES 2021–23 · two-stage cascade · held-out test set",
+  mlSource: "NHANES 2021–23 · Final Model C two-stage cascade (full-development fit) · held-out test set",
   llmSource: "Phase 6 · real Qwen3-4B-Instruct-2507 + BGE-M3 RAG + safety validator · 30 held-out profiles (10/10/10)",
   deferNote:
     "Fine-tuning is deferred as a paper extension. The current thesis MVP uses an evaluated base Qwen3 + guideline RAG + safety validator.",

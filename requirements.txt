@@ -19,7 +19,11 @@ uvicorn[standard]==0.34.0
 pydantic==2.10.4
 python-dotenv==1.0.1          # loads the backend .env file
 
-# --- ML model (two-stage cascade) ---
+# --- ML model (Final Model C two-stage cascade) ---
+# The deployed package (model_package/FINAL_MODEL_C_FULL_DEVELOPMENT.joblib) is a
+# plain-dict of fitted sklearn stages and loads with scikit-learn + joblib alone —
+# no custom pickle classes. imbalanced-learn is a training-time dependency (used
+# by the model notebook); it is not required to load or serve the model.
 pandas==2.2.3
 numpy==2.0.2
 scipy==1.14.1

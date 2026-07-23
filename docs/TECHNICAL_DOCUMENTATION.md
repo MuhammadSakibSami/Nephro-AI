@@ -38,7 +38,7 @@
 
 Nephro-AI is a **non-invasive chronic kidney disease (CKD) risk screening and patient education system**. It combines a two-stage machine-learning cascade with a safety-guarded, retrieval-augmented large language model (LLM) to:
 
-1. **Screen** for CKD risk (low / moderate / high) from 22 routine health inputs — *without requiring creatinine, eGFR, or UACR*, which are the standard confirmatory tests.
+1. **Screen** for CKD risk (low / moderate / high) from 14 routine health inputs — *without requiring creatinine, eGFR, or UACR*, which are the standard confirmatory tests.
 2. **Educate** the patient with personalized, plain-language kidney-health guidance that is grounded in clinical guidelines (KDIGO, ADA, NKF/KDOQI, CDC) and guaranteed by a multi-layer safety validator to contain no diagnosis, no medication advice, and no individualized nutrient targets.
 
 ### 1.2 Problem Statement
@@ -70,10 +70,10 @@ Nephro-AI addresses both gaps:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        PATIENT INPUTS                           │
-│   Age, Sex, BMI, Waist, Blood Pressure, Pulse, Glucose,        │
-│   HbA1c, BUN, Uric Acid, Albumin, Na, K, Hemoglobin,          │
-│   Diabetes, Hypertension, Cholesterol flags & medications       │
+│                        PATIENT INPUTS (14)                      │
+│   Age, Income ratio, Waist, Systolic BP, Diastolic BP,         │
+│   Glucose, HbA1c, BUN, Uric Acid, Albumin, Hemoglobin,        │
+│   Diabetes, Hypertension, BP medicine                           │
 └─────────────────────┬───────────────────────────────────────────┘
                       │
                       ▼ POST /generate-guidance
@@ -234,23 +234,20 @@ lucide-react         # Icon library
 
 ### 4.1 Patient Input & Feature Engineering
 
-The user submits a form with **22 features**:
+The user submits a form with the **14 features** consumed by the deployed Final Model C (13-feature Stage-1 + direct-six Stage-2, 14 unique inputs). Every input shown is scored by the model — there are no unused/context-only fields.
 
 **Demographic & socioeconomic:**
 | Feature | Type | Unit |
 |---|---|---|
 | age | Numeric | years |
-| sex_female | Binary | 0/1 |
 | income_poverty_ratio | Numeric | ratio |
 
 **Anthropometric & vitals:**
 | Feature | Type | Unit |
 |---|---|---|
-| bmi | Numeric | kg/m² |
 | waist | Numeric | cm |
 | mean_sbp | Numeric | mmHg |
 | mean_dbp | Numeric | mmHg |
-| mean_pulse | Numeric | bpm |
 
 **Laboratory values:**
 | Feature | Type | Unit |
@@ -260,39 +257,35 @@ The user submits a form with **22 features**:
 | blood_urea_nitrogen | Numeric | mg/dL |
 | uric_acid | Numeric | mg/dL |
 | serum_albumin | Numeric | g/dL |
-| sodium | Numeric | mmol/L |
-| potassium | Numeric | mmol/L |
 | hemoglobin | Numeric | g/dL |
 
 **Comorbidity flags (binary, Yes/No):**
 | Feature | Description |
 |---|---|
 | diabetes_yes | Diagnosed diabetes |
-| borderline_diabetes | Prediabetes / borderline |
 | hypertension_doctor_told | Diagnosed hypertension |
-| high_cholesterol_told | Diagnosed high cholesterol |
 | taking_bp_medicine | Currently on BP medication |
-| taking_cholesterol_medicine | Currently on cholesterol medication |
 
 **Notably absent:** creatinine, eGFR, UACR, urine protein — the defining features of standard CKD diagnostics. Their exclusion is the key non-invasive property of the system.
 
-The backend applies **live-input consistency rules** before sending to the model:
-- If hypertension=No, then taking_bp_medicine defaults to 0 (no need to ask).
-- If high_cholesterol=No, taking_cholesterol_medicine defaults to 0.
-- If diabetes=Yes, borderline_diabetes defaults to 0 (can't have both).
+> **Model evolution:** an earlier development iteration collected 22 candidate features; feature selection during model development reduced the deployed Model C to these 14. The removed inputs (sex, BMI, pulse, sodium, potassium, borderline-diabetes, high-cholesterol, cholesterol-medicine) did not survive selection into either stage.
 
-Missing features are handled by the model's trained imputation pipeline (median/mode imputation fitted on the training set). Up to 5 missing features are tolerated; reliability degrades gracefully.
+The backend applies a **live-input consistency rule** before sending to the model:
+- If hypertension=No, then taking_bp_medicine defaults to 0 (matches the structural-missing handling used at training time).
+
+Missing features are handled by the model's trained imputation pipeline (median for numeric, most-frequent for binary, fitted on the training set). Reliability degrades gracefully as inputs are omitted.
 
 ---
 
 ### 4.2 Two-Stage ML Cascade
 
-The core ML model is a **two-stage cascade** trained on NHANES 2021–23 data and serialized as a `.joblib` package.
+The core ML model is the deployed **Final Model C** — a **two-stage cascade** trained on NHANES 2021–23 data and serialized as a `.joblib` package (`FINAL_MODEL_C_FULL_DEVELOPMENT.joblib`). The package is a plain `dict` holding two self-contained sklearn stages (each a `preprocessor` + `model`); it requires **no custom pickle classes** to load. It is fit on the original Train + Validation split (development N = 4,719).
 
 **Stage 1 — At-Risk Gate (Random Forest)**
 
 - **Task:** Binary classification: low vs. at-risk (moderate+high combined).
-- **Algorithm:** Random Forest (with imbalanced-learn SMOTE or class-weight balancing).
+- **Algorithm:** Random Forest (150 trees, depth 5) with imbalanced-learn `RandomOverSampler`.
+- **Features:** 13 features (see `stage1_features` in the package).
 - **Output:** `P(at-risk)` — probability the patient is NOT low risk.
 - **Threshold:** 0.44 (tuned to minimize dangerous high→low misses).
 - **Decision:** If `P(at-risk) < 0.44` → classify as **low**, return immediately.
@@ -300,11 +293,13 @@ The core ML model is a **two-stage cascade** trained on NHANES 2021–23 data an
 **Stage 2 — High-Risk Discriminator (Gradient Boosting)**
 
 - **Task:** Binary classification within at-risk pool: moderate vs. high.
-- **Algorithm:** Gradient Boosting Classifier.
-- **Input:** A subset of features selected for high-vs-moderate discrimination.
+- **Algorithm:** Gradient Boosting Classifier (150 estimators, lr 0.05, depth 2) with an OBU (over/under-balancing) resampler at training time.
+- **Input:** The "direct-six" features (`blood_urea_nitrogen, uric_acid, hemoglobin, serum_albumin, mean_sbp, age`).
 - **Output:** `P(high | at-risk)` — conditional probability of high given at-risk.
 - **Threshold:** 0.50.
 - **Decision:** If `P(high | at-risk) ≥ 0.50` → classify as **high**, else **moderate**.
+
+Composed class probabilities are `[1−p1, p1·(1−p2), p1·p2]`, row-normalized, where `p1 = P(at-risk)` and `p2 = P(high | at-risk)`.
 
 **Why two stages?**
 
@@ -351,7 +346,7 @@ After scoring, the backend calls `_build_llm_context()` to package everything th
      "unit": "mmHg", "direction": "supports_prediction", "absolute_contribution": 0.18},
     ...
   ],
-  "input_quality": {"n_supplied": 22, "n_missing": 0, ...},
+  "input_quality": {"n_supplied_features": 14, "n_missing_features": 0, ...},
   "patient_inputs": {"age": 65, "mean_sbp": 160, "diabetes_yes": 1, ...},
   "suggestion_style": {...}
 }
@@ -588,7 +583,7 @@ All endpoints are served by FastAPI at `http://localhost:8000`. Interactive Swag
 
 ### 6.1 POST /generate-guidance
 
-**Request body:** Same 22-feature JSON as `/predict`.
+**Request body:** Same 14-feature JSON as `/predict`.
 
 **Response (abbreviated):**
 ```json
@@ -773,7 +768,7 @@ The following features represent the novel contributions of this thesis compared
 **What prior work does:** LLM health education tools typically pass only a risk class or a generic condition summary. They don't feed the patient's actual numeric values and binary condition flags into the prompt with explicit per-section personalization requirements.
 
 **What Nephro-AI does:** The user prompt contains:
-- A `PATIENT PROFILE` block with all 22 patient input values, human-readable.
+- A `PATIENT PROFILE` block with all 14 patient input values, human-readable.
 - A `PERSONALIZATION REQUIREMENTS` block with explicit, condition-derived instructions for each of the 5 output sections — computed from the patient's actual profile.
 
 This ensures a diabetic hypertensive patient receives categorically different food/routine/follow-up guidance from a young patient with only borderline BMI.
@@ -873,7 +868,7 @@ This ensures a diabetic hypertensive patient receives categorically different fo
 | `App` | `src/App.jsx` | Root: shared state (values, guidance, view), health polling, demo runner |
 | `AppShell` | `src/components/AppShell.jsx` | Sidebar navigation, status bar, disclaimer footer |
 | `PatientView` | `src/components/patient/PatientView.jsx` | Form + result display container |
-| `PatientForm` | `src/components/patient/PatientForm.jsx` | 22-field input form in 5 groups (Basic, Body, BP, Labs, History) |
+| `PatientForm` | `src/components/patient/PatientForm.jsx` | 14-field input form in 5 groups (Basic, Body, BP, Labs, History) |
 | `PatientResult` | `src/components/patient/PatientResult.jsx` | Risk card, reliability badge, key signals, 5-section education, safety notes |
 | `AdminDashboard` | `src/components/admin/AdminDashboard.jsx` | Tabbed dashboard (8 tabs) |
 | `PredictionPanels` | `src/components/admin/PredictionPanels.jsx` | Probabilities, stage outputs, input quality, explanation |
@@ -888,7 +883,7 @@ This ensures a diabetic hypertensive patient receives categorically different fo
 
 | File | Contents |
 |---|---|
-| `src/data/featureSchema.js` | 22 feature definitions: label, unit, type, default, range, help text |
+| `src/data/featureSchema.js` | 14 feature definitions: label, unit, type, default, range, help text |
 | `src/data/demoCases.js` | 3 pre-filled payloads: Low / Moderate / High-emergency |
 | `src/data/evaluationData.js` | Frozen Phase-6 metrics (hardcoded for offline display) |
 | `src/lib/risk.js` | Risk level colour + icon + label helpers |
@@ -915,7 +910,7 @@ The database layer is **optional and best-effort** — the API never blocks or f
 | `id` | INTEGER PRIMARY KEY (autoincrement) | Row identifier |
 | `created_at` | TIMESTAMPTZ (server_default = now()) | When the screening was run |
 | `source` | VARCHAR(32) | `"predict"` or `"generate-guidance"` |
-| `input_features` | JSONB / JSON | Raw 22-feature payload from the user |
+| `input_features` | JSONB / JSON | Raw 14-feature payload from the user |
 | `n_missing_features` | INTEGER | Count of features that were imputed |
 | `risk_class` | VARCHAR(16) (indexed) | `"low"` / `"moderate"` / `"high"` |
 | `risk_class_display` | VARCHAR(64) | Human-readable label |
@@ -950,9 +945,8 @@ Nephro-AI/
 ├── backend/
 │   ├── main.py                    # FastAPI app, CORS, routes, lifespan (init_db)
 │   ├── schemas.py                 # Pydantic: PatientFeatures, PredictionResponse
-│   ├── feature_config.py          # MODEL_FEATURES (22), FEATURE_METADATA, NUMERIC_RANGES
+│   ├── feature_config.py          # MODEL_FEATURES (14), FEATURE_METADATA, NUMERIC_RANGES
 │   ├── model_service.py           # KidneyRiskModelService: load, score, explain, reliability
-│   ├── model_runtime.py           # Pickle alias shims for joblib compatibility
 │   ├── llm_endpoint.py            # build_guidance_response(), llm_health()
 │   └── database/
 │       ├── models.py              # SQLAlchemy Screening ORM
@@ -1022,7 +1016,7 @@ Nephro-AI/
 │           └── exportUtils.js
 │
 ├── model_package/
-│   ├── joint_s1_rfbalanced_k19_s2_rfbalanced_k12_stage2_thr050_model_package.joblib
+│   ├── FINAL_MODEL_C_FULL_DEVELOPMENT.joblib   # deployed Final Model C (plain-dict package)
 │   ├── nhanes_FINAL_CLEAR_BASELINE_STAGE2_THR050_MODEL_NOTEBOOK (1).ipynb
 │   └── nhanes_PHASE1_CV_BASELINES_SHAP_COLAB_READY_FIXED_SHAP (1).ipynb
 │
@@ -1069,7 +1063,7 @@ Nephro-AI/
 
 | Parameter | Value |
 |---|---|
-| ML input features | 22 |
+| ML input features | 14 |
 | Risk classes | 3 (low, moderate, high) |
 | Stage 1 threshold | 0.44 |
 | Stage 2 threshold | 0.50 |

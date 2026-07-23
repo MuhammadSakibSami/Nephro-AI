@@ -6,7 +6,7 @@ that turns the risk result into personalized, plain-language kidney-health
 **education**.
 
 - **ML model** — predicts a KDIGO-aligned risk level (low / moderate / high) from
-  22 routine, non-invasive inputs (vitals, standard labs, history) — *no
+  14 routine, non-invasive inputs (vitals, standard labs, history) — *no
   creatinine / eGFR / UACR required as inputs*.
 - **LLM component** — retrieves relevant clinical-guideline snippets (RAG), writes
   5-section education, and passes every output through a strict **safety
@@ -99,8 +99,7 @@ Safe, personalized kidney-risk education  ── /generate-guidance ──►  R
 <repo root>/
 ├── backend/                  # FastAPI: /predict, /generate-guidance, /health, ...
 │   ├── main.py               #   app + routes (loads .env)
-│   ├── model_service.py      #   two-stage cascade loading + scoring
-│   ├── model_runtime.py      #   custom classes for joblib loading
+│   ├── model_service.py      #   Final Model C two-stage cascade loading + scoring
 │   ├── llm_endpoint.py       #   wires RAG + LLM + validator into the API
 │   ├── schemas.py            #   request/response models
 │   └── feature_config.py     #   feature metadata
@@ -202,13 +201,11 @@ chunks, query, grounding ratio, validator `violations`).
 
 ```json
 {
-  "age": 62, "sex_female": 0, "income_poverty_ratio": 2.1,
-  "bmi": 30.2, "waist": 105.0,
-  "mean_sbp": 138.0, "mean_dbp": 82.0, "mean_pulse": 76.0,
+  "age": 62, "income_poverty_ratio": 2.1, "waist": 105.0,
+  "mean_sbp": 138.0, "mean_dbp": 82.0,
   "glucose": 118.0, "hba1c": 6.4, "blood_urea_nitrogen": 22.0, "uric_acid": 6.8,
-  "serum_albumin": 4.0, "sodium": 140.0, "potassium": 4.4, "hemoglobin": 13.2,
-  "diabetes_yes": 1, "borderline_diabetes": 0, "hypertension_doctor_told": 1,
-  "high_cholesterol_told": 1, "taking_bp_medicine": 1, "taking_cholesterol_medicine": 1
+  "serum_albumin": 4.0, "hemoglobin": 13.2,
+  "diabetes_yes": 1, "hypertension_doctor_told": 1, "taking_bp_medicine": 1
 }
 ```
 </details>
@@ -238,11 +235,11 @@ See **[frontend/README.md](frontend/README.md)** for UI details.
 
 Frozen evidence lives in [`results/`](results/).
 
-**ML two-stage cascade** (NHANES 2021–23, held-out test):
+**Final Model C — two-stage cascade** (deployed full-development fit, NHANES 2021–23 held-out test):
 
 | Accuracy | Balanced acc | Macro F1 | Low recall | Moderate recall | High recall | High→Low miss |
 |---|---|---|---|---|---|---|
-| 0.719 | 0.664 | 0.559 | 0.751 | 0.505 | 0.737 | 2 |
+| 0.709 | 0.660 | 0.556 | 0.739 | 0.505 | 0.737 | 2 |
 
 **LLM — Phase 6** (real Qwen3-4B + BGE-M3 RAG + validator, 30 held-out profiles):
 

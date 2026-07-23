@@ -26,7 +26,7 @@
 
 **What exists right now:**
 - A trained two-stage ML cascade model with extensive ablation history
-- Trained on NHANES 2021–23 data, 22 input features, 3 output classes (low / moderate / high)
+- Trained on NHANES 2021–23 data, 14 input features (deployed Final Model C; an earlier iteration used 22 candidate features before selection), 3 output classes (low / moderate / high)
 - Target variable defined by KDIGO 2012 eGFR + UACR grid (gold-standard clinical definition)
 - A FastAPI backend serving predictions with explanations and LLM-ready context
 - A Streamlit frontend for testing
@@ -65,14 +65,19 @@ This is now fully documented. Target was derived from NHANES 2021–23 lab data 
 
 ### 2.2 Model Architecture
 
-A **TwoStageCascade** classifier:
+The deployed **Final Model C** two-stage cascade (a plain-dict `.joblib` package of two
+fitted sklearn stages — no custom pickle classes):
 
 | Stage | Task | Algorithm | Features Used |
 |---|---|---|---|
-| Stage 1 | Low vs At-Risk gate | RandomForest + RandomOverSampler | Top 19 by RF importance on training set |
-| Stage 2 | Moderate vs High | GradientBoosting + OBUResampler + TreeMedianSelector | Top 12 → 6 after TreeMedianSelector |
+| Stage 1 | Low vs At-Risk gate | RandomForest (150 trees, depth 5) + RandomOverSampler | 13 features |
+| Stage 2 | Moderate vs High | GradientBoosting (150 est, lr 0.05, depth 2) + OBU resampler | direct-six (6 features) |
+
+**Stage-1 features (13):** age, blood_urea_nitrogen, hba1c, taking_bp_medicine, mean_sbp, glucose, hypertension_doctor_told, uric_acid, diabetes_yes, income_poverty_ratio, mean_dbp, hemoglobin, waist
 
 **Stage-2 final features (6):** blood_urea_nitrogen, uric_acid, hemoglobin, serum_albumin, mean_sbp, age
+
+**Unique model inputs: 14** (union of the two stages).
 
 **Decision logic:**
 - If Stage-1 P(at-risk) < 0.44 → predict **Low**
@@ -81,18 +86,25 @@ A **TwoStageCascade** classifier:
 
 ### 2.3 Final Test Results
 
+Deployed **Final Model C — full-development fit** (Train + Validation, N = 4,719),
+evaluated on the held-out historical test set (N = 833):
+
 | Metric | Value |
 |---|---|
-| Accuracy | 0.7191 |
-| Balanced Accuracy | 0.6641 |
-| Macro F1 | 0.5591 |
-| Weighted F1 | 0.7566 |
-| Low Recall | 0.7507 |
+| Accuracy | 0.7095 |
+| Balanced Accuracy | 0.6602 |
+| Macro F1 | 0.5561 |
+| Low Recall | 0.7391 |
 | Moderate Recall | 0.5048 |
 | High Recall | 0.7368 |
 | High→Low Misses | 2 |
 | Stage-1 threshold | 0.44 |
 | Stage-2 threshold | 0.50 |
+
+> The train-only audit fit (N = 3,886) scores slightly higher on this already-inspected
+> test (accuracy 0.7239), but the full-development fit is the deployed artifact because
+> it uses the additional 833 validation participants. See the Model C notebook for the
+> exact reproduction audit.
 
 ### 2.4 Experiment History — What Has Already Been Tried
 
@@ -237,7 +249,7 @@ pip install shap
 
 ### 4.4 No Flat Baseline Comparison
 
-**This is different from what you've already done.** Your experiment history compared alternative Stage-2 models — but that is not a baseline comparison. A proper baseline is a **single 3-class classifier trained directly on all 22 features, without any cascade**. This is needed to show that your two-stage design adds value.
+**This is different from what you've already done.** Your experiment history compared alternative Stage-2 models — but that is not a baseline comparison. A proper baseline is a **single 3-class classifier trained directly on the same 14 Model C input features, without any cascade**. This is needed to show that your two-stage design adds value.
 
 **Required comparisons:**
 
@@ -279,7 +291,7 @@ Your paper's premise is predicting CKD risk "without invasive tests." This frami
 
 - **Blood draws** are technically invasive (needle puncture). What you mean is: without the specific tests used to diagnose and stage CKD — serum creatinine-based eGFR and urine albumin-to-creatinine ratio (UACR).
 - **BUN** in your features is a kidney-adjacent marker found in standard metabolic panels — not a CKD-specific test. Same for serum albumin and uric acid.
-- **All 22 input features** come from standard annual checkup components: vital signs, basic metabolic panel, HbA1c, CBC, and self-reported history.
+- **All 14 input features** come from standard annual checkup components: vital signs, basic metabolic panel, HbA1c, CBC, and self-reported history.
 
 **Recommended framing for the paper:**
 
@@ -401,7 +413,7 @@ After CV, fit the final model on the full training set (or use the CV prediction
 
 **1.3 — Train flat baselines**
 
-Train and evaluate 4 flat 3-class classifiers using the same 22 features, same train/val/test split, and same CV:
+Train and evaluate 4 flat 3-class classifiers using the same 14 Model C input features, same train/val/test split, and same CV:
 - Logistic Regression (`class_weight='balanced'`)
 - RandomForest (`class_weight='balanced'`, 150 estimators)
 - GradientBoosting (150 estimators, learning_rate=0.05, max_depth=2, analogous to Stage-2)
@@ -508,7 +520,7 @@ Title: Non-Invasive Kidney Disease Risk Screening Using a Two-Stage Machine
 2. Methods
    2.1 Dataset: NHANES 2021–23, inclusion criteria, exact N and attrition
    2.2 Target variable: KDIGO 2012 risk grid using CKD-EPI 2021 eGFR + UACR
-   2.3 Feature set: 22 input features, explicit exclusion of creatinine/urine markers
+   2.3 Feature set: 14 input features (Final Model C), explicit exclusion of creatinine/urine markers
    2.4 Preprocessing: imputation, coding fixes, structural missingness handling
    2.5 Model architecture: two-stage cascade design rationale
    2.6 Stage-1: RF + ROS, feature selection, threshold
@@ -628,15 +640,13 @@ All experiments tried and rejected before finalizing the current model:
 | File | Purpose |
 |---|---|
 | [nhanes_2021–2023_eda_+_cleaned_csv_creation.py](ckd_risk_app/model_package/nhanes_2021–2023_eda_+_cleaned_csv_creation.py) | Target variable construction, EDA, leakage-aware dataset creation |
-| [model_package/nhanes_FINAL_CLEAR_BASELINE_STAGE2_THR050_MODEL_NOTEBOOK (1).ipynb](ckd_risk_app/model_package/nhanes_FINAL_CLEAR_BASELINE_STAGE2_THR050_MODEL_NOTEBOOK%20(1).ipynb) | Final model training notebook |
+| [misc/notebooks/nhanes-model-c-train-save-download-and-predict.ipynb](ckd_risk_app/misc/notebooks/nhanes-model-c-train-save-download-and-predict.ipynb) | Deployed Final Model C train/save/verify notebook |
 | [final model pawar steps.pdf](ckd_risk_app/model_package/final%20model%20pawar%20steps.pdf) | Experiment history: all tried approaches and outcomes |
-| [backend/model_runtime.py](ckd_risk_app/backend/model_runtime.py) | TwoStageCascade, OBUResampler, TreeMedianSelector class definitions |
-| [backend/model_service.py](ckd_risk_app/backend/model_service.py) | Prediction pipeline, explanation generation, LLM context builder |
-| [backend/feature_config.py](ckd_risk_app/backend/feature_config.py) | Feature metadata, default values, units |
+| [backend/model_service.py](ckd_risk_app/backend/model_service.py) | Model C loading (plain-dict package), scoring, explanation, LLM context builder |
+| [backend/feature_config.py](ckd_risk_app/backend/feature_config.py) | 14-feature metadata, default values, units |
 | [backend/schemas.py](ckd_risk_app/backend/schemas.py) | Request/response Pydantic models |
 | [backend/main.py](ckd_risk_app/backend/main.py) | FastAPI endpoints |
-| [frontend/app.py](ckd_risk_app/frontend/app.py) | Streamlit UI |
-| [model_package/joint_s1_rfbalanced_k19_s2_rfbalanced_k12_stage2_thr050_model_package.joblib](ckd_risk_app/model_package/joint_s1_rfbalanced_k19_s2_rfbalanced_k12_stage2_thr050_model_package.joblib) | Trained model artifact |
+| [model_package/FINAL_MODEL_C_FULL_DEVELOPMENT.joblib](ckd_risk_app/model_package/FINAL_MODEL_C_FULL_DEVELOPMENT.joblib) | Deployed trained model artifact (14 inputs, no custom pickle classes) |
 
 ---
 

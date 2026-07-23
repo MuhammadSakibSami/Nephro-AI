@@ -42,11 +42,13 @@ export function reliabilityColor(level) {
 export function factorName(factor) {
   if (factor?.label) return factor.label;
   const map = {
+    age: "Age", income_poverty_ratio: "Income-to-poverty ratio",
     mean_sbp: "Blood pressure (systolic)", mean_dbp: "Blood pressure (diastolic)",
-    hba1c: "Blood sugar (HbA1c)", glucose: "Glucose", bmi: "Body mass index",
+    hba1c: "Blood sugar (HbA1c)", glucose: "Glucose",
     waist: "Waist size", blood_urea_nitrogen: "Kidney blood test (BUN)",
     uric_acid: "Uric acid", serum_albumin: "Albumin", hemoglobin: "Hemoglobin",
     diabetes_yes: "Diabetes history", hypertension_doctor_told: "High blood pressure history",
+    taking_bp_medicine: "Blood-pressure medicine",
   };
   return map[factor?.feature] || factor?.feature || "Factor";
 }

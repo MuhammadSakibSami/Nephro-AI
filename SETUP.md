@@ -24,7 +24,7 @@ There are two ways to set up:
 
 You also need the trained **model package** `.joblib` in `model_package/`
 (it ships with the repo as
-`joint_s1_rfbalanced_k19_s2_rfbalanced_k12_stage2_thr050_model_package.joblib`).
+`FINAL_MODEL_C_FULL_DEVELOPMENT.joblib`).
 
 **LLM mode:** by default the app runs in **local-demo mode** — no GPU and no heavy
 ML libraries required. Production Qwen3 is optional (see §5).

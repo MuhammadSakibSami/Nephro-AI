@@ -248,7 +248,7 @@ ul.x li::before{content:"✕";position:absolute;left:0;color:var(--red);font-wei
       <div class="card" style="border-color:rgba(0,201,255,.3);padding:28px">
         <div style="font-size:1.8rem;margin-bottom:12px">🩺</div>
         <div class="card-title">Stage 1 — ML Screening</div>
-        <p style="font-size:.85rem;color:var(--muted);line-height:1.6;margin-bottom:14px">22 routine health inputs (vitals, standard labs, comorbidity flags) → Two-stage ML cascade → <strong style="color:var(--green)">Low / Moderate / High</strong> kidney risk class</p>
+        <p style="font-size:.85rem;color:var(--muted);line-height:1.6;margin-bottom:14px">14 routine health inputs (vitals, standard labs, comorbidity flags) → Two-stage ML cascade → <strong style="color:var(--green)">Low / Moderate / High</strong> kidney risk class</p>
         <ul class="checks" style="margin-top:8px">
           <li>No creatinine required</li>
           <li>No eGFR or UACR needed</li>
@@ -312,7 +312,7 @@ ul.x li::before{content:"✕";position:absolute;left:0;color:var(--red);font-wei
       <div class="card" style="border-color:rgba(0,201,255,.25)">
         <div class="card-title">Why NHANES?</div>
         <ul class="checks">
-          <li>Contains all 22 of our non-invasive features</li>
+          <li>Contains all 14 of our non-invasive features</li>
           <li>Also contains eGFR &amp; UACR for label construction</li>
           <li>Representative of the general population (not just clinic patients)</li>
           <li>Publicly available — reproducible research</li>
@@ -333,44 +333,42 @@ ul.x li::before{content:"✕";position:absolute;left:0;color:var(--red);font-wei
 <div class="content">
   <div class="sl-head">
     <div class="sl-tag">Feature Engineering</div>
-    <div class="sl-title">22 <span>Non-Invasive</span> Input Features</div>
+    <div class="sl-title">14 <span>Non-Invasive</span> Input Features</div>
     <div class="sl-sub">Everything measurable at a community health check — no specialist lab required</div>
   </div>
   <hr class="div">
   <div class="feat-grid" style="flex:1">
     <div class="feat-item">
-      <div class="fi-label">Demographic (3)</div>
+      <div class="fi-label">Demographic (2)</div>
       <ul class="fi-list">
-        <li>Age (years)</li><li>Sex (M/F)</li><li>Income-to-poverty ratio</li>
+        <li>Age (years)</li><li>Income-to-poverty ratio</li>
       </ul>
     </div>
     <div class="feat-item">
-      <div class="fi-label">Anthropometric (2)</div>
+      <div class="fi-label">Anthropometric (1)</div>
       <ul class="fi-list">
-        <li>BMI (kg/m²)</li><li>Waist circumference (cm)</li>
+        <li>Waist circumference (cm)</li>
       </ul>
     </div>
     <div class="feat-item">
-      <div class="fi-label">Blood Pressure (3)</div>
+      <div class="fi-label">Blood Pressure (2)</div>
       <ul class="fi-list">
-        <li>Mean systolic BP (mmHg)</li><li>Mean diastolic BP (mmHg)</li><li>Mean pulse (bpm)</li>
+        <li>Mean systolic BP (mmHg)</li><li>Mean diastolic BP (mmHg)</li>
       </ul>
     </div>
     <div class="feat-item">
-      <div class="fi-label">Routine Labs (8)</div>
+      <div class="fi-label">Routine Labs (6)</div>
       <ul class="fi-list">
         <li>Fasting glucose (mg/dL)</li><li>HbA1c (%)</li>
         <li>Blood urea nitrogen (mg/dL)</li><li>Uric acid (mg/dL)</li>
-        <li>Serum albumin (g/dL)</li><li>Sodium (mmol/L)</li>
-        <li>Potassium (mmol/L)</li><li>Hemoglobin (g/dL)</li>
+        <li>Serum albumin (g/dL)</li><li>Hemoglobin (g/dL)</li>
       </ul>
     </div>
     <div class="feat-item">
-      <div class="fi-label">Comorbidity Flags (6 binary)</div>
+      <div class="fi-label">Comorbidity Flags (3 binary)</div>
       <ul class="fi-list">
-        <li>Diagnosed diabetes</li><li>Prediabetes / borderline</li>
-        <li>Diagnosed hypertension</li><li>Diagnosed high cholesterol</li>
-        <li>Taking BP medication</li><li>Taking cholesterol medication</li>
+        <li>Diagnosed diabetes</li><li>Diagnosed hypertension</li>
+        <li>Taking BP medication</li>
       </ul>
     </div>
     <div class="feat-item" style="background:rgba(239,68,68,.06);border-color:rgba(239,68,68,.25)">
@@ -400,7 +398,7 @@ ul.x li::before{content:"✕";position:absolute;left:0;color:var(--red);font-wei
     <div class="col col-1">
       <div class="cascade">
         <div class="cs-box" style="border-color:rgba(0,201,255,.3);text-align:center">
-          <h4>22 Feature Input</h4>
+          <h4>14 Feature Input</h4>
           <p>All non-invasive patient features</p>
         </div>
         <div class="cs-down">↓</div>
@@ -456,9 +454,9 @@ ul.x li::before{content:"✕";position:absolute;left:0;color:var(--red);font-wei
   </div>
   <hr class="div">
   <div class="mrow" style="margin-bottom:20px">
-    <div class="mcard"><div class="mv">71.9%</div><div class="ml">Accuracy</div></div>
-    <div class="mcard"><div class="mv">66.4%</div><div class="ml">Balanced Accuracy</div></div>
-    <div class="mcard"><div class="mv">55.9%</div><div class="ml">Macro F1</div></div>
+    <div class="mcard"><div class="mv">70.9%</div><div class="ml">Accuracy</div></div>
+    <div class="mcard"><div class="mv">66.0%</div><div class="ml">Balanced Accuracy</div></div>
+    <div class="mcard"><div class="mv">55.6%</div><div class="ml">Macro F1</div></div>
     <div class="mcard"><div class="mv text-green">73.7%</div><div class="ml">High Recall</div></div>
     <div class="mcard" style="border-color:rgba(16,185,129,.3)"><div class="mv text-green">2</div><div class="ml">High→Low Misses</div></div>
   </div>
@@ -467,7 +465,7 @@ ul.x li::before{content:"✕";position:absolute;left:0;color:var(--red);font-wei
       <table class="dtable">
         <thead><tr><th>Class</th><th>Recall</th><th>Interpretation</th></tr></thead>
         <tbody>
-          <tr><td><span class="pill pill-g">Low</span></td><td>75.1%</td><td style="color:var(--muted);font-size:.78rem">Good — most low-risk patients correctly cleared</td></tr>
+          <tr><td><span class="pill pill-g">Low</span></td><td>73.9%</td><td style="color:var(--muted);font-size:.78rem">Good — most low-risk patients correctly cleared</td></tr>
           <tr><td><span class="pill pill-a">Moderate</span></td><td>50.5%</td><td style="color:var(--muted);font-size:.78rem">Hardest class — inherently ambiguous boundary</td></tr>
           <tr><td><span class="pill pill-r">High</span></td><td>73.7%</td><td style="color:var(--muted);font-size:.78rem">Strong — critical class, cascade tuned for this</td></tr>
         </tbody>
@@ -536,7 +534,7 @@ ul.x li::before{content:"✕";position:absolute;left:0;color:var(--red);font-wei
         <div class="card-title" style="color:#a78bfa">Personalisation Architecture</div>
         <p style="font-size:.82rem;color:var(--muted);line-height:1.6;margin-bottom:10px">Three layers of personalisation ensure every patient's education is unique:</p>
         <div style="display:flex;flex-direction:column;gap:6px">
-          <div style="background:rgba(124,58,237,.1);border-radius:6px;padding:8px 12px;font-size:.78rem"><strong style="color:#a78bfa">1. Patient Profile block</strong> — all 22 actual patient values in the prompt (age, SBP, HbA1c, diabetes flag, etc.)</div>
+          <div style="background:rgba(124,58,237,.1);border-radius:6px;padding:8px 12px;font-size:.78rem"><strong style="color:#a78bfa">1. Patient Profile block</strong> — all 14 actual patient values in the prompt (age, SBP, HbA1c, diabetes flag, etc.)</div>
           <div style="background:rgba(124,58,237,.1);border-radius:6px;padding:8px 12px;font-size:.78rem"><strong style="color:#a78bfa">2. Factor-aware RAG</strong> — different patients get different guideline chunks based on their top risk drivers</div>
           <div style="background:rgba(124,58,237,.1);border-radius:6px;padding:8px 12px;font-size:.78rem"><strong style="color:#a78bfa">3. Per-section cues</strong> — explicit condition-derived instructions per output section (e.g. "For Food habits: address high blood sugar because HbA1c = 8.5%")</div>
         </div>
@@ -831,7 +829,7 @@ ul.x li::before{content:"✕";position:absolute;left:0;color:var(--red);font-wei
   <div class="con-grid" style="margin-bottom:18px">
     <div class="con-item">
       <h4>✓ Non-Invasive CKD Screening Works</h4>
-      <p>A two-stage ML cascade trained on 22 routine features achieves 71.9% accuracy and 73.7% high-risk recall — without eGFR, creatinine, or UACR — making community-level screening feasible.</p>
+      <p>A two-stage ML cascade trained on 14 routine features achieves 70.9% accuracy and 73.7% high-risk recall — without eGFR, creatinine, or UACR — making community-level screening feasible.</p>
     </div>
     <div class="con-item">
       <h4>✓ LLMs Can Safely Personalise Patient Education</h4>

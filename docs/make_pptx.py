@@ -265,7 +265,7 @@ HDR(s, "Overview", [("What is ", False), ("Nephro-AI", True), ("?", False)],
 # Two main boxes
 BCARD(s, .4, 1.62, 5.9, 4.2,
       title="Stage 1 — ML Screening",
-      items=["22 routine health inputs → Low / Moderate / High risk",
+      items=["14 routine health inputs → Low / Moderate / High risk",
              "No creatinine, No eGFR, No UACR — routine vitals and labs only",
              "Two-stage cascade: RF gate + GradientBoosting discriminator",
              "KDIGO risk grid aligned classification",
@@ -318,7 +318,7 @@ CARD_BOX(s, 6.63, 1.62, 6.1, 2.6,
 
 BCARD(s, .4, 4.32, 6.1, 2.22,
       title="Why NHANES?",
-      items=["Contains all 22 of our non-invasive input features",
+      items=["Contains all 14 of our non-invasive input features",
              "Also contains eGFR & UACR for label construction",
              "Representative general population — not just clinic patients",
              "Publicly available — fully reproducible research pipeline"])
@@ -332,10 +332,10 @@ CARD_BOX(s, 6.63, 4.32, 6.1, 2.22,
          ac=RED, fill=RGBColor(28, 8, 8))
 
 # ══════════════════════════════════════════════════════════════════════════════
-# SLIDE 5 — 22 NON-INVASIVE FEATURES
+# SLIDE 5 — 14 NON-INVASIVE FEATURES
 # ══════════════════════════════════════════════════════════════════════════════
 s = S()
-HDR(s, "Feature Engineering", [("22 ", True), ("Non-Invasive", False), (" Input Features", True)],
+HDR(s, "Feature Engineering", [("14 ", True), ("Non-Invasive", False), (" Input Features", True)],
     "Everything measurable at a community health check — no specialist lab required")
 
 # 6 cards in 2 rows × 3 cols
@@ -348,21 +348,19 @@ def feat(s, x, y, w, h, label, items, tc=ACC, fill=CARD):
 cw, ch, gap = 4.06, 2.5, .175
 r1y, r2y = 1.62, 4.20
 
-feat(s, .4,          r1y, cw, ch, "Demographic (3)",
-     ["Age (years)", "Sex (M/F)", "Income-to-poverty ratio"])
-feat(s, .4+cw+gap,   r1y, cw, ch, "Anthropometric (2)",
-     ["BMI (kg/m²)", "Waist circumference (cm)"])
-feat(s, .4+2*(cw+gap), r1y, cw, ch, "Blood Pressure (3)",
-     ["Mean systolic BP (mmHg)", "Mean diastolic BP (mmHg)", "Mean pulse (bpm)"])
+feat(s, .4,          r1y, cw, ch, "Demographic (2)",
+     ["Age (years)", "Income-to-poverty ratio"])
+feat(s, .4+cw+gap,   r1y, cw, ch, "Anthropometric (1)",
+     ["Waist circumference (cm)"])
+feat(s, .4+2*(cw+gap), r1y, cw, ch, "Blood Pressure (2)",
+     ["Mean systolic BP (mmHg)", "Mean diastolic BP (mmHg)"])
 
-feat(s, .4,          r2y, cw, ch, "Routine Labs (8)",
+feat(s, .4,          r2y, cw, ch, "Routine Labs (6)",
      ["Fasting glucose (mg/dL)", "HbA1c (%)", "Blood urea nitrogen (mg/dL)",
-      "Uric acid (mg/dL)", "Serum albumin (g/dL)",
-      "Sodium (mmol/L)", "Potassium (mmol/L)", "Hemoglobin (g/dL)"])
-feat(s, .4+cw+gap,   r2y, cw, ch, "Comorbidity Flags (6 binary)",
-     ["Diagnosed diabetes", "Prediabetes / borderline",
-      "Diagnosed hypertension", "Diagnosed high cholesterol",
-      "Taking BP medication", "Taking cholesterol medication"])
+      "Uric acid (mg/dL)", "Serum albumin (g/dL)", "Hemoglobin (g/dL)"])
+feat(s, .4+cw+gap,   r2y, cw, ch, "Comorbidity Flags (3 binary)",
+     ["Diagnosed diabetes", "Diagnosed hypertension",
+      "Taking BP medication"])
 feat(s, .4+2*(cw+gap), r2y, cw, ch, "Deliberately Excluded  ✕",
      ["✕  Serum creatinine", "✕  eGFR (estimated / calculated)",
       "✕  UACR (urine albumin-creatinine)", "✕  Urine protein / dipstick",
@@ -388,7 +386,7 @@ def cbox(s, x, y, w, h, title, body, tc=ACC, fill=CARD):
 def arr(s, x, y):
     T(s, x, y, bw, .3, [("▼", 14, ACC, True, False, PP_ALIGN.CENTER)])
 
-cbox(s, cx, cy,      bw, .62, "22 Feature Input", "All non-invasive patient features", tc=MUT)
+cbox(s, cx, cy,      bw, .62, "14 Feature Input", "All non-invasive patient features", tc=MUT)
 arr(s, cx, cy+.62)
 cbox(s, cx, cy+.92,  bw, .90, "Stage 1 — Random Forest Gate",
      "Binary: Low vs At-Risk   |   Threshold: 0.44   |   Tuned for high sensitivity")
@@ -443,9 +441,9 @@ mw, mh = 2.35, 1.35
 mx = .4
 my = 1.65
 stats = [
-    ("71.9%", "Accuracy",          ACC),
-    ("66.4%", "Balanced Accuracy", ACC),
-    ("55.9%", "Macro F1",          MUT),
+    ("70.9%", "Accuracy",          ACC),
+    ("66.0%", "Balanced Accuracy", ACC),
+    ("55.6%", "Macro F1",          MUT),
     ("73.7%", "High Risk Recall",  GRN),
     ("2",     "High→Low Misses",   GRN),
 ]
@@ -460,7 +458,7 @@ tx2, ty2 = .4, 3.2
 R(s, tx2, ty2, tw, th, fill=CARD2, lc=CBR)
 T(s, tx2+.15, ty2+.1, tw-.25, .25, [("Per-Class Recall", 7, ACC, True)])
 rows2 = [
-    ("Low        75.1%   Good — most low-risk patients correctly cleared",           GRN),
+    ("Low        73.9%   Good — most low-risk patients correctly cleared",           GRN),
     ("Moderate   50.5%   Hardest class — ambiguous moderate/high boundary",         AMB),
     ("High        73.7%   Strong — critical class, cascade tuned for this",          GRN),
 ]
@@ -534,7 +532,7 @@ CARD_BOX(s, .4, 2.65, 5.8, 4.0,
 # Personalisation architecture
 CARD_BOX(s, 6.4, 2.65, 6.73, 4.0,
          title="3-Layer Personalisation Architecture",
-         body=["1.  PATIENT PROFILE block — all 22 actual patient values injected into the prompt "
+         body=["1.  PATIENT PROFILE block — all 14 actual patient values injected into the prompt "
                "(age, SBP, HbA1c, diabetes flag, BMI, etc.).",
                "",
                "2.  Factor-aware RAG — different patients get different guideline chunks based "
@@ -802,7 +800,7 @@ HDR(s, "Conclusion", [("What We ", False), ("Achieved", True)],
 
 conclusions = [
     ("✓  Non-Invasive CKD Screening Works",
-     "A two-stage ML cascade trained on 22 routine features achieves 71.9% accuracy "
+     "A two-stage ML cascade trained on 14 routine features achieves 70.9% accuracy "
      "and 73.7% high-risk recall — without eGFR, creatinine, or UACR."),
     ("✓  LLMs Can Safely Personalise Patient Education",
      "Qwen3-4B with factor-aware RAG and condition-specific prompt cues achieves "
