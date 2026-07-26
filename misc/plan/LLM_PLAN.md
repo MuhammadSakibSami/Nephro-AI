@@ -6,7 +6,7 @@
 
 > **⚑ THESIS-FIRST MVP MODE (June 2026).** Priority is the thesis + supervisor demo, so the project is split:
 > - **Thesis MVP (DONE):** Phases 1–6 + a minimal `/generate-guidance` endpoint with a local-demo fallback. **Phase 6 (real Qwen3 + BGE-M3 + validator) is FROZEN as the thesis LLM evaluation result.**
-> - **Paper extension (DEFERRED):** Phase 7 (RAFT data — *pipeline built*), Phase 8 (QLoRA), Phase 9 (ablation). Deferred due to free-tier API quota + Qwen self-distillation CUDA OOM; **not required for the thesis**. The codebase is kept extensible to resume them (pluggable model/teacher backends, `adapter_path` hook, frozen eval profiles).
+> - **Paper extension (IN PROGRESS on a local GPU box):** Phase 7 (RAFT data — *pipeline built; real run executing*), Phase 8 (QLoRA — *pipeline built + offline-validated, awaiting the dataset*), Phase 9 (ablation — pending). The original blockers (free-tier API quota + Qwen self-distillation CUDA OOM on Colab) are resolved by local GPU compute + 100% self-distillation. **Not required for the thesis.** The codebase is extensible throughout (pluggable model/teacher backends, `adapter_path` hook, frozen eval profiles).
 > - See `THESIS_LLM_MVP_SUMMARY.md` for the supervisor-facing summary.
 
 > **Scope statement (use this wording in app + paper):**
@@ -405,11 +405,21 @@ Each phase: **Objective → Steps → Deliverable → Test/acceptance → Risks.
 
 ---
 
-### PHASE 8 — QLoRA Fine-Tuning  ⏸ DEFERRED — paper extension
+### PHASE 8 — QLoRA Fine-Tuning  ⏳ PIPELINE BUILT — awaiting the real Phase-7 dataset
 
-> **Not required for the thesis MVP.** Depends on Phase 7 data. Loads via the existing `QwenChatModel(adapter_path=...)` hook, so no runtime change is needed when resumed.
+> Depends on Phase 7 data. Loads via the existing `QwenChatModel(adapter_path=...)` hook, so no runtime change is needed.
 
 **Objective:** Fine-tune Qwen3-4B to emit grounded, safe, structured guidance directly from a **compact prompt** — internalizing the format + safety so raw_unsafe → ~0 without the validator.
+
+**Implemented in:**
+- `ckd_risk_app/llm/finetune/data.py` — chat-template encoding + **assistant-only loss masking** by prompt-prefix length (tokenizer-version independent; raises if the template stops being prefix-stable), truncation/zero-supervision handling, length stats, padding collator.
+- `ckd_risk_app/llm/finetune/qlora_train.py` — 4-bit NF4 (double-quant) + LoRA (r=16, alpha=32, dropout 0.05, 7 target projections), 3 epochs / lr 2e-4 cosine, gradient checkpointing + paged AdamW 8-bit, best-checkpoint-on-val-loss. **VRAM auto-detect** sets batch/accum/seq-len (all overridable). Emits `adapter/`, `training_log.csv`, `training_curve.png`, `run_card.md`. `--dry-run` validates the data pipeline with no GPU.
+- `ckd_risk_app/llm/finetune/evaluate_adapter.py` — acceptance check: generates from the COMPACT prompt with the **validator OFF** and reports `raw_unsafe_rate` (headline), format, risk-mention, readability. Run with/without `--adapter` for the Phase-9 base-vs-fine-tuned pair.
+- `misc/notebooks/phase8_qlora_finetune.ipynb` — Colab mirror. Docs: `misc/docs/LLM_PHASE8_QLORA_FINETUNE.md`.
+
+**Verified (offline, no GPU):** pure masking functions; assistant-only span starts at the answer and ends at `<|im_end|>`; prompt fully masked to `-100`; prefix-stability guard raises on a broken template; real Phase-7 smoke rows encode with 0 dropped / 0 truncated at 2048 (p50 1424, p95 1616 tokens; answers p50 163); zero-supervision examples dropped at a tiny window.
+
+> **Deviation (deliberate):** step 3 below names TRL's `SFTTrainer`; the implementation uses `transformers.Trainer` over a pre-tokenized dataset. Identical objective, but the assistant-only masking is explicit and unit-tested rather than dependent on TRL's shifting collator API. State this in the paper.
 
 **Steps:**
 1. `qlora_train.py` (Colab): load Qwen3-4B in **4-bit NF4** (bitsandbytes, double-quant), gradient checkpointing.

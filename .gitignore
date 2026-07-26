@@ -46,3 +46,11 @@ dist/
 .mypy_cache/
 .coverage
 htmlcov/
+
+# LLM Phase 7/8 artifacts — large and regenerable from the scripts.
+# Commit the small provenance files by hand (data_card.md, run_card.md,
+# phase8_*_summary.md) since the paper cites them.
+phase7_data/
+phase7_smoke/
+phase8_eval/
+llm/finetune/adapters/
