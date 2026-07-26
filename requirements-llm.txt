@@ -22,6 +22,10 @@ accelerate>=0.33
 sentence-transformers>=3.0    # BGE-M3 embeddings
 faiss-cpu>=1.8                # vector index (or faiss-gpu)
 
+# Phase 8 — QLoRA fine-tuning (llm/finetune/):
+peft>=0.11                    # LoRA adapters
+# bitsandbytes>=0.43           # only needed for --precision 4bit; not required for --precision bf16
+
 # Optional, only for the deferred Phase-7 data-generation extension:
 # google-genai>=0.3            # Gemini free-tier teacher
 # textstat>=0.7                # readability scoring in evaluation
