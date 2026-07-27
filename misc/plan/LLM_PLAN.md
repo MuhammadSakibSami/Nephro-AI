@@ -6,7 +6,7 @@
 
 > **⚑ THESIS-FIRST MVP MODE (June 2026).** Priority is the thesis + supervisor demo, so the project is split:
 > - **Thesis MVP (DONE):** Phases 1–6 + a minimal `/generate-guidance` endpoint with a local-demo fallback. **Phase 6 (real Qwen3 + BGE-M3 + validator) is FROZEN as the thesis LLM evaluation result.**
-> - **Paper extension (IN PROGRESS on a local GPU box):** Phase 7 (RAFT data — *pipeline built; real run executing*), Phase 8 (QLoRA — *pipeline built + offline-validated, awaiting the dataset*), Phase 9 (ablation — pending). The original blockers (free-tier API quota + Qwen self-distillation CUDA OOM on Colab) are resolved by local GPU compute + 100% self-distillation. **Not required for the thesis.** The codebase is extensible throughout (pluggable model/teacher backends, `adapter_path` hook, frozen eval profiles).
+> - **Paper extension (IN PROGRESS on a local GPU box):** Phase 7 (RAFT data — **done**, 540/60 train/val), Phase 8 (QLoRA — **done**, adapter trained + acceptance-checked), Phase 9 (ablation — **done** on automated axes; human/expert review still open). The original blockers (free-tier API quota + Qwen self-distillation CUDA OOM on Colab) are resolved by local GPU compute + 100% self-distillation. **Not required for the thesis.** The codebase is extensible throughout (pluggable model/teacher backends, `adapter_path` hook, frozen eval profiles).
 > - See `THESIS_LLM_MVP_SUMMARY.md` for the supervisor-facing summary.
 
 > **Scope statement (use this wording in app + paper):**
@@ -438,7 +438,14 @@ Each phase: **Objective → Steps → Deliverable → Test/acceptance → Risks.
 
 ### PHASE 9 — Evaluation & Ablation (paper's LLM results)
 
-> **⏸ DEFERRED — paper extension.** Needs the fine-tuned model (Phases 7–8). The **base arm is already captured** (frozen Phase-6 results in `ckd_risk_app/results/`); for the thesis, Phase 6 stands as the LLM evaluation.
+> **✅ DONE (automated axes) — paper extension.** 4-arm ablation run on real Qwen3-4B-Instruct-2507 + the Phase-8 QLoRA adapter, on a **fresh** 30-profile set scored by the real trained ML model (`llm/eval/phase9_profiles.py`), not the hand-authored Phase-6 set — Phase 6 had two evaluation-harness bugs found and fixed here (see `docs/LLM_PHASE9_ABLATION_EVAL.md` §0). **Human/expert review is the one remaining open item.**
+
+**RESULT (base / base+RAG / base+RAG+validator / fine-tuned+RAG+validator, 30 real-model-scored profiles):**
+- raw_unsafe_rate: **0.133 / 0.067 / 0.100 / 0.033** — fine-tuning is the only arm that moves the raw (pre-validator) number, and moves it furthest; `diagnosis` and `nutrition_restriction` violations are fully eliminated in the fine-tuned arm, leaving only one hard emergency-redirect edge case.
+- final_unsafe_rate: **0.0** in both validator-on arms (validator does its job regardless of arm).
+- mean_factor_relevance: 0.95 / 0.983 / 0.983 / **1.0**. mean_prompt_tokens: 1456 / 2243 / 2243 / **1638** (**-27%** vs the validator-on base arm — the quantified prompt-compression claim).
+- **Fix applied mid-phase:** the model was never told the BP threshold the validator itself checks (SBP≥180/DBP≥120), so `emergency_redirect` was the one violation category present in every arm. Added a shared threshold (`contract.has_emergency_vitals`) and an unmissable, patient-specific prompt alert citing the patient's own reading. Fixed all 3 clear high-systolic cases outright; two borderline isolated-diastolic cases remain inconsistent even with the fix (sampling-variance non-compliance, not a further wording problem) — an honest stated limitation, harmless in deployment since the validator guarantees final_unsafe=0 regardless.
+- Full table, methodology, and the emergency-redirect story: `docs/LLM_PHASE9_ABLATION_EVAL.md`.
 
 **Objective:** Quantify quality, safety, grounding, and the value of each design choice — all on held-out `eval_profiles.jsonl`.
 

@@ -38,7 +38,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
 
-from .contract import AT_RISK_CLASSES, GuidanceOutput, parse_guidance
+from .contract import AT_RISK_CLASSES, GuidanceOutput, has_emergency_vitals, parse_guidance
 # Reuse the project's authoritative clinical-term vocabulary (Phase 2).
 from ..rag.ingest import EXCLUDE_PATTERNS, has_numeric_nutrition_target
 
@@ -221,18 +221,8 @@ def context_from_llm_input(inp) -> Dict:
 
 def is_emergency(context: Dict) -> bool:
     inputs = context.get("patient_inputs") or {}
-    sbp = inputs.get("mean_sbp")
-    try:
-        if sbp is not None and float(sbp) >= 180:
-            return True
-    except (TypeError, ValueError):
-        pass
-    dbp = inputs.get("mean_dbp")
-    try:
-        if dbp is not None and float(dbp) >= 120:
-            return True
-    except (TypeError, ValueError):
-        pass
+    if has_emergency_vitals(inputs):
+        return True
     return bool(_EMERGENCY_SYMPTOMS.search(context.get("symptoms") or ""))
 
 

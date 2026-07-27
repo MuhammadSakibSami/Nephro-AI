@@ -1,0 +1,931 @@
+arm,profile_id,risk_class,status,n_attempts,prompt_tokens,format_ok,raw_unsafe,final_unsafe,factor_relevance,grounding_has_any,grounding_valid_ratio,readability_grade,readability_ok,personalization,mentions_risk,query,raw_model_text,final_safe_text
+finetuned,P9_M04,moderate,pass,1,1556,True,False,False,1.0,True,1.0,7.61,True,2,True,moderate kidney disease risk. HbA1c 9.2 %. Glucose 178 mg/dL. Doctor told diabetes 1. high blood sugar diabetes. high blood sugar. diabetes blood sugar. high blood pressure. kidney health lifestyle education,"Summary:
+You have a moderate risk for kidney problems. This is not a diagnosis, but it means your kidneys may be under more stress than average. Your blood sugar is higher than ideal - your HbA1c is 9.2% and your fasting glucose is 178 mg/dL - which can harm the tiny filters in your kidneys over time.
+
+Food habits:
+Because your blood sugar is high, it's important to choose foods that don't spike your glucose. Skip sugary drinks, sweets, and refined carbs like white bread or pastries. Focus on whole grains, vegetables, and lean proteins like beans, chicken, or fish. These foods help keep your blood sugar steady. Always check with your doctor or a dietitian before making big changes to your diet.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body balance blood sugar and blood pressure, which can support your kidneys.
+
+Daily routine:
+Check your blood sugar every day, especially before meals and at bedtime. This helps you see how your body is responding. Do light activities like walking for 10 to 15 minutes each day. These small steps can help your blood sugar stay in a healthier range. Avoid heavy lifting or intense exercise without talking to your doctor first.
+
+Follow-up reminder:
+Because your risk is moderate, it's important to talk to your doctor soon. Ask for a urine test to check for protein (which can be a sign of kidney stress) and a blood test to check your kidney function. Also ask about your HbA1c - this will help your doctor see how well your blood sugar is being managed over time. These tests can help catch any changes early.
+
+Grounding used internally: [""CDC_CKD_RISK_general_001"", ""ADA2026_diabetes_001"", ""SYK2015_bp_001"", ""NKFPED_followup_001""]","Summary:
+You have a moderate risk for kidney problems. This is not a diagnosis, but it means your kidneys may be under more stress than average. Your blood sugar is higher than ideal - your HbA1c is 9.2% and your fasting glucose is 178 mg/dL - which can harm the tiny filters in your kidneys over time.
+
+Food habits:
+Because your blood sugar is high, it's important to choose foods that don't spike your glucose. Skip sugary drinks, sweets, and refined carbs like white bread or pastries. Focus on whole grains, vegetables, and lean proteins like beans, chicken, or fish. These foods help keep your blood sugar steady. Always check with your doctor or a dietitian before making big changes to your diet.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body balance blood sugar and blood pressure, which can support your kidneys.
+
+Daily routine:
+Check your blood sugar every day, especially before meals and at bedtime. This helps you see how your body is responding. Do light activities like walking for 10 to 15 minutes each day. These small steps can help your blood sugar stay in a healthier range. Avoid heavy lifting or intense exercise without talking to your doctor first.
+
+Follow-up reminder:
+Because your risk is moderate, it's important to talk to your doctor soon. Ask for a urine test to check for protein (which can be a sign of kidney stress) and a blood test to check your kidney function. Also ask about your HbA1c - this will help your doctor see how well your blood sugar is being managed over time. These tests can help catch any changes early.
+
+Grounding used internally: [""CDC_CKD_RISK_general_001"", ""ADA2026_diabetes_001"", ""SYK2015_bp_001"", ""NKFPED_followup_001""]"
+finetuned,P9_L09,low,pass,1,1543,True,False,False,1.0,True,1.0,8.28,False,2,True,low kidney disease risk. Age 47 years. Waist circumference 96 cm. high blood pressure. uric acid diet. kidney health lifestyle education,"Summary:
+You have a low risk for kidney problems based on this screening. At age 47 and with a waist size of 96 cm, these factors slightly raise risk, but your blood pressure, blood sugar, and other markers are mostly healthy, which helps keep your kidneys in good shape.
+
+Food habits:
+Eat a balanced diet with plenty of fresh fruits, vegetables, and whole grains. Since your waist is a bit larger, try to reduce added sugars and processed foods. Keep meals balanced and avoid too much salt, which can help keep your blood pressure steady. Your blood sugar is slightly higher than normal, so choosing low-sugar foods and eating regular meals can help keep it in check.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body stay balanced, which can support your blood pressure and energy levels.
+
+Daily routine:
+Stay active every day - even a short walk helps. Aim for at least 30 minutes of moderate activity like walking, gardening, or dancing. This helps your heart and blood pressure stay healthy. Drink plenty of water each day - about 3 liters - to help your kidneys filter waste and stay strong. Keep track of your blood pressure and blood sugar at home if you feel comfortable, so you can notice any changes early.
+
+Follow-up reminder:
+Even though your screening shows low risk, it's a good idea to talk to your doctor or a health care provider. They can check your kidney function with a simple blood or urine test. This helps make sure your kidneys stay healthy, especially since you're 47 and have a larger waist. A yearly check-up is a smart step for your overall health.
+
+Grounding used internally: [""SYK2015_nutrition_001"", ""NKFPED_activity_001"", ""SYK2015_bp_001"", ""KDIGO2024_weight_001""]","Summary:
+You have a low risk for kidney problems based on this screening. At age 47 and with a waist size of 96 cm, these factors slightly raise risk, but your blood pressure, blood sugar, and other markers are mostly healthy, which helps keep your kidneys in good shape.
+
+Food habits:
+Eat a balanced diet with plenty of fresh fruits, vegetables, and whole grains. Since your waist is a bit larger, try to reduce added sugars and processed foods. Keep meals balanced and avoid too much salt, which can help keep your blood pressure steady. Your blood sugar is slightly higher than normal, so choosing low-sugar foods and eating regular meals can help keep it in check.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body stay balanced, which can support your blood pressure and energy levels.
+
+Daily routine:
+Stay active every day - even a short walk helps. Aim for at least 30 minutes of moderate activity like walking, gardening, or dancing. This helps your heart and blood pressure stay healthy. Drink plenty of water each day - about 3 liters - to help your kidneys filter waste and stay strong. Keep track of your blood pressure and blood sugar at home if you feel comfortable, so you can notice any changes early.
+
+Follow-up reminder:
+Even though your screening shows low risk, it's a good idea to talk to your doctor or a health care provider. They can check your kidney function with a simple blood or urine test. This helps make sure your kidneys stay healthy, especially since you're 47 and have a larger waist. A yearly check-up is a smart step for your overall health.
+
+Grounding used internally: [""SYK2015_nutrition_001"", ""NKFPED_activity_001"", ""SYK2015_bp_001"", ""KDIGO2024_weight_001""]"
+finetuned,P9_L02,low,pass,1,1479,True,False,False,1.0,True,1.0,6.97,True,2,True,low kidney disease risk. Age 33 years. high blood sugar diabetes. uric acid diet. weight waist. kidney health lifestyle education,"Summary:
+You have a low risk for kidney problems based on this screening. At age 33, your risk is still being watched, but your overall health shows good signs.
+
+Food habits:
+Since your blood sugar is slightly higher than normal, it's a good idea to choose foods with less sugar and fewer refined carbs. Try eating more whole grains, fruits, and vegetables. Choose lean proteins like beans, fish, or chicken instead of processed meats. Avoid sugary drinks and snacks. This helps keep your blood sugar steady and supports your kidney health.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body stay balanced, which can support your blood sugar and blood pressure levels.
+
+Daily routine:
+Stay active every day - even a short walk helps. Aim for at least 30 minutes of light to moderate activity most days. This can help your blood sugar and blood pressure stay in a healthy range. Drink plenty of water throughout the day. Keep track of your blood sugar at home if you're doing so, and talk to your doctor about how often to check it.
+
+Follow-up reminder:
+It's a good idea to talk to your doctor about checking your HbA1c again in the next few months. This will help you see how well your blood sugar is being managed over time, which is important for long-term kidney health.
+
+Grounding used internally: [""SYK2015_nutrition_001"", ""NKFPED_activity_001"", ""CDC_CKD_RISK_general_001""]","Summary:
+You have a low risk for kidney problems based on this screening. At age 33, your risk is still being watched, but your overall health shows good signs.
+
+Food habits:
+Since your blood sugar is slightly higher than normal, it's a good idea to choose foods with less sugar and fewer refined carbs. Try eating more whole grains, fruits, and vegetables. Choose lean proteins like beans, fish, or chicken instead of processed meats. Avoid sugary drinks and snacks. This helps keep your blood sugar steady and supports your kidney health.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body stay balanced, which can support your blood sugar and blood pressure levels.
+
+Daily routine:
+Stay active every day - even a short walk helps. Aim for at least 30 minutes of light to moderate activity most days. This can help your blood sugar and blood pressure stay in a healthy range. Drink plenty of water throughout the day. Keep track of your blood sugar at home if you're doing so, and talk to your doctor about how often to check it.
+
+Follow-up reminder:
+It's a good idea to talk to your doctor about checking your HbA1c again in the next few months. This will help you see how well your blood sugar is being managed over time, which is important for long-term kidney health.
+
+Grounding used internally: [""SYK2015_nutrition_001"", ""NKFPED_activity_001"", ""CDC_CKD_RISK_general_001""]"
+finetuned,P9_H01,high,pass,1,1905,True,False,False,1.0,True,1.0,7.96,True,2,True,high kidney disease risk. Blood urea nitrogen 42 mg/dL. Uric acid 10.1 mg/dL. Age 70 years. kidney function diet protein. uric acid diet. diabetes blood sugar. kidney health lifestyle education,"Summary:
+You have a high risk for kidney problems based on your current health. This means your kidneys may be under more stress than average. Two key factors are your blood urea nitrogen level of 42 mg/dL and uric acid level of 10.1 mg/dL, both of which can affect kidney health.
+
+Food habits:
+Because you have diabetes and your blood sugar is higher than normal (HbA1c 7.4%), it's important to choose foods that help keep your blood sugar steady. Eat more fruits like bananas, berries, and oranges, and vegetables like carrots, bell peppers, and squash. These foods are low in sugar and help balance your blood sugar. Avoid white bread, pastas, and sugary snacks. Try to eat balanced meals with protein, fiber, and healthy carbs. Limit animal proteins like meat, chicken, and fish, as they can raise uric acid and increase the risk of kidney stones.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps keep your blood pressure and blood sugar steady, which is important for your kidneys and overall health.
+
+Daily routine:
+Check your blood sugar every day, especially before meals and at bedtime. This helps you see how your body is responding and can help keep your diabetes under control. Do light activities like walking slowly for 10 to 15 minutes each day. These small movements can help your blood sugar and support your heart and kidneys. Stay hydrated - drink water throughout the day, but don't drink too much before bed.
+
+Follow-up reminder:
+You should talk to your doctor soon to get a urine test to check for protein (which can be a sign of kidney issues) and a blood test to check your kidney function. Ask your doctor about getting your HbA1c checked again to better understand your long-term blood sugar control. Since your risk is high, it's important to confirm this with a clinician and get these tests done. Do not wait - get these tests done as soon as possible.
+
+Grounding used internally: [""SYK2015_nutrition_005"", ""SYK2015_diabetes_001"", ""ADA2026_weight_001"", ""KDIGO2024_followup_003""]","Summary:
+You have a high risk for kidney problems based on your current health. This means your kidneys may be under more stress than average. Two key factors are your blood urea nitrogen level of 42 mg/dL and uric acid level of 10.1 mg/dL, both of which can affect kidney health.
+
+Food habits:
+Because you have diabetes and your blood sugar is higher than normal (HbA1c 7.4%), it's important to choose foods that help keep your blood sugar steady. Eat more fruits like bananas, berries, and oranges, and vegetables like carrots, bell peppers, and squash. These foods are low in sugar and help balance your blood sugar. Avoid white bread, pastas, and sugary snacks. Try to eat balanced meals with protein, fiber, and healthy carbs. Limit animal proteins like meat, chicken, and fish, as they can raise uric acid and increase the risk of kidney stones.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps keep your blood pressure and blood sugar steady, which is important for your kidneys and overall health.
+
+Daily routine:
+Check your blood sugar every day, especially before meals and at bedtime. This helps you see how your body is responding and can help keep your diabetes under control. Do light activities like walking slowly for 10 to 15 minutes each day. These small movements can help your blood sugar and support your heart and kidneys. Stay hydrated - drink water throughout the day, but don't drink too much before bed.
+
+Follow-up reminder:
+You should talk to your doctor soon to get a urine test to check for protein (which can be a sign of kidney issues) and a blood test to check your kidney function. Ask your doctor about getting your HbA1c checked again to better understand your long-term blood sugar control. Since your risk is high, it's important to confirm this with a clinician and get these tests done. Do not wait - get these tests done as soon as possible.
+
+Grounding used internally: [""SYK2015_nutrition_005"", ""SYK2015_diabetes_001"", ""ADA2026_weight_001"", ""KDIGO2024_followup_003""]"
+finetuned,P9_M07,moderate,pass,1,1577,True,False,False,1.0,True,1.0,8.27,False,2,True,moderate kidney disease risk. Glucose 200 mg/dL. Mean diastolic BP 100 mmHg. Doctor told diabetes 1. high blood sugar. high blood pressure. diabetes blood sugar. weight waist. kidney health lifestyle education,"Summary:
+You have a moderate risk for kidney problems based on your current health. This means your kidneys may be under more stress than average, especially because your blood sugar is high (200 mg/dL) and your blood pressure is elevated (diastolic 100 mmHg). This does not mean you have kidney disease, but it's important to take steps to protect your kidneys.
+
+Food habits:
+Because your blood sugar is high, it's best to choose foods with little sugar and no refined carbs. Skip sugary drinks, white bread, pastries, and processed snacks. Instead, eat whole grains like brown rice or oats, fresh fruits in small amounts, and vegetables. Choose lean proteins like beans, chicken, or fish. These choices help keep your blood sugar steady and reduce stress on your kidneys.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body balance blood sugar and blood pressure, which supports your kidney health.
+
+Daily routine:
+Check your blood sugar every day, especially before meals and at bedtime. This helps you see how your body is responding and can help keep it in a healthier range. Do light activities like walking for 10 to 15 minutes each day. This helps your blood sugar and blood pressure stay steady. Avoid heavy lifting or intense exercise unless your doctor says it's safe.
+
+Follow-up reminder:
+Because your risk is moderate, it's important to talk to your doctor soon. Ask for a urine test to check for protein (which can be a sign of kidney stress) and a blood test to check your kidney function. Also ask about your HbA1c level - this shows your average blood sugar over the past few months. These tests can help your doctor see how well your kidney health is doing and what changes might help.
+
+Grounding used internally: [""ADA2026_diabetes_001"", ""SYK2015_nutrition_001"", ""SYK2015_bp_001"", ""NKFPED_followup_001""]","Summary:
+You have a moderate risk for kidney problems based on your current health. This means your kidneys may be under more stress than average, especially because your blood sugar is high (200 mg/dL) and your blood pressure is elevated (diastolic 100 mmHg). This does not mean you have kidney disease, but it's important to take steps to protect your kidneys.
+
+Food habits:
+Because your blood sugar is high, it's best to choose foods with little sugar and no refined carbs. Skip sugary drinks, white bread, pastries, and processed snacks. Instead, eat whole grains like brown rice or oats, fresh fruits in small amounts, and vegetables. Choose lean proteins like beans, chicken, or fish. These choices help keep your blood sugar steady and reduce stress on your kidneys.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body balance blood sugar and blood pressure, which supports your kidney health.
+
+Daily routine:
+Check your blood sugar every day, especially before meals and at bedtime. This helps you see how your body is responding and can help keep it in a healthier range. Do light activities like walking for 10 to 15 minutes each day. This helps your blood sugar and blood pressure stay steady. Avoid heavy lifting or intense exercise unless your doctor says it's safe.
+
+Follow-up reminder:
+Because your risk is moderate, it's important to talk to your doctor soon. Ask for a urine test to check for protein (which can be a sign of kidney stress) and a blood test to check your kidney function. Also ask about your HbA1c level - this shows your average blood sugar over the past few months. These tests can help your doctor see how well your kidney health is doing and what changes might help.
+
+Grounding used internally: [""ADA2026_diabetes_001"", ""SYK2015_nutrition_001"", ""SYK2015_bp_001"", ""NKFPED_followup_001""]"
+finetuned,P9_M02,moderate,pass,1,1575,True,False,False,1.0,True,1.0,8.0,True,2,True,moderate kidney disease risk. Mean systolic BP 154 mmHg. Doctor told hypertension 1. Age 71 years. high blood pressure. high blood pressure hypertension. kidney health lifestyle education,"Summary:
+You have a moderate risk for kidney problems based on your current health. This means your kidneys may be under more stress than average, especially because your blood pressure is high (154 mmHg) and your doctor has told you you have hypertension.
+
+Food habits:
+Since you have high blood pressure, it's a good idea to reduce the amount of salt in your food. Too much salt can make blood pressure go up, which puts more strain on your kidneys. Try to avoid processed foods, canned soups, and salty snacks. Use herbs and spices instead of salt to flavor meals.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps keep your blood pressure steady and supports your overall health.
+
+Daily routine:
+Check your blood pressure every day and write down the numbers. This helps your doctor see how it changes. If you can, do light activities like walking slowly or stretching for 10 to 15 minutes each day. These help your heart and blood vessels work better. Avoid heavy lifting or intense exercise unless your doctor says it's safe.
+
+Follow-up reminder:
+Because your risk is moderate, it's important to talk to your doctor soon. Ask for a urine test to check for protein (which can be a sign of kidney issues) and a blood test to check how well your kidneys are working. Also, ask your doctor to review your blood pressure and make sure it's being managed well.
+
+Grounding used internally: [""CDC_CKD_RISK_general_001"", ""SYK2015_nutrition_001"", ""KDIGO2024_bp_005"", ""NKFPED_followup_001""]","Summary:
+You have a moderate risk for kidney problems based on your current health. This means your kidneys may be under more stress than average, especially because your blood pressure is high (154 mmHg) and your doctor has told you you have hypertension.
+
+Food habits:
+Since you have high blood pressure, it's a good idea to reduce the amount of salt in your food. Too much salt can make blood pressure go up, which puts more strain on your kidneys. Try to avoid processed foods, canned soups, and salty snacks. Use herbs and spices instead of salt to flavor meals.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps keep your blood pressure steady and supports your overall health.
+
+Daily routine:
+Check your blood pressure every day and write down the numbers. This helps your doctor see how it changes. If you can, do light activities like walking slowly or stretching for 10 to 15 minutes each day. These help your heart and blood vessels work better. Avoid heavy lifting or intense exercise unless your doctor says it's safe.
+
+Follow-up reminder:
+Because your risk is moderate, it's important to talk to your doctor soon. Ask for a urine test to check for protein (which can be a sign of kidney issues) and a blood test to check how well your kidneys are working. Also, ask your doctor to review your blood pressure and make sure it's being managed well.
+
+Grounding used internally: [""CDC_CKD_RISK_general_001"", ""SYK2015_nutrition_001"", ""KDIGO2024_bp_005"", ""NKFPED_followup_001""]"
+finetuned,P9_H07,high,pass,1,1569,True,False,False,1.0,True,1.0,7.93,True,2,True,high kidney disease risk. Blood urea nitrogen 35 mg/dL. HbA1c 9.8 %. Doctor told diabetes 1. kidney function diet protein. high blood sugar diabetes. diabetes blood sugar. high blood pressure hypertension. kidney health lifestyle education,"Summary:
+You have a high risk for kidney problems based on your current health. This means your kidneys may be under more stress than average. Two key reasons are your blood sugar level (HbA1c of 9.8%) and your blood urea nitrogen (BUN) of 35 mg/dL, both of which can harm the kidneys over time.
+
+Food habits:
+Because your blood sugar is high, try to eat fewer sugary and refined foods like white bread, pastries, and sugary drinks. Choose whole grains, fruits, vegetables, and lean proteins instead. Since you have high blood pressure, reduce salt in your meals - avoid processed foods, canned soups, and salty snacks. These changes can help lower your blood sugar and blood pressure, which protects your kidneys.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps keep your blood pressure and blood sugar more stable, which is important for your kidney health.
+
+Daily routine:
+Check your blood pressure every day and write down the numbers. Your blood pressure is already high (142/78 mmHg), so tracking it helps you and your doctor see how it changes. Also, check your blood sugar regularly, especially when you eat or feel tired. Keep a log so you can share it with your doctor.
+
+Follow-up reminder:
+You should talk to your doctor soon to get a urine test to check for protein (which can be a sign of kidney damage) and a blood test to check how well your kidneys are working. Ask your doctor about your HbA1c level and whether it needs to be checked again. Also, ask for a review of your blood pressure plan - since it's high, your doctor may want to adjust your care.
+
+Grounding used internally: [""SYK2015_diabetes_003"", ""SYK2015_nutrition_001"", ""SYK2015_bp_001"", ""NKFPED_followup_001""]","Summary:
+You have a high risk for kidney problems based on your current health. This means your kidneys may be under more stress than average. Two key reasons are your blood sugar level (HbA1c of 9.8%) and your blood urea nitrogen (BUN) of 35 mg/dL, both of which can harm the kidneys over time.
+
+Food habits:
+Because your blood sugar is high, try to eat fewer sugary and refined foods like white bread, pastries, and sugary drinks. Choose whole grains, fruits, vegetables, and lean proteins instead. Since you have high blood pressure, reduce salt in your meals - avoid processed foods, canned soups, and salty snacks. These changes can help lower your blood sugar and blood pressure, which protects your kidneys.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps keep your blood pressure and blood sugar more stable, which is important for your kidney health.
+
+Daily routine:
+Check your blood pressure every day and write down the numbers. Your blood pressure is already high (142/78 mmHg), so tracking it helps you and your doctor see how it changes. Also, check your blood sugar regularly, especially when you eat or feel tired. Keep a log so you can share it with your doctor.
+
+Follow-up reminder:
+You should talk to your doctor soon to get a urine test to check for protein (which can be a sign of kidney damage) and a blood test to check how well your kidneys are working. Ask your doctor about your HbA1c level and whether it needs to be checked again. Also, ask for a review of your blood pressure plan - since it's high, your doctor may want to adjust your care.
+
+Grounding used internally: [""SYK2015_diabetes_003"", ""SYK2015_nutrition_001"", ""SYK2015_bp_001"", ""NKFPED_followup_001""]"
+finetuned,P9_M06,moderate,pass,1,1709,True,False,False,1.0,True,1.0,8.72,False,2,True,moderate kidney disease risk. HbA1c 10.2 %. Doctor told diabetes 1. Serum albumin 4.6 g/dL. high blood sugar diabetes. anemia nutrition. diabetes blood sugar. kidney health lifestyle education,"Summary:
+You have a moderate risk for kidney problems based on your current health. This means your kidneys may be under more stress than average, especially because your blood sugar has been high (HbA1c of 10.2%) and you have been told you have diabetes by your doctor.
+
+Food habits:
+Because your blood sugar is high, try to eat meals with fewer sugars and less refined carbs like white bread, pastries, or sugary drinks. Choose whole grains, vegetables, and lean proteins like chicken, fish, or beans. Avoid foods with added sugars or sweeteners. Since you have diabetes, it's important to keep your blood sugar steady - eat balanced meals and avoid large spikes.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body manage blood sugar and keeps your blood pressure steady, which is helpful for your kidneys.
+
+Daily routine:
+Check your blood sugar every day, especially before meals and at bedtime. This helps you see how your body is responding and lets you make small changes if needed. Stay active with light daily movement like walking - just 10 to 15 minutes a day can help your blood sugar and energy levels.
+
+Follow-up reminder:
+It's important to talk to your doctor soon. Ask for a urine test to check for protein (which can signal kidney stress) and a blood test to check your kidney function. Also ask about your HbA1c level - this will help your doctor see how well your blood sugar is being controlled over time. A moderate risk means you should follow up with a clinician to confirm and get a clear plan.
+
+Grounding used internally: [""SYK2015_diabetes_002"", ""KDIGO2024_nutrition_013"", ""NKFPED_followup_001""]","Summary:
+You have a moderate risk for kidney problems based on your current health. This means your kidneys may be under more stress than average, especially because your blood sugar has been high (HbA1c of 10.2%) and you have been told you have diabetes by your doctor.
+
+Food habits:
+Because your blood sugar is high, try to eat meals with fewer sugars and less refined carbs like white bread, pastries, or sugary drinks. Choose whole grains, vegetables, and lean proteins like chicken, fish, or beans. Avoid foods with added sugars or sweeteners. Since you have diabetes, it's important to keep your blood sugar steady - eat balanced meals and avoid large spikes.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body manage blood sugar and keeps your blood pressure steady, which is helpful for your kidneys.
+
+Daily routine:
+Check your blood sugar every day, especially before meals and at bedtime. This helps you see how your body is responding and lets you make small changes if needed. Stay active with light daily movement like walking - just 10 to 15 minutes a day can help your blood sugar and energy levels.
+
+Follow-up reminder:
+It's important to talk to your doctor soon. Ask for a urine test to check for protein (which can signal kidney stress) and a blood test to check your kidney function. Also ask about your HbA1c level - this will help your doctor see how well your blood sugar is being controlled over time. A moderate risk means you should follow up with a clinician to confirm and get a clear plan.
+
+Grounding used internally: [""SYK2015_diabetes_002"", ""KDIGO2024_nutrition_013"", ""NKFPED_followup_001""]"
+finetuned,P9_H05,high,pass,1,1574,True,False,False,1.0,True,1.0,7.75,True,2,True,high kidney disease risk. Blood urea nitrogen 45 mg/dL. HbA1c 8.9 %. Uric acid 7.4 mg/dL. kidney function diet protein. high blood sugar diabetes. uric acid diet. high blood sugar. kidney health lifestyle education,"Summary:
+You have a high risk for kidney problems. This is because your blood sugar is high (HbA1c 8.9%) and your blood urea nitrogen is 45 mg/dL, which can signal that your kidneys are not working as well as they should.
+
+Food habits:
+Because your blood sugar is high, it's important to eat foods that don't spike your blood sugar. Choose whole grains like brown rice or oats instead of white bread or pastas. Eat more fruits like bananas, berries, and oranges, and more vegetables like carrots and bell peppers. Avoid sugary drinks and refined snacks. Since your uric acid is high, try to limit animal proteins like meat, chicken, and fish. These can raise uric acid and increase the risk of kidney stones. A balanced, low-sugar diet helps protect your kidneys.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps keep your blood sugar and blood pressure steady, which is important for your kidneys.
+
+Daily routine:
+Check your blood sugar every day, especially before meals and at bedtime. This helps you see how your body is responding and lets you make small changes if needed. Also, stay well hydrated - drink water throughout the day. Clear, water-like urine means your body is flushing out waste properly.
+
+Follow-up reminder:
+Because your risk is high, you should talk to your doctor soon. Ask for a urine test to check for protein (which can be a sign of kidney damage) and a blood test to check your kidney function. Also ask about your HbA1c level - checking it regularly helps manage your diabetes and protects your kidneys. This is not a diagnosis, but it's a good step to take to keep your kidneys healthy.
+
+Grounding used internally: [""CDC_CKD_RISK_general_001"", ""SYK2015_nutrition_005"", ""SYK2015_diabetes_003""]","Summary:
+You have a high risk for kidney problems. This is because your blood sugar is high (HbA1c 8.9%) and your blood urea nitrogen is 45 mg/dL, which can signal that your kidneys are not working as well as they should.
+
+Food habits:
+Because your blood sugar is high, it's important to eat foods that don't spike your blood sugar. Choose whole grains like brown rice or oats instead of white bread or pastas. Eat more fruits like bananas, berries, and oranges, and more vegetables like carrots and bell peppers. Avoid sugary drinks and refined snacks. Since your uric acid is high, try to limit animal proteins like meat, chicken, and fish. These can raise uric acid and increase the risk of kidney stones. A balanced, low-sugar diet helps protect your kidneys.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps keep your blood sugar and blood pressure steady, which is important for your kidneys.
+
+Daily routine:
+Check your blood sugar every day, especially before meals and at bedtime. This helps you see how your body is responding and lets you make small changes if needed. Also, stay well hydrated - drink water throughout the day. Clear, water-like urine means your body is flushing out waste properly.
+
+Follow-up reminder:
+Because your risk is high, you should talk to your doctor soon. Ask for a urine test to check for protein (which can be a sign of kidney damage) and a blood test to check your kidney function. Also ask about your HbA1c level - checking it regularly helps manage your diabetes and protects your kidneys. This is not a diagnosis, but it's a good step to take to keep your kidneys healthy.
+
+Grounding used internally: [""CDC_CKD_RISK_general_001"", ""SYK2015_nutrition_005"", ""SYK2015_diabetes_003""]"
+finetuned,P9_H03,high,pass,1,1563,True,False,False,1.0,True,1.0,8.43,False,2,True,high kidney disease risk. Blood urea nitrogen 32 mg/dL. Taking BP medicine 1. HbA1c 9.6 %. kidney function diet protein. blood pressure. high blood sugar diabetes. diabetes blood sugar. kidney health lifestyle education,"Summary:
+You have a high risk for kidney problems based on your screening. This means your kidneys may be under stress, especially because your blood urea nitrogen is 32 mg/dL and you are taking blood pressure medicine.
+
+Food habits:
+Because your blood sugar is high (HbA1c 9.6%) and you have diabetes, try to eat fewer sweets and refined carbs like white bread, pastries, and sugary drinks. Choose whole grains, fruits, vegetables, and lean proteins instead. Since you have high blood pressure, reduce salt in your food - avoid processed foods, canned soups, and salty snacks. These changes can help lower your blood sugar and blood pressure, which protects your kidneys.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps keep your blood pressure and blood sugar steady, which is important for your kidneys.
+
+Daily routine:
+Check your blood pressure every day and write down the numbers. Keep track of your blood sugar too, especially when you eat or feel tired. Do light activities like walking for 10 to 15 minutes each day. These small steps can help your blood pressure and blood sugar stay in a healthier range.
+
+Follow-up reminder:
+You should talk to your doctor soon to get a urine test to check for protein and a blood test to check your kidney function. Ask your doctor about your HbA1c level and whether your blood pressure medicine needs to be reviewed. These tests are important because your risk is high, and early detection can help protect your kidneys.
+
+Grounding used internally: [""SYK2015_diabetes_004"", ""SYK2015_nutrition_001"", ""SYK2015_bp_001"", ""NKFPED_followup_001""]","Summary:
+You have a high risk for kidney problems based on your screening. This means your kidneys may be under stress, especially because your blood urea nitrogen is 32 mg/dL and you are taking blood pressure medicine.
+
+Food habits:
+Because your blood sugar is high (HbA1c 9.6%) and you have diabetes, try to eat fewer sweets and refined carbs like white bread, pastries, and sugary drinks. Choose whole grains, fruits, vegetables, and lean proteins instead. Since you have high blood pressure, reduce salt in your food - avoid processed foods, canned soups, and salty snacks. These changes can help lower your blood sugar and blood pressure, which protects your kidneys.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps keep your blood pressure and blood sugar steady, which is important for your kidneys.
+
+Daily routine:
+Check your blood pressure every day and write down the numbers. Keep track of your blood sugar too, especially when you eat or feel tired. Do light activities like walking for 10 to 15 minutes each day. These small steps can help your blood pressure and blood sugar stay in a healthier range.
+
+Follow-up reminder:
+You should talk to your doctor soon to get a urine test to check for protein and a blood test to check your kidney function. Ask your doctor about your HbA1c level and whether your blood pressure medicine needs to be reviewed. These tests are important because your risk is high, and early detection can help protect your kidneys.
+
+Grounding used internally: [""SYK2015_diabetes_004"", ""SYK2015_nutrition_001"", ""SYK2015_bp_001"", ""NKFPED_followup_001""]"
+finetuned,P9_H02,high,pass,1,1862,True,False,False,1.0,True,1.0,7.59,True,2,True,high kidney disease risk. Blood urea nitrogen 30 mg/dL. Hemoglobin 11.3 g/dL. Glucose 216 mg/dL. kidney function diet protein. anemia nutrition. high blood sugar. kidney health lifestyle education,"Summary:
+You have a high risk for kidney problems based on your current health. This means your kidneys may be under stress, and it's important to take steps to protect them. Your blood urea nitrogen is 30 mg/dL, which is higher than normal, and your hemoglobin is 11.3 g/dL, which is a sign of possible anemia. These numbers help explain why your risk is high.
+
+Food habits:
+Because your blood sugar is high (216 mg/dL), it's important to eat foods that don't spike your blood sugar. Choose whole grains like brown rice or oats instead of white bread or pastries. Pick fruits like apples or berries in small amounts, and avoid sugary drinks or snacks. Limit processed foods and refined carbs. These choices can help keep your blood sugar more stable and reduce stress on your kidneys.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body balance blood sugar and blood pressure, which is important for your kidneys. If you feel tired, rest more - but don't stay in bed too long if you're not sleepy.
+
+Daily routine:
+Check your blood sugar every day, especially before meals and at bedtime. This helps you see how your body is reacting to food and activity. Keep a simple record of your readings so you can share them with your doctor. Also, stay active - even a short walk each day can help your blood sugar and overall health.
+
+Follow-up reminder:
+You should talk to your doctor soon to get a urine test to check for protein (called UACR) and a blood test to check your kidney function. Ask about getting your HbA1c tested - this shows how well your blood sugar has been controlled over time. A high risk level like this means it's important to confirm the results with a clinician and get proper testing to guide your care.
+
+Grounding used internally: [""SYK2015_diabetes_002"", ""KDIGO2024_followup_003"", ""KDIGO2024_nutrition_007"", ""ADA2026_bp_001""]","Summary:
+You have a high risk for kidney problems based on your current health. This means your kidneys may be under stress, and it's important to take steps to protect them. Your blood urea nitrogen is 30 mg/dL, which is higher than normal, and your hemoglobin is 11.3 g/dL, which is a sign of possible anemia. These numbers help explain why your risk is high.
+
+Food habits:
+Because your blood sugar is high (216 mg/dL), it's important to eat foods that don't spike your blood sugar. Choose whole grains like brown rice or oats instead of white bread or pastries. Pick fruits like apples or berries in small amounts, and avoid sugary drinks or snacks. Limit processed foods and refined carbs. These choices can help keep your blood sugar more stable and reduce stress on your kidneys.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body balance blood sugar and blood pressure, which is important for your kidneys. If you feel tired, rest more - but don't stay in bed too long if you're not sleepy.
+
+Daily routine:
+Check your blood sugar every day, especially before meals and at bedtime. This helps you see how your body is reacting to food and activity. Keep a simple record of your readings so you can share them with your doctor. Also, stay active - even a short walk each day can help your blood sugar and overall health.
+
+Follow-up reminder:
+You should talk to your doctor soon to get a urine test to check for protein (called UACR) and a blood test to check your kidney function. Ask about getting your HbA1c tested - this shows how well your blood sugar has been controlled over time. A high risk level like this means it's important to confirm the results with a clinician and get proper testing to guide your care.
+
+Grounding used internally: [""SYK2015_diabetes_002"", ""KDIGO2024_followup_003"", ""KDIGO2024_nutrition_007"", ""ADA2026_bp_001""]"
+finetuned,P9_L03,low,pass,1,1850,True,False,False,1.0,True,1.0,9.07,False,2,True,low kidney disease risk. Age 45 years. Waist circumference 99 cm. Serum albumin 2.9 g/dL. high blood pressure. kidney function diet protein. weight waist. kidney health lifestyle education,"Summary:
+You have a low risk for kidney problems right now. At age 45 and with a waist size of 99 cm, these factors are being watched closely, but your overall screening shows a good sign. This means your kidneys are likely working well, and you can keep taking care of your health with simple, everyday habits.
+
+Food habits:
+Since your waist is a bit large and your blood sugar is slightly higher than normal (100 mg/dL), it's a good idea to choose foods that help keep your blood sugar steady and support a healthy weight. Focus on eating balanced meals with whole grains, vegetables, and lean proteins like chicken or beans. Limit added sugars and processed foods. If you're ever unsure about what to eat, talk to a doctor or a registered dietitian - they can help you make choices that fit your life.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body stay balanced, which can support your blood pressure and energy levels - both of which are important for kidney health.
+
+Daily routine:
+Move your body every day - even a short walk of 10 to 15 minutes can help. Try to walk after meals or during breaks. Drink plenty of water throughout the day, but don't drink too much right before bed. Keep track of your blood pressure and blood sugar at home if you're able, so you can notice any changes early.
+
+Follow-up reminder:
+Even though your screening shows low risk, it's still a good idea to check in with your doctor every year. They can review your blood pressure, blood sugar, and kidney function tests to make sure everything stays on track. This is especially helpful at age 45, when early checks can catch small changes before they become bigger issues.
+
+Grounding used internally: [""KDOQI2020NUTR_nutrition_004"", ""SYK2015_diabetes_001"", ""KDIGO2024_bp_005"", ""ADA2026_weight_001""]","Summary:
+You have a low risk for kidney problems right now. At age 45 and with a waist size of 99 cm, these factors are being watched closely, but your overall screening shows a good sign. This means your kidneys are likely working well, and you can keep taking care of your health with simple, everyday habits.
+
+Food habits:
+Since your waist is a bit large and your blood sugar is slightly higher than normal (100 mg/dL), it's a good idea to choose foods that help keep your blood sugar steady and support a healthy weight. Focus on eating balanced meals with whole grains, vegetables, and lean proteins like chicken or beans. Limit added sugars and processed foods. If you're ever unsure about what to eat, talk to a doctor or a registered dietitian - they can help you make choices that fit your life.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body stay balanced, which can support your blood pressure and energy levels - both of which are important for kidney health.
+
+Daily routine:
+Move your body every day - even a short walk of 10 to 15 minutes can help. Try to walk after meals or during breaks. Drink plenty of water throughout the day, but don't drink too much right before bed. Keep track of your blood pressure and blood sugar at home if you're able, so you can notice any changes early.
+
+Follow-up reminder:
+Even though your screening shows low risk, it's still a good idea to check in with your doctor every year. They can review your blood pressure, blood sugar, and kidney function tests to make sure everything stays on track. This is especially helpful at age 45, when early checks can catch small changes before they become bigger issues.
+
+Grounding used internally: [""KDOQI2020NUTR_nutrition_004"", ""SYK2015_diabetes_001"", ""KDIGO2024_bp_005"", ""ADA2026_weight_001""]"
+finetuned,P9_H09,high,pass,1,1618,True,False,False,1.0,True,1.0,6.42,True,2,True,high kidney disease risk. Blood urea nitrogen 36 mg/dL. Mean systolic BP 204 mmHg. Doctor told hypertension 1. kidney function diet protein. high blood pressure. high blood pressure hypertension. anemia nutrition. kidney health lifestyle education,"Summary:
+You have a high risk for kidney problems based on your screening. This means your kidneys may be under stress. Two key reasons are your blood urea nitrogen of 36 mg/dL and your high blood pressure (systolic 204 mmHg). This is not a diagnosis, but it shows you should take extra care.
+
+Food habits:
+Because you have high blood pressure, try to reduce how much salt you eat. Avoid processed foods, canned soups, and salty snacks. Choose fresh fruits, vegetables, and whole grains instead. This can help lower your blood pressure and protect your kidneys.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps keep your blood pressure steady and supports your overall health.
+
+Daily routine:
+Check your blood pressure every day and write down the numbers. Keep track of them so you can share them with your doctor. This helps them see how your blood pressure is changing. Also, stay active with light daily movement like walking, if you can.
+
+Follow-up reminder:
+You should see a doctor soon to check your kidney health. Ask for a urine test to check for protein and a blood test to check kidney function. Your blood pressure is very high (204 mmHg), so you need urgent medical care. Do not wait - go to a doctor or emergency room right away.
+
+Grounding used internally: [""CDC_CKD_RISK_general_001"", ""SYK2015_nutrition_001"", ""SYK2015_bp_001"", ""NKFPED_followup_001""]","Summary:
+You have a high risk for kidney problems based on your screening. This means your kidneys may be under stress. Two key reasons are your blood urea nitrogen of 36 mg/dL and your high blood pressure (systolic 204 mmHg). This is not a diagnosis, but it shows you should take extra care.
+
+Food habits:
+Because you have high blood pressure, try to reduce how much salt you eat. Avoid processed foods, canned soups, and salty snacks. Choose fresh fruits, vegetables, and whole grains instead. This can help lower your blood pressure and protect your kidneys.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps keep your blood pressure steady and supports your overall health.
+
+Daily routine:
+Check your blood pressure every day and write down the numbers. Keep track of them so you can share them with your doctor. This helps them see how your blood pressure is changing. Also, stay active with light daily movement like walking, if you can.
+
+Follow-up reminder:
+You should see a doctor soon to check your kidney health. Ask for a urine test to check for protein and a blood test to check kidney function. Your blood pressure is very high (204 mmHg), so you need urgent medical care. Do not wait - go to a doctor or emergency room right away.
+
+Grounding used internally: [""CDC_CKD_RISK_general_001"", ""SYK2015_nutrition_001"", ""SYK2015_bp_001"", ""NKFPED_followup_001""]"
+finetuned,P9_L08,low,pass,1,1662,True,False,False,1.0,True,1.0,8.23,False,2,True,low kidney disease risk. Age 37 years. Hemoglobin 14.5 g/dL. high blood pressure. anemia nutrition. kidney health lifestyle education,"Summary:
+You have a low risk for kidney problems based on this screening. At age 37, your body is still in a healthy stage, and your hemoglobin level of 14.5 g/dL is normal, which means your red blood cells are working well to carry oxygen. This helps support your overall health.
+
+Food habits:
+Since your blood pressure is a concern (diastolic at 100 mmHg), it's a good idea to keep your salt intake in check. Try to limit processed and packaged foods, which often have hidden salt. Choose fresh fruits, vegetables, whole grains, and lean proteins like chicken or beans. These foods support healthy blood pressure and energy levels. Your blood sugar is slightly higher than normal (fasting glucose 100 mg/dL), so eating balanced meals with steady carbs can help keep it stable.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body stay balanced, which can support your blood pressure and energy levels.
+
+Daily routine:
+Stay active every day - even a short walk of 10 to 15 minutes can help your heart and blood vessels work better. Drink plenty of water throughout the day to stay hydrated. Keep track of your blood pressure and blood sugar at home if you're doing so, so you can notice any changes early. This helps you stay on top of your health.
+
+Follow-up reminder:
+Even though your screening shows low risk, it's a good idea to talk to your doctor or a health provider. They can check your kidney function with a simple blood or urine test if you'd like. This helps make sure everything is working well, especially since you're at age 37 and have a slightly higher hemoglobin level that could be worth checking over time.
+
+Grounding used internally: [""CDC_CKD_RISK_general_001"", ""KDIGO2024_nutrition_004"", ""KDIGO2024_bp_005""]","Summary:
+You have a low risk for kidney problems based on this screening. At age 37, your body is still in a healthy stage, and your hemoglobin level of 14.5 g/dL is normal, which means your red blood cells are working well to carry oxygen. This helps support your overall health.
+
+Food habits:
+Since your blood pressure is a concern (diastolic at 100 mmHg), it's a good idea to keep your salt intake in check. Try to limit processed and packaged foods, which often have hidden salt. Choose fresh fruits, vegetables, whole grains, and lean proteins like chicken or beans. These foods support healthy blood pressure and energy levels. Your blood sugar is slightly higher than normal (fasting glucose 100 mg/dL), so eating balanced meals with steady carbs can help keep it stable.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body stay balanced, which can support your blood pressure and energy levels.
+
+Daily routine:
+Stay active every day - even a short walk of 10 to 15 minutes can help your heart and blood vessels work better. Drink plenty of water throughout the day to stay hydrated. Keep track of your blood pressure and blood sugar at home if you're doing so, so you can notice any changes early. This helps you stay on top of your health.
+
+Follow-up reminder:
+Even though your screening shows low risk, it's a good idea to talk to your doctor or a health provider. They can check your kidney function with a simple blood or urine test if you'd like. This helps make sure everything is working well, especially since you're at age 37 and have a slightly higher hemoglobin level that could be worth checking over time.
+
+Grounding used internally: [""CDC_CKD_RISK_general_001"", ""KDIGO2024_nutrition_004"", ""KDIGO2024_bp_005""]"
+finetuned,P9_M03,moderate,pass,1,1691,True,False,False,1.0,True,1.0,7.75,True,2,True,moderate kidney disease risk. Blood urea nitrogen 10 mg/dL. Mean systolic BP 184 mmHg. Doctor told hypertension 1. kidney function diet protein. high blood pressure. high blood pressure hypertension. kidney health lifestyle education,"Summary:
+You have a moderate risk for kidney problems based on your current health. This means your kidneys may be under some stress, especially because your blood pressure is very high (184 mmHg) and your blood urea nitrogen is slightly elevated at 10 mg/dL. This is not a diagnosis, but it shows you should take steps to protect your kidneys.
+
+Food habits:
+Because your blood pressure is very high, it's a good idea to reduce the amount of salt in your food. Try to avoid processed foods, canned soups, and salty snacks. Use herbs and spices instead of salt to flavor meals. This can help lower your blood pressure over time and reduce stress on your kidneys.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps keep your blood pressure steady and supports your overall health, especially when you're managing high blood pressure.
+
+Daily routine:
+Check your blood pressure every day and write down the numbers. This helps your doctor see how your blood pressure is changing. If it stays high, you should see a doctor right away. You can do light activities like walking slowly or stretching for 10-15 minutes each day. These help your heart and blood pressure stay healthy. Avoid heavy lifting or intense exercise until your doctor says it's safe.
+
+Follow-up reminder:
+You should see your doctor soon to check your blood pressure and ask about a urine test to check for protein (which can signal kidney issues). Also, ask for a blood test to check your kidney function. Your blood pressure of 184 mmHg is very high and needs medical attention. Do not wait - go to a doctor or urgent care right away to get help. This is not something to manage on your own.
+
+Grounding used internally: [""SYK2015_nutrition_001"", ""SYK2015_diabetes_001"", ""NKFPED_followup_001""]","Summary:
+You have a moderate risk for kidney problems based on your current health. This means your kidneys may be under some stress, especially because your blood pressure is very high (184 mmHg) and your blood urea nitrogen is slightly elevated at 10 mg/dL. This is not a diagnosis, but it shows you should take steps to protect your kidneys.
+
+Food habits:
+Because your blood pressure is very high, it's a good idea to reduce the amount of salt in your food. Try to avoid processed foods, canned soups, and salty snacks. Use herbs and spices instead of salt to flavor meals. This can help lower your blood pressure over time and reduce stress on your kidneys.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps keep your blood pressure steady and supports your overall health, especially when you're managing high blood pressure.
+
+Daily routine:
+Check your blood pressure every day and write down the numbers. This helps your doctor see how your blood pressure is changing. If it stays high, you should see a doctor right away. You can do light activities like walking slowly or stretching for 10-15 minutes each day. These help your heart and blood pressure stay healthy. Avoid heavy lifting or intense exercise until your doctor says it's safe.
+
+Follow-up reminder:
+You should see your doctor soon to check your blood pressure and ask about a urine test to check for protein (which can signal kidney issues). Also, ask for a blood test to check your kidney function. Your blood pressure of 184 mmHg is very high and needs medical attention. Do not wait - go to a doctor or urgent care right away to get help. This is not something to manage on your own.
+
+Grounding used internally: [""SYK2015_nutrition_001"", ""SYK2015_diabetes_001"", ""NKFPED_followup_001""]"
+finetuned,P9_L07,low,pass,1,1512,True,False,False,1.0,True,1.0,8.74,False,2,True,low kidney disease risk. Age 50 years. Mean diastolic BP 68 mmHg. high blood pressure. kidney function diet protein. kidney health lifestyle education,"Summary:
+You have a low risk for kidney problems based on this screening. At age 50, which is a time to be mindful of health, your blood pressure is in a good range - especially your diastolic pressure of 68 mmHg - which helps keep your kidneys working well.
+
+Food habits:
+Eat a balanced diet with plenty of fresh fruits and vegetables. Since you're 50 and have a healthy blood sugar level (HbA1c 5.6%), you can enjoy a variety of whole grains, lean proteins, and healthy fats. Try to limit added sugars and refined foods. Your waist is a bit larger at 98 cm, so choosing balanced meals and avoiding excess salt can help keep your blood pressure steady and support your overall health.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body stay balanced, which can support your blood pressure and energy levels - both of which are important for kidney health.
+
+Daily routine:
+Move your body every day - even a short walk of 10 to 15 minutes can help. Aim for at least 30 minutes of moderate activity like walking, gardening, or dancing each week. Drink plenty of water throughout the day to stay hydrated. Keep track of your blood pressure and blood sugar at home if you're doing so, so you can stay aware of how your body feels.
+
+Follow-up reminder:
+Even though your screening shows low risk, it's a good idea to talk to your doctor or a health professional every year. They can check your blood pressure, urine, and kidney function with simple tests. This helps keep an eye on your health, especially since you're 50 and have some factors that can affect kidney health over time.
+
+Grounding used internally: [""NKFPED_activity_001"", ""SYK2015_diabetes_001"", ""SYK2015_nutrition_001""]","Summary:
+You have a low risk for kidney problems based on this screening. At age 50, which is a time to be mindful of health, your blood pressure is in a good range - especially your diastolic pressure of 68 mmHg - which helps keep your kidneys working well.
+
+Food habits:
+Eat a balanced diet with plenty of fresh fruits and vegetables. Since you're 50 and have a healthy blood sugar level (HbA1c 5.6%), you can enjoy a variety of whole grains, lean proteins, and healthy fats. Try to limit added sugars and refined foods. Your waist is a bit larger at 98 cm, so choosing balanced meals and avoiding excess salt can help keep your blood pressure steady and support your overall health.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body stay balanced, which can support your blood pressure and energy levels - both of which are important for kidney health.
+
+Daily routine:
+Move your body every day - even a short walk of 10 to 15 minutes can help. Aim for at least 30 minutes of moderate activity like walking, gardening, or dancing each week. Drink plenty of water throughout the day to stay hydrated. Keep track of your blood pressure and blood sugar at home if you're doing so, so you can stay aware of how your body feels.
+
+Follow-up reminder:
+Even though your screening shows low risk, it's a good idea to talk to your doctor or a health professional every year. They can check your blood pressure, urine, and kidney function with simple tests. This helps keep an eye on your health, especially since you're 50 and have some factors that can affect kidney health over time.
+
+Grounding used internally: [""NKFPED_activity_001"", ""SYK2015_diabetes_001"", ""SYK2015_nutrition_001""]"
+finetuned,P9_H06,high,pass,1,1799,True,False,False,1.0,True,1.0,6.55,True,2,True,high kidney disease risk. Serum albumin 3.4 g/dL. Mean systolic BP 202 mmHg. Taking BP medicine 1. nutrition protein diet. high blood pressure. kidney function diet protein. blood pressure. kidney health lifestyle education,"Summary:
+You have a high risk for kidney problems based on your blood pressure and blood test results. Your blood pressure is very high (202 mmHg), and your serum albumin is slightly low (3.4 g/dL), both of which can affect kidney health.
+
+Food habits:
+Because your blood pressure is very high, it's important to reduce salt in your food. Try to avoid processed foods, canned soups, and salty snacks. Use herbs and spices instead of salt to flavor meals. This can help lower your blood pressure over time.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps keep your blood pressure steady and supports your overall health.
+
+Daily routine:
+Check your blood pressure every day and keep a record of the readings. This helps your doctor see how well your treatment is working. You can walk slowly or do light stretching for 10-15 minutes each day. These activities are safe and helpful for your age and health.
+
+Follow-up reminder:
+You should see your doctor soon to check your blood pressure and kidney function. Ask for a urine test to check for protein and a blood test to check kidney function. Your blood pressure is very high and needs to be reviewed right away. Do not wait - seek medical care promptly.
+
+Grounding used internally: [""CDC_CKD_RISK_general_001"", ""KDIGO2024_bp_005"", ""NKFPED_followup_001""]","Summary:
+You have a high risk for kidney problems based on your blood pressure and blood test results. Your blood pressure is very high (202 mmHg), and your serum albumin is slightly low (3.4 g/dL), both of which can affect kidney health.
+
+Food habits:
+Because your blood pressure is very high, it's important to reduce salt in your food. Try to avoid processed foods, canned soups, and salty snacks. Use herbs and spices instead of salt to flavor meals. This can help lower your blood pressure over time.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps keep your blood pressure steady and supports your overall health.
+
+Daily routine:
+Check your blood pressure every day and keep a record of the readings. This helps your doctor see how well your treatment is working. You can walk slowly or do light stretching for 10-15 minutes each day. These activities are safe and helpful for your age and health.
+
+Follow-up reminder:
+You should see your doctor soon to check your blood pressure and kidney function. Ask for a urine test to check for protein and a blood test to check kidney function. Your blood pressure is very high and needs to be reviewed right away. Do not wait - seek medical care promptly.
+
+Grounding used internally: [""CDC_CKD_RISK_general_001"", ""KDIGO2024_bp_005"", ""NKFPED_followup_001""]"
+finetuned,P9_L10,low,pass,1,1673,True,False,False,1.0,True,1.0,8.32,False,2,True,low kidney disease risk. Age 30 years. Mean systolic BP 116 mmHg. Serum albumin 4.3 g/dL. high blood sugar. diabetes blood sugar. high blood pressure. kidney health lifestyle education,"Summary:
+You have a low risk for kidney problems right now. At age 30, your blood pressure is slightly above normal (116 mmHg), which is a small concern, but your overall risk is still low because you have diabetes and your blood sugar is being managed with care.
+
+Food habits:
+Since your blood sugar is higher than normal (189 mg/dL), it's important to choose foods that don't spike your blood sugar. Eat more whole grains, fresh fruits, vegetables, and lean proteins like beans or chicken. Limit sugary drinks, sweets, and refined carbs like white bread or pastries. These choices help keep your blood sugar steady and protect your kidneys over time.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body balance blood sugar and keeps your blood pressure steady, which supports your kidney health.
+
+Daily routine:
+Check your blood sugar every day, especially before meals and at bedtime. This helps you see how your body is responding and lets you make small changes if needed. Staying on top of your blood sugar is one of the best things you can do to protect your kidneys.
+
+Follow-up reminder:
+Talk to your doctor about having your HbA1c checked again in 3 to 6 months. This test shows how well your blood sugar has been controlled over time. Since you have diabetes, regular checks help keep your kidneys safe and your health on track.
+
+Grounding used internally: [""CDC_CKD_RISK_general_001"", ""SYK2015_nutrition_001"", ""SYK2015_diabetes_003""]","Summary:
+You have a low risk for kidney problems right now. At age 30, your blood pressure is slightly above normal (116 mmHg), which is a small concern, but your overall risk is still low because you have diabetes and your blood sugar is being managed with care.
+
+Food habits:
+Since your blood sugar is higher than normal (189 mg/dL), it's important to choose foods that don't spike your blood sugar. Eat more whole grains, fresh fruits, vegetables, and lean proteins like beans or chicken. Limit sugary drinks, sweets, and refined carbs like white bread or pastries. These choices help keep your blood sugar steady and protect your kidneys over time.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body balance blood sugar and keeps your blood pressure steady, which supports your kidney health.
+
+Daily routine:
+Check your blood sugar every day, especially before meals and at bedtime. This helps you see how your body is responding and lets you make small changes if needed. Staying on top of your blood sugar is one of the best things you can do to protect your kidneys.
+
+Follow-up reminder:
+Talk to your doctor about having your HbA1c checked again in 3 to 6 months. This test shows how well your blood sugar has been controlled over time. Since you have diabetes, regular checks help keep your kidneys safe and your health on track.
+
+Grounding used internally: [""CDC_CKD_RISK_general_001"", ""SYK2015_nutrition_001"", ""SYK2015_diabetes_003""]"
+finetuned,P9_M10,moderate,pass,1,1691,True,False,False,1.0,True,1.0,8.26,False,2,True,moderate kidney disease risk. HbA1c 10.3 %. Doctor told diabetes 1. Hemoglobin 12.4 g/dL. high blood sugar diabetes. diabetes blood sugar. anemia nutrition. kidney health lifestyle education,"Summary:
+You have a moderate risk for kidney problems based on your current health. This means your kidneys may be under more stress than average, especially because your blood sugar has been high (HbA1c of 10.3%) and you have been told you have diabetes by your doctor.
+
+Food habits:
+Since your blood sugar is high, try to eat meals with fewer sugars and less refined carbs like white bread, pastries, or sugary drinks. Choose whole grains, vegetables, and lean proteins like chicken, fish, or beans. Avoid foods with added sugars or hidden sugars. These choices can help keep your blood sugar more stable and reduce stress on your kidneys.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body manage blood sugar and blood pressure better, which is important for your kidney health.
+
+Daily routine:
+Check your blood sugar every day, especially before meals and at bedtime. This helps you see how your body is responding and lets you make small changes if needed. Keep a simple record of your readings so you can share them with your doctor.
+
+Follow-up reminder:
+It's important to talk to your doctor soon. Ask for a urine test to check for protein (which can be a sign of kidney stress) and a blood test to check how well your kidneys are working. Also, ask about getting your HbA1c checked again to better understand your long-term blood sugar control. A moderate risk level means it's wise to confirm this with a clinician and lab tests.
+
+Grounding used internally: [""SYK2015_diabetes_002"", ""KDIGO2024_nutrition_013"", ""NKFPED_followup_001""]","Summary:
+You have a moderate risk for kidney problems based on your current health. This means your kidneys may be under more stress than average, especially because your blood sugar has been high (HbA1c of 10.3%) and you have been told you have diabetes by your doctor.
+
+Food habits:
+Since your blood sugar is high, try to eat meals with fewer sugars and less refined carbs like white bread, pastries, or sugary drinks. Choose whole grains, vegetables, and lean proteins like chicken, fish, or beans. Avoid foods with added sugars or hidden sugars. These choices can help keep your blood sugar more stable and reduce stress on your kidneys.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body manage blood sugar and blood pressure better, which is important for your kidney health.
+
+Daily routine:
+Check your blood sugar every day, especially before meals and at bedtime. This helps you see how your body is responding and lets you make small changes if needed. Keep a simple record of your readings so you can share them with your doctor.
+
+Follow-up reminder:
+It's important to talk to your doctor soon. Ask for a urine test to check for protein (which can be a sign of kidney stress) and a blood test to check how well your kidneys are working. Also, ask about getting your HbA1c checked again to better understand your long-term blood sugar control. A moderate risk level means it's wise to confirm this with a clinician and lab tests.
+
+Grounding used internally: [""SYK2015_diabetes_002"", ""KDIGO2024_nutrition_013"", ""NKFPED_followup_001""]"
+finetuned,P9_L04,low,pass,1,1647,True,False,False,1.0,True,1.0,8.14,False,2,True,low kidney disease risk. Age 46 years. Waist circumference 118 cm. Uric acid 5.6 mg/dL. high blood sugar. diabetes blood sugar. high blood pressure. kidney health lifestyle education,"Summary:
+You have a low risk for kidney problems right now. At age 46 and with a waist size of 118 cm, it's good to stay mindful of your blood sugar and lifestyle habits to keep your kidneys healthy.
+
+Food habits:
+Since your blood sugar is a bit high (210 mg/dL), try to eat meals with fewer sugars and refined carbs. Choose whole grains, fresh fruits in small amounts, and vegetables instead of sugary snacks or processed foods. These choices can help keep your blood sugar more stable and support your overall health.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body manage blood sugar and keeps your blood pressure steady.
+
+Daily routine:
+Check your blood sugar each day, especially before meals and at bedtime. This helps you see how your body is responding and lets you make small changes if needed. Stay active with daily movement - even a short walk can help.
+
+Follow-up reminder:
+Talk to your doctor about having your HbA1c checked again in the next few months. Since you have diabetes, regular checks help keep your blood sugar under control and protect your kidneys over time.
+
+Grounding used internally: [""CDC_CKD_RISK_general_001"", ""SYK2015_nutrition_001"", ""SYK2015_diabetes_001"", ""SYK2015_bp_001""]","Summary:
+You have a low risk for kidney problems right now. At age 46 and with a waist size of 118 cm, it's good to stay mindful of your blood sugar and lifestyle habits to keep your kidneys healthy.
+
+Food habits:
+Since your blood sugar is a bit high (210 mg/dL), try to eat meals with fewer sugars and refined carbs. Choose whole grains, fresh fruits in small amounts, and vegetables instead of sugary snacks or processed foods. These choices can help keep your blood sugar more stable and support your overall health.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body manage blood sugar and keeps your blood pressure steady.
+
+Daily routine:
+Check your blood sugar each day, especially before meals and at bedtime. This helps you see how your body is responding and lets you make small changes if needed. Stay active with daily movement - even a short walk can help.
+
+Follow-up reminder:
+Talk to your doctor about having your HbA1c checked again in the next few months. Since you have diabetes, regular checks help keep your blood sugar under control and protect your kidneys over time.
+
+Grounding used internally: [""CDC_CKD_RISK_general_001"", ""SYK2015_nutrition_001"", ""SYK2015_diabetes_001"", ""SYK2015_bp_001""]"
+finetuned,P9_M01,moderate,pass,1,1559,True,False,False,1.0,True,1.0,7.63,True,2,True,moderate kidney disease risk. Taking BP medicine 1. Mean systolic BP 160 mmHg. Doctor told hypertension 1. blood pressure. high blood pressure. high blood pressure hypertension. kidney health lifestyle education,"Summary:
+You have a moderate risk for kidney problems based on your current health. This means your kidneys may be under extra stress right now, especially because you're taking blood pressure medicine and your blood pressure is often high (160 mmHg).
+
+Food habits:
+Because your blood pressure is high, it's a good idea to reduce how much salt you eat each day. Too much salt can make blood pressure go up even more, which puts extra strain on your kidneys. Try to avoid processed foods, canned soups, and salty snacks. Use herbs and spices instead of salt to flavor your meals.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your blood pressure stay steady and your body works better overall.
+
+Daily routine:
+Check your blood pressure every day and write down the numbers. This helps your doctor see how well your treatment is working. Keep track of your readings so you can share them with your doctor. If your blood pressure stays high, it's important to talk to your doctor right away.
+
+Follow-up reminder:
+Because your blood pressure is very high (160 mmHg), you should see your doctor soon to check your blood pressure and talk about your treatment plan. Ask for a urine test to check for protein and a blood test to check how well your kidneys are working. These tests can help your doctor understand your kidney health better. Always talk to your doctor before making any changes to your health plan.
+
+Grounding used internally: [""CDC_CKD_RISK_general_001"", ""CDC_CKD_RISK_general_002"", ""NKFPED_followup_001""]","Summary:
+You have a moderate risk for kidney problems based on your current health. This means your kidneys may be under extra stress right now, especially because you're taking blood pressure medicine and your blood pressure is often high (160 mmHg).
+
+Food habits:
+Because your blood pressure is high, it's a good idea to reduce how much salt you eat each day. Too much salt can make blood pressure go up even more, which puts extra strain on your kidneys. Try to avoid processed foods, canned soups, and salty snacks. Use herbs and spices instead of salt to flavor your meals.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your blood pressure stay steady and your body works better overall.
+
+Daily routine:
+Check your blood pressure every day and write down the numbers. This helps your doctor see how well your treatment is working. Keep track of your readings so you can share them with your doctor. If your blood pressure stays high, it's important to talk to your doctor right away.
+
+Follow-up reminder:
+Because your blood pressure is very high (160 mmHg), you should see your doctor soon to check your blood pressure and talk about your treatment plan. Ask for a urine test to check for protein and a blood test to check how well your kidneys are working. These tests can help your doctor understand your kidney health better. Always talk to your doctor before making any changes to your health plan.
+
+Grounding used internally: [""CDC_CKD_RISK_general_001"", ""CDC_CKD_RISK_general_002"", ""NKFPED_followup_001""]"
+finetuned,P9_M08,moderate,pass,1,1563,True,False,False,1.0,True,1.0,8.08,False,2,True,moderate kidney disease risk. HbA1c 7.6 %. Glucose 248 mg/dL. Doctor told diabetes 1. high blood sugar diabetes. high blood sugar. diabetes blood sugar. anemia nutrition. kidney health lifestyle education,"Summary:
+You have a moderate risk for kidney problems based on your current health. This means your kidneys may be under more stress than average, especially because your blood sugar is high - your HbA1c is 7.6% and your fasting glucose is 248 mg/dL. This is a sign that your blood sugar control needs attention.
+
+Food habits:
+Because your blood sugar is high, try to eat fewer sugary and refined foods like white bread, pastries, and sugary drinks. Choose whole grains, fresh fruits in small amounts, and vegetables instead. Eat balanced meals with protein and fiber to help keep your blood sugar steady. Avoid foods that spike sugar quickly. These choices can help reduce the strain on your kidneys over time.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body balance blood sugar and keeps your blood pressure steady, which supports your kidney health.
+
+Daily routine:
+Check your blood sugar every day, especially before meals and at bedtime. This helps you see how your body is responding and lets you make small changes if needed. Stay active with daily movement - like walking for 20 to 30 minutes - to help your blood sugar and blood pressure stay in a healthier range.
+
+Follow-up reminder:
+Because your risk is moderate, it's important to talk to your doctor soon. Ask for a urine test to check for protein (which can be a sign of kidney stress) and a blood test to check your kidney function. Also ask about your HbA1c - this will help your doctor see how well your blood sugar is being controlled over time. These tests can help catch any changes early.
+
+Grounding used internally: [""ADA2026_diabetes_001"", ""SYK2015_nutrition_001"", ""SYK2015_bp_001""]","Summary:
+You have a moderate risk for kidney problems based on your current health. This means your kidneys may be under more stress than average, especially because your blood sugar is high - your HbA1c is 7.6% and your fasting glucose is 248 mg/dL. This is a sign that your blood sugar control needs attention.
+
+Food habits:
+Because your blood sugar is high, try to eat fewer sugary and refined foods like white bread, pastries, and sugary drinks. Choose whole grains, fresh fruits in small amounts, and vegetables instead. Eat balanced meals with protein and fiber to help keep your blood sugar steady. Avoid foods that spike sugar quickly. These choices can help reduce the strain on your kidneys over time.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body balance blood sugar and keeps your blood pressure steady, which supports your kidney health.
+
+Daily routine:
+Check your blood sugar every day, especially before meals and at bedtime. This helps you see how your body is responding and lets you make small changes if needed. Stay active with daily movement - like walking for 20 to 30 minutes - to help your blood sugar and blood pressure stay in a healthier range.
+
+Follow-up reminder:
+Because your risk is moderate, it's important to talk to your doctor soon. Ask for a urine test to check for protein (which can be a sign of kidney stress) and a blood test to check your kidney function. Also ask about your HbA1c - this will help your doctor see how well your blood sugar is being controlled over time. These tests can help catch any changes early.
+
+Grounding used internally: [""ADA2026_diabetes_001"", ""SYK2015_nutrition_001"", ""SYK2015_bp_001""]"
+finetuned,P9_L01,low,pass,1,1777,True,False,False,1.0,True,1.0,7.67,True,2,True,low kidney disease risk. Uric acid 4.4 mg/dL. high blood sugar diabetes. weight waist. uric acid diet. kidney health lifestyle education,"Summary:
+You have a low risk for kidney problems based on this screening. One factor that slightly raised your risk is your uric acid level of 4.4 mg/dL, which is a bit higher than normal. This is not a sign of kidney disease, but it's something to be aware of and keep an eye on.
+
+Food habits:
+Since your blood sugar is slightly elevated (100 mg/dL fasting), it's a good idea to choose foods that help keep your blood sugar steady. Try to eat more fruits like bananas, berries, and oranges, and more vegetables like carrots, bell peppers, and squash. These are low in sugar and help balance your blood sugar. Avoid white bread, pastas, and sugary snacks. You can enjoy a balanced meal with whole grains like oats or barley if they fit your appetite. These choices support your overall health and help keep your body in a good balance.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body stay steady, especially when your blood sugar and blood pressure are being monitored. It also helps your body recover and stay strong.
+
+Daily routine:
+You can enjoy gentle daily activities like walking for 20 to 30 minutes each day. Even a short walk helps your heart and blood flow. You can also do light stretching or sit quietly for a few minutes each day to feel relaxed. These small habits support your energy and overall well-being as you age.
+
+Follow-up reminder:
+It's a good idea to talk to your doctor about checking your HbA1c level again in the next few months. This will help you see how well your blood sugar is being managed over time. Since your fasting blood glucose is a bit higher than normal, regular checks can help keep your health on track.
+
+Grounding used internally: [""SYK2015_nutrition_005"", ""KDIGO2024_weight_001""]","Summary:
+You have a low risk for kidney problems based on this screening. One factor that slightly raised your risk is your uric acid level of 4.4 mg/dL, which is a bit higher than normal. This is not a sign of kidney disease, but it's something to be aware of and keep an eye on.
+
+Food habits:
+Since your blood sugar is slightly elevated (100 mg/dL fasting), it's a good idea to choose foods that help keep your blood sugar steady. Try to eat more fruits like bananas, berries, and oranges, and more vegetables like carrots, bell peppers, and squash. These are low in sugar and help balance your blood sugar. Avoid white bread, pastas, and sugary snacks. You can enjoy a balanced meal with whole grains like oats or barley if they fit your appetite. These choices support your overall health and help keep your body in a good balance.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body stay steady, especially when your blood sugar and blood pressure are being monitored. It also helps your body recover and stay strong.
+
+Daily routine:
+You can enjoy gentle daily activities like walking for 20 to 30 minutes each day. Even a short walk helps your heart and blood flow. You can also do light stretching or sit quietly for a few minutes each day to feel relaxed. These small habits support your energy and overall well-being as you age.
+
+Follow-up reminder:
+It's a good idea to talk to your doctor about checking your HbA1c level again in the next few months. This will help you see how well your blood sugar is being managed over time. Since your fasting blood glucose is a bit higher than normal, regular checks can help keep your health on track.
+
+Grounding used internally: [""SYK2015_nutrition_005"", ""KDIGO2024_weight_001""]"
+finetuned,P9_M09,moderate,pass,1,1500,True,False,False,1.0,True,1.0,7.59,True,2,True,moderate kidney disease risk. HbA1c 8.9 %. Doctor told diabetes 1. Mean systolic BP 120 mmHg. high blood sugar diabetes. diabetes blood sugar. high blood pressure. kidney health lifestyle education,"Summary:
+You have a moderate risk for kidney problems. This is mainly because you have diabetes and your blood sugar has been high (HbA1c of 8.9%). Your doctor has told you you have diabetes, which increases your chance of kidney issues over time.
+
+Food habits:
+Since your blood sugar is high, try to eat foods with less sugar and fewer refined carbs. Choose whole grains, vegetables, and lean proteins like beans, chicken, or fish. Avoid sugary drinks and snacks. These choices help keep your blood sugar more stable and protect your kidneys.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body balance blood sugar and blood pressure, which is important for your kidneys.
+
+Daily routine:
+Check your blood sugar every day, especially before meals and at bedtime. This helps you see how your body is responding and lets you make small changes if needed. Keep a simple log to share with your doctor.
+
+Follow-up reminder:
+It's important to talk to your doctor soon. Ask for a urine test to check for protein (which can be a sign of kidney damage) and a blood test to check how well your kidneys are working. Also ask about your HbA1c level - checking it regularly helps manage your diabetes and protects your kidneys.
+
+Grounding used internally: [""CDC_CKD_RISK_general_001"", ""SYK2015_diabetes_003"", ""NKFPED_followup_001"", ""SYK2015_bp_001""]","Summary:
+You have a moderate risk for kidney problems. This is mainly because you have diabetes and your blood sugar has been high (HbA1c of 8.9%). Your doctor has told you you have diabetes, which increases your chance of kidney issues over time.
+
+Food habits:
+Since your blood sugar is high, try to eat foods with less sugar and fewer refined carbs. Choose whole grains, vegetables, and lean proteins like beans, chicken, or fish. Avoid sugary drinks and snacks. These choices help keep your blood sugar more stable and protect your kidneys.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body balance blood sugar and blood pressure, which is important for your kidneys.
+
+Daily routine:
+Check your blood sugar every day, especially before meals and at bedtime. This helps you see how your body is responding and lets you make small changes if needed. Keep a simple log to share with your doctor.
+
+Follow-up reminder:
+It's important to talk to your doctor soon. Ask for a urine test to check for protein (which can be a sign of kidney damage) and a blood test to check how well your kidneys are working. Also ask about your HbA1c level - checking it regularly helps manage your diabetes and protects your kidneys.
+
+Grounding used internally: [""CDC_CKD_RISK_general_001"", ""SYK2015_diabetes_003"", ""NKFPED_followup_001"", ""SYK2015_bp_001""]"
+finetuned,P9_M05,moderate,pass,1,1579,True,False,False,1.0,True,1.0,8.55,False,2,True,moderate kidney disease risk. HbA1c 6.6 %. Mean diastolic BP 105 mmHg. Glucose 172 mg/dL. high blood sugar diabetes. high blood pressure. high blood sugar. diabetes blood sugar. kidney health lifestyle education,"Summary:
+You have a moderate risk for kidney problems based on your current health. This means your kidneys may be under more stress than average, especially because your blood sugar is higher than ideal (HbA1c of 6.6%) and your blood pressure is elevated (diastolic at 105 mmHg). This is not a diagnosis, and it does not mean you have kidney disease.
+
+Food habits:
+Because your blood sugar is high (fasting glucose 172 mg/dL), it's important to choose foods that don't spike your blood sugar. Skip sugary drinks, white bread, pastries, and processed snacks. Instead, eat whole grains like brown rice or oats, fresh fruits in small amounts, and vegetables. Choose lean proteins like beans, chicken, or fish. Limit added sugars and refined carbs. These choices can help keep your blood sugar more stable and reduce stress on your kidneys.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body balance blood sugar and blood pressure, which can make a difference in how your kidneys are working.
+
+Daily routine:
+Check your blood sugar every day, especially before meals and at bedtime. This helps you see how your food and lifestyle choices are affecting your blood sugar. Move your body gently every day - like walking for 20 to 30 minutes - to help lower blood pressure and keep your blood sugar in check. Even small walks can help. Avoid heavy lifting or intense exercise unless your doctor says it's safe.
+
+Follow-up reminder:
+Because your risk is moderate, it's important to talk to your doctor soon. Ask for a urine test to check for protein (which can be a sign of kidney stress) and a blood test to check your kidney function. Also ask about your HbA1c - this test shows your average blood sugar over time. These tests can help your doctor see how your kidneys are doing and whether your blood sugar or blood pressure needs to be managed better.
+
+Grounding used internally: [""ADA2026_diabetes_001"", ""SYK2015_nutrition_001"", ""SYK2015_bp_001""]","Summary:
+You have a moderate risk for kidney problems based on your current health. This means your kidneys may be under more stress than average, especially because your blood sugar is higher than ideal (HbA1c of 6.6%) and your blood pressure is elevated (diastolic at 105 mmHg). This is not a diagnosis, and it does not mean you have kidney disease.
+
+Food habits:
+Because your blood sugar is high (fasting glucose 172 mg/dL), it's important to choose foods that don't spike your blood sugar. Skip sugary drinks, white bread, pastries, and processed snacks. Instead, eat whole grains like brown rice or oats, fresh fruits in small amounts, and vegetables. Choose lean proteins like beans, chicken, or fish. Limit added sugars and refined carbs. These choices can help keep your blood sugar more stable and reduce stress on your kidneys.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body balance blood sugar and blood pressure, which can make a difference in how your kidneys are working.
+
+Daily routine:
+Check your blood sugar every day, especially before meals and at bedtime. This helps you see how your food and lifestyle choices are affecting your blood sugar. Move your body gently every day - like walking for 20 to 30 minutes - to help lower blood pressure and keep your blood sugar in check. Even small walks can help. Avoid heavy lifting or intense exercise unless your doctor says it's safe.
+
+Follow-up reminder:
+Because your risk is moderate, it's important to talk to your doctor soon. Ask for a urine test to check for protein (which can be a sign of kidney stress) and a blood test to check your kidney function. Also ask about your HbA1c - this test shows your average blood sugar over time. These tests can help your doctor see how your kidneys are doing and whether your blood sugar or blood pressure needs to be managed better.
+
+Grounding used internally: [""ADA2026_diabetes_001"", ""SYK2015_nutrition_001"", ""SYK2015_bp_001""]"
+finetuned,P9_L06,low,pass,1,1481,True,False,False,1.0,True,1.0,8.12,False,2,True,low kidney disease risk. Age 38 years. Serum albumin 3.9 g/dL. high blood sugar diabetes. diabetes blood sugar. nutrition protein diet. kidney health lifestyle education,"Summary:
+You have a low risk for kidney problems based on this screening. At age 38, your risk is slightly higher than average, but your blood sugar is well-managed and your kidney health markers are good. Your serum albumin level is normal, which is a good sign for your overall health.
+
+Food habits:
+Since you have diabetes and your blood sugar is a bit high, it's a good idea to choose foods with less sugar and fewer refined carbs. Try eating more whole grains, fresh fruits, vegetables, and lean proteins like beans or chicken. Limit sugary drinks and snacks. These choices can help keep your blood sugar steady and support your kidney health.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body balance blood sugar and keeps your blood pressure steady, which supports your kidney health.
+
+Daily routine:
+Check your blood sugar every day, especially before meals and at bedtime. This helps you see how your body is responding and lets you make small changes if needed. Staying on top of your blood sugar is a key step in protecting your kidneys over time.
+
+Follow-up reminder:
+It's a good idea to talk to your doctor about your HbA1c level. Since you have diabetes, checking this regularly helps make sure your blood sugar is well controlled. This can help keep your kidneys healthy in the long run.
+
+Grounding used internally: [""CDC_CKD_RISK_general_001"", ""SYK2015_nutrition_001"", ""SYK2015_diabetes_003"", ""NKFPED_activity_001""]","Summary:
+You have a low risk for kidney problems based on this screening. At age 38, your risk is slightly higher than average, but your blood sugar is well-managed and your kidney health markers are good. Your serum albumin level is normal, which is a good sign for your overall health.
+
+Food habits:
+Since you have diabetes and your blood sugar is a bit high, it's a good idea to choose foods with less sugar and fewer refined carbs. Try eating more whole grains, fresh fruits, vegetables, and lean proteins like beans or chicken. Limit sugary drinks and snacks. These choices can help keep your blood sugar steady and support your kidney health.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body balance blood sugar and keeps your blood pressure steady, which supports your kidney health.
+
+Daily routine:
+Check your blood sugar every day, especially before meals and at bedtime. This helps you see how your body is responding and lets you make small changes if needed. Staying on top of your blood sugar is a key step in protecting your kidneys over time.
+
+Follow-up reminder:
+It's a good idea to talk to your doctor about your HbA1c level. Since you have diabetes, checking this regularly helps make sure your blood sugar is well controlled. This can help keep your kidneys healthy in the long run.
+
+Grounding used internally: [""CDC_CKD_RISK_general_001"", ""SYK2015_nutrition_001"", ""SYK2015_diabetes_003"", ""NKFPED_activity_001""]"
+finetuned,P9_H10,high,pass,1,1678,True,False,False,1.0,True,1.0,6.63,True,2,True,high kidney disease risk. Mean systolic BP 202 mmHg. Serum albumin 3.2 g/dL. Taking BP medicine 1. high blood pressure. nutrition protein diet. blood pressure. kidney function diet protein. kidney health lifestyle education,"Summary:
+You have a high risk for kidney problems based on your screening. This is mainly because your blood pressure is very high (202 mmHg) and your serum albumin is low (3.2 g/dL), which can affect how well your kidneys work.
+
+Food habits:
+Because your blood pressure is very high, it's a good idea to reduce the amount of salt in your food. Try to avoid processed foods, canned soups, and salty snacks. Use herbs and spices instead of salt to flavor meals. This can help lower your blood pressure over time.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps keep your blood pressure steady and supports your overall health.
+
+Daily routine:
+Check your blood pressure every day and write down the numbers. Keep track of them so you can share them with your doctor. This helps your doctor see how your blood pressure is changing. Also, stay active with light daily movement like walking, if you can.
+
+Follow-up reminder:
+You should see your doctor soon to check your kidney health. Ask for a urine test to check for protein and a blood test to check kidney function. Your blood pressure is very high (202 mmHg), so it's important to have it reviewed by a doctor right away. Do not wait - seek medical care promptly.
+
+Grounding used internally: [""CDC_CKD_RISK_general_001"", ""SYK2015_nutrition_001"", ""KDIGO2024_bp_005"", ""NKFPED_followup_001""]","Summary:
+You have a high risk for kidney problems based on your screening. This is mainly because your blood pressure is very high (202 mmHg) and your serum albumin is low (3.2 g/dL), which can affect how well your kidneys work.
+
+Food habits:
+Because your blood pressure is very high, it's a good idea to reduce the amount of salt in your food. Try to avoid processed foods, canned soups, and salty snacks. Use herbs and spices instead of salt to flavor meals. This can help lower your blood pressure over time.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps keep your blood pressure steady and supports your overall health.
+
+Daily routine:
+Check your blood pressure every day and write down the numbers. Keep track of them so you can share them with your doctor. This helps your doctor see how your blood pressure is changing. Also, stay active with light daily movement like walking, if you can.
+
+Follow-up reminder:
+You should see your doctor soon to check your kidney health. Ask for a urine test to check for protein and a blood test to check kidney function. Your blood pressure is very high (202 mmHg), so it's important to have it reviewed by a doctor right away. Do not wait - seek medical care promptly.
+
+Grounding used internally: [""CDC_CKD_RISK_general_001"", ""SYK2015_nutrition_001"", ""KDIGO2024_bp_005"", ""NKFPED_followup_001""]"
+finetuned,P9_L05,low,pass,1,1461,True,False,False,1.0,True,1.0,7.51,True,2,True,low kidney disease risk. Age 49 years. HbA1c 5.2 %. high blood sugar diabetes. anemia nutrition. kidney health lifestyle education,"Summary:
+You have a low risk for kidney problems based on this screening. At age 49, and with a blood sugar level of 5.2%, your risk is slightly higher than average, but your overall kidney health is still strong. This means you're on a good path, and small, healthy habits can keep your kidneys working well for years to come.
+
+Food habits:
+Since your blood sugar is slightly elevated (5.2%), it's a good idea to eat balanced meals with plenty of fresh fruits, vegetables, and whole grains. Try to limit added sugars and refined foods like white bread or sugary drinks. Since you're 49 and have a waist size of 98 cm, watching your salt intake can help keep your blood pressure in check - even if you don't have high blood pressure yet. A balanced, fresh-food diet helps support your blood sugar and overall health.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body stay balanced, which can support your blood sugar and energy levels. It also helps your body repair itself, which is helpful for long-term health.
+
+Daily routine:
+Move your body every day - even a short walk of 20 to 30 minutes can help. Regular activity supports your blood sugar and helps keep your blood pressure steady. Drink plenty of water throughout the day. This helps your kidneys filter waste properly. Keep track of your blood sugar at home if you're doing so, and check your blood pressure once a week if you feel it's changing.
+
+Follow-up reminder:
+Even though your screening shows low risk, it's a good idea to talk to your doctor or a health care provider. They can check your kidney function with a simple blood test or urine test. This helps make sure your kidneys are working well, especially since you're 49 and have a slightly higher blood sugar. A yearly check-up is a smart step to stay healthy.
+
+Grounding used internally: [""CDC_CKD_RISK_general_001"", ""SYK2015_nutrition_001"", ""NKFPED_activity_001""]","Summary:
+You have a low risk for kidney problems based on this screening. At age 49, and with a blood sugar level of 5.2%, your risk is slightly higher than average, but your overall kidney health is still strong. This means you're on a good path, and small, healthy habits can keep your kidneys working well for years to come.
+
+Food habits:
+Since your blood sugar is slightly elevated (5.2%), it's a good idea to eat balanced meals with plenty of fresh fruits, vegetables, and whole grains. Try to limit added sugars and refined foods like white bread or sugary drinks. Since you're 49 and have a waist size of 98 cm, watching your salt intake can help keep your blood pressure in check - even if you don't have high blood pressure yet. A balanced, fresh-food diet helps support your blood sugar and overall health.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps your body stay balanced, which can support your blood sugar and energy levels. It also helps your body repair itself, which is helpful for long-term health.
+
+Daily routine:
+Move your body every day - even a short walk of 20 to 30 minutes can help. Regular activity supports your blood sugar and helps keep your blood pressure steady. Drink plenty of water throughout the day. This helps your kidneys filter waste properly. Keep track of your blood sugar at home if you're doing so, and check your blood pressure once a week if you feel it's changing.
+
+Follow-up reminder:
+Even though your screening shows low risk, it's a good idea to talk to your doctor or a health care provider. They can check your kidney function with a simple blood test or urine test. This helps make sure your kidneys are working well, especially since you're 49 and have a slightly higher blood sugar. A yearly check-up is a smart step to stay healthy.
+
+Grounding used internally: [""CDC_CKD_RISK_general_001"", ""SYK2015_nutrition_001"", ""NKFPED_activity_001""]"
+finetuned,P9_H08,high,pass,1,1644,True,False,False,1.0,True,1.0,6.85,True,2,True,high kidney disease risk. Blood urea nitrogen 31 mg/dL. HbA1c 6.5 %. Uric acid 6.9 mg/dL. kidney function diet protein. high blood sugar diabetes. uric acid diet. high blood pressure. kidney health lifestyle education,"Summary:
+You have a high risk for kidney problems based on your screening. This means your kidneys may be under more stress than average. Two key factors are your blood urea nitrogen level of 31 mg/dL and your blood sugar level (HbA1c) of 6.5%, both of which can affect kidney health over time.
+
+Food habits:
+Because your blood sugar is slightly high (HbA1c 6.5%), it's important to choose foods that help keep your blood sugar steady. Avoid sugary drinks and refined foods like white bread, pastries, and sweets. Instead, eat more whole grains, fruits like bananas and berries, and vegetables like carrots and bell peppers. These foods help balance blood sugar and support kidney health. Since your uric acid is a bit high, try to limit animal proteins like meat, chicken, and fish. Choose plant-based proteins like beans or lentils when possible. Drink plenty of water - clear, water-like urine means you're drinking enough.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps keep your blood pressure and blood sugar steady, which supports your kidneys. If you feel tired, rest during the day or take a short walk - but don't stay in bed too long if you're not sleepy.
+
+Daily routine:
+Move your body every day - even a short walk of 10 to 15 minutes helps. Try to walk at the same time each day, like after breakfast or lunch. Staying active helps keep your blood pressure and blood sugar in check. Drink water throughout the day. Keep track of your blood pressure and blood sugar at home if you can, so you can share this with your doctor. If you feel dizzy, weak, or have swelling in your feet or hands, check with your doctor.
+
+Follow-up reminder:
+Because your screening shows high risk, it's important to talk to your doctor soon. Ask for a urine test to check for protein (called UACR) and a blood test to check your kidney function. Also ask about your HbA1c level - this helps track how well your blood sugar is being managed. These tests can help your doctor see if your kidney health is changing. Do not wait - get these tests done in the next few months.
+
+Grounding used internally: [""SYK2015_nutrition_005"", ""SYK2015_diabetes_004"", ""ADA2026_bp_001"", ""NKFPED_followup_001""]","Summary:
+You have a high risk for kidney problems based on your screening. This means your kidneys may be under more stress than average. Two key factors are your blood urea nitrogen level of 31 mg/dL and your blood sugar level (HbA1c) of 6.5%, both of which can affect kidney health over time.
+
+Food habits:
+Because your blood sugar is slightly high (HbA1c 6.5%), it's important to choose foods that help keep your blood sugar steady. Avoid sugary drinks and refined foods like white bread, pastries, and sweets. Instead, eat more whole grains, fruits like bananas and berries, and vegetables like carrots and bell peppers. These foods help balance blood sugar and support kidney health. Since your uric acid is a bit high, try to limit animal proteins like meat, chicken, and fish. Choose plant-based proteins like beans or lentils when possible. Drink plenty of water - clear, water-like urine means you're drinking enough.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps keep your blood pressure and blood sugar steady, which supports your kidneys. If you feel tired, rest during the day or take a short walk - but don't stay in bed too long if you're not sleepy.
+
+Daily routine:
+Move your body every day - even a short walk of 10 to 15 minutes helps. Try to walk at the same time each day, like after breakfast or lunch. Staying active helps keep your blood pressure and blood sugar in check. Drink water throughout the day. Keep track of your blood pressure and blood sugar at home if you can, so you can share this with your doctor. If you feel dizzy, weak, or have swelling in your feet or hands, check with your doctor.
+
+Follow-up reminder:
+Because your screening shows high risk, it's important to talk to your doctor soon. Ask for a urine test to check for protein (called UACR) and a blood test to check your kidney function. Also ask about your HbA1c level - this helps track how well your blood sugar is being managed. These tests can help your doctor see if your kidney health is changing. Do not wait - get these tests done in the next few months.
+
+Grounding used internally: [""SYK2015_nutrition_005"", ""SYK2015_diabetes_004"", ""ADA2026_bp_001"", ""NKFPED_followup_001""]"
+finetuned,P9_H04,high,sanitized,1,1845,True,True,False,1.0,True,1.0,8.82,False,2,True,high kidney disease risk. Uric acid 9.8 mg/dL. Age 68 years. HbA1c 6.4 %. uric acid diet. high blood sugar diabetes. high blood pressure. kidney health lifestyle education,"Summary:
+You have a high risk for kidney problems based on your age and elevated uric acid level. This means it's important to take steps now to protect your kidneys, especially since your blood pressure is high (diastolic 122 mmHg) and your blood sugar is slightly elevated.
+
+Food habits:
+Eat more fruits and vegetables like bananas, berries, carrots, and bell peppers. These help keep your urine balanced and reduce the risk of kidney stones. Avoid sugary foods and white bread, pastas, and sweets. Since your blood sugar is a bit high, choose whole grains like oats or barley instead of refined carbs. This helps keep your blood sugar steady and supports kidney health.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps keep your blood pressure and blood sugar steady, which is important for your kidneys.
+
+Daily routine:
+Do light activities like walking slowly for 20 to 30 minutes a day. Even short walks help your heart and blood flow. Stay hydrated by drinking water throughout the day. Clean, clear urine means you're drinking enough. Avoid heavy lifting or intense exercise unless your doctor says it's safe.
+
+Follow-up reminder:
+You should see a doctor soon to check your urine for protein and have a blood test to check how well your kidneys are working. Ask your doctor about getting an HbA1c test to better understand your blood sugar over time. Because your blood pressure and uric acid are high, these checks are important to catch any early signs of kidney issues.
+
+Grounding used internally: [""SYK2015_nutrition_005"", ""SYK2015_diabetes_001"", ""SYK2015_bp_001"", ""KDIGO2024_weight_001""]","Summary:
+If you have urgent symptoms such as chest pain, trouble breathing, or severe swelling, seek emergency medical care now. You have a high risk for kidney problems based on your age and elevated uric acid level. This means it's important to take steps now to protect your kidneys, especially since your blood pressure is high (diastolic 122 mmHg) and your blood sugar is slightly elevated.
+
+Food habits:
+Eat more fruits and vegetables like bananas, berries, carrots, and bell peppers. These help keep your urine balanced and reduce the risk of kidney stones. Avoid sugary foods and white bread, pastas, and sweets. Since your blood sugar is a bit high, choose whole grains like oats or barley instead of refined carbs. This helps keep your blood sugar steady and supports kidney health.
+
+Rest and sleep:
+Try to get 7 to 9 hours of sleep each night. Go to bed and wake up at the same time every day. Good sleep helps keep your blood pressure and blood sugar steady, which is important for your kidneys.
+
+Daily routine:
+Do light activities like walking slowly for 20 to 30 minutes a day. Even short walks help your heart and blood flow. Stay hydrated by drinking water throughout the day. Clean, clear urine means you're drinking enough. Avoid heavy lifting or intense exercise unless your doctor says it's safe.
+
+Follow-up reminder:
+You should see a doctor soon to check your urine for protein and have a blood test to check how well your kidneys are working. Ask your doctor about getting an HbA1c test to better understand your blood sugar over time. Because your blood pressure and uric acid are high, these checks are important to catch any early signs of kidney issues.
+
+Grounding used internally: [""SYK2015_nutrition_005"", ""SYK2015_diabetes_001"", ""SYK2015_bp_001"", ""KDIGO2024_weight_001""]"

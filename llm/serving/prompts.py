@@ -21,6 +21,8 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional, Tuple
 
 from .contract import (
+    EMERGENCY_DBP_THRESHOLD,
+    EMERGENCY_SBP_THRESHOLD,
     GROUNDING_LABEL,
     LLMInput,
     OUTPUT_SECTION_LABELS,
@@ -338,6 +340,52 @@ def render_retrieved_chunks(chunks: Optional[List[Dict[str, Any]]]) -> str:
     return "\n\n".join(blocks)
 
 
+def _emergency_alert_block(inp: LLMInput) -> str:
+    """An unmissable, patient-specific hypertensive-emergency alert.
+
+    Cites the PATIENT'S OWN triggering value(s) rather than only the abstract
+    threshold rule — a generic "blood pressure is in the emergency range"
+    line was observed to be ignored by the model when systolic looked normal
+    and only diastolic was elevated (the model anchors on systolic as "the"
+    blood pressure number). Naming the actual reading the patient reported
+    makes the urgent condition concrete instead of something to compare
+    against a rule.
+    """
+    if not inp.is_emergency_bp:
+        return ""
+
+    def _num(key: str) -> Optional[float]:
+        try:
+            v = float(inp.patient_inputs.get(key))
+            return None if v != v else v
+        except (TypeError, ValueError):
+            return None
+
+    sbp, dbp = _num("mean_sbp"), _num("mean_dbp")
+    sbp_flagged = sbp is not None and sbp >= EMERGENCY_SBP_THRESHOLD
+    dbp_flagged = dbp is not None and dbp >= EMERGENCY_DBP_THRESHOLD
+    readings = []
+    if sbp_flagged:
+        readings.append(f"a systolic (top number) reading of {sbp:.0f} mmHg")
+    if dbp_flagged:
+        readings.append(f"a diastolic (bottom number) reading of {dbp:.0f} mmHg")
+    reading_text = " and ".join(readings) if readings else "a blood pressure reading"
+
+    # The "may look ordinary" caveat only matters for the diastolic-only case —
+    # a systolic >=180 reading is not subtle and doesn't need that framing.
+    caveat = (" even though the systolic number alone may look ordinary at a glance"
+              if dbp_flagged and not sbp_flagged else "")
+
+    return (
+        "URGENT VITALS ALERT\n"
+        f"This patient reported {reading_text}, which is in the hypertensive-emergency "
+        f"range (systolic >= {EMERGENCY_SBP_THRESHOLD:.0f} or diastolic >= "
+        f"{EMERGENCY_DBP_THRESHOLD:.0f} mmHg){caveat}. Regardless of the overall "
+        "screening risk level, you MUST advise seeking prompt/urgent medical care "
+        "(e.g. in the Summary or Follow-up reminder section).\n\n"
+    )
+
+
 def build_user_prompt(
     inp: LLMInput,
     retrieved_chunks: Optional[List[Dict[str, Any]]] = None,
@@ -349,6 +397,7 @@ def build_user_prompt(
         if inp.is_at_risk
         else "This is a low screening result: keep the tone reassuring and preventive."
     )
+    emergency_block = _emergency_alert_block(inp)
     missing = (
         f"{inp.n_missing_features} input(s) were missing and estimated by the model"
         + (f" ({', '.join(inp.missing_feature_labels)})." if inp.missing_feature_labels else ".")
@@ -358,6 +407,7 @@ def build_user_prompt(
 
     personalization_cues = _build_personalization_cues(inp)
     return (
+        f"{emergency_block}"
         "SCREENING RESULT\n"
         f"- Risk level: {inp.risk_class_display} ({inp.risk_class})\n"
         f"- Class probabilities: {_render_probabilities(inp.probabilities)}\n"

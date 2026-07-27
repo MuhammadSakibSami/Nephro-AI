@@ -48,6 +48,34 @@ from typing import Any, Dict, List, Optional
 RISK_CLASSES = ["low", "moderate", "high"]
 AT_RISK_CLASSES = ["moderate", "high"]  # classes that require a lab/clinician reminder
 
+# ---------------------------------------------------------------------------
+# Hypertensive-emergency vitals thresholds. Single source of truth: both the
+# prompt builder (so the model is explicitly told) and the safety validator's
+# `is_emergency` (so it knows whether an urgent-care line was required) must
+# use the SAME threshold, or the model has no way to know what "very high
+# blood pressure" numerically means to the validator that checks its output.
+# ---------------------------------------------------------------------------
+EMERGENCY_SBP_THRESHOLD = 180.0
+EMERGENCY_DBP_THRESHOLD = 120.0
+
+
+def has_emergency_vitals(patient_inputs: Dict[str, Any]) -> bool:
+    """True if the patient's BP inputs are in the hypertensive-emergency range."""
+    def _num(key: str) -> Optional[float]:
+        try:
+            v = float(patient_inputs.get(key))
+            return None if v != v else v  # reject NaN
+        except (TypeError, ValueError):
+            return None
+
+    sbp = _num("mean_sbp")
+    if sbp is not None and sbp >= EMERGENCY_SBP_THRESHOLD:
+        return True
+    dbp = _num("mean_dbp")
+    if dbp is not None and dbp >= EMERGENCY_DBP_THRESHOLD:
+        return True
+    return False
+
 
 # ===========================================================================
 # OUTPUT CONTRACT
@@ -292,6 +320,10 @@ class LLMInput:
     @property
     def is_at_risk(self) -> bool:
         return self.risk_class in AT_RISK_CLASSES
+
+    @property
+    def is_emergency_bp(self) -> bool:
+        return has_emergency_vitals(self.patient_inputs)
 
     def top_factor_phrases(self, k: int = 3) -> List[str]:
         supporting = [f for f in self.key_factors if f.direction == "supports_prediction"]

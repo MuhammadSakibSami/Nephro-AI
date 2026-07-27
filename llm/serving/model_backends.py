@@ -64,6 +64,21 @@ class QwenChatModel:
     def spec(self) -> str:
         return f"qwen:{self.model_name}"
 
+    def _device(self):
+        """Real (non-meta) device to move inputs to. With device_map="auto",
+        some parameters may be on CPU/meta, so avoid blindly using a meta device."""
+        torch = self._torch
+        try:
+            device = self.model.get_input_embeddings().weight.device
+            if device.type == "meta":
+                raise RuntimeError("input embedding is on meta device")
+            return device
+        except Exception:
+            for param in self.model.parameters():
+                if getattr(param, "device", None) is not None and param.device.type != "meta":
+                    return param.device
+            return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     def generate(self, messages: List[Dict[str, str]]) -> str:
         """Generate a reply from chat messages.
 
@@ -92,22 +107,8 @@ class QwenChatModel:
             max_length=4096,
         )
 
-        # 3) Move inputs to a real device. With device_map="auto", some
-        # parameters may be on CPU/meta, so avoid blindly using a meta device.
-        try:
-            device = self.model.get_input_embeddings().weight.device
-            if device.type == "meta":
-                raise RuntimeError("input embedding is on meta device")
-        except Exception:
-            device = None
-            for param in self.model.parameters():
-                if getattr(param, "device", None) is not None and param.device.type != "meta":
-                    device = param.device
-                    break
-            if device is None:
-                device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-        model_inputs = {k: v.to(device) for k, v in model_inputs.items()}
+        # 3) Move inputs to a real device.
+        model_inputs = {k: v.to(self._device()) for k, v in model_inputs.items()}
 
         # 4) Generate from keyword inputs. Do not pass BatchEncoding positionally.
         with torch.inference_mode():
@@ -125,6 +126,54 @@ class QwenChatModel:
         prompt_len = model_inputs["input_ids"].shape[-1]
         gen = out[0][prompt_len:]
         return self.tokenizer.decode(gen, skip_special_tokens=True).strip()
+
+    def generate_batch(self, batch_messages: List[List[Dict[str, str]]]) -> List[str]:
+        """Generate replies for several independent conversations in one
+        forward pass. LEFT-padding means every row's real prompt ends at the
+        same index, so generation starts at the same column for the whole
+        batch and slicing out the new tokens doesn't need per-row lengths.
+        Used by eval harnesses (Phase 9) to cut GPU-bound wall-clock time —
+        not used by the single-request serving path.
+        """
+        torch = self._torch
+
+        prompt_texts = [
+            self.tokenizer.apply_chat_template(m, tokenize=False, add_generation_prompt=True)
+            for m in batch_messages
+        ]
+
+        old_side = self.tokenizer.padding_side
+        old_pad = self.tokenizer.pad_token
+        if self.tokenizer.pad_token is None:
+            self.tokenizer.pad_token = self.tokenizer.eos_token
+        self.tokenizer.padding_side = "left"
+        try:
+            model_inputs = self.tokenizer(
+                prompt_texts, return_tensors="pt", truncation=True,
+                max_length=4096, padding=True,
+            )
+        finally:
+            self.tokenizer.padding_side = old_side
+            self.tokenizer.pad_token = old_pad
+
+        model_inputs = {k: v.to(self._device()) for k, v in model_inputs.items()}
+
+        with torch.inference_mode():
+            out = self.model.generate(
+                **model_inputs,
+                max_new_tokens=self.max_new_tokens,
+                do_sample=self.temperature > 0,
+                temperature=self.temperature if self.temperature > 0 else None,
+                top_p=self.top_p,
+                pad_token_id=(self.tokenizer.pad_token_id or self.tokenizer.eos_token_id),
+                eos_token_id=self.tokenizer.eos_token_id,
+            )
+
+        prompt_len = model_inputs["input_ids"].shape[-1]
+        return [
+            self.tokenizer.decode(row[prompt_len:], skip_special_tokens=True).strip()
+            for row in out
+        ]
 
 
 # ---------------------------------------------------------------------------
