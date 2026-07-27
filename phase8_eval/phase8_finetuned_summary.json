@@ -1,0 +1,16 @@
+{
+  "tag": "finetuned",
+  "arm": "fine-tuned",
+  "model": "Qwen/Qwen3-4B-Instruct-2507",
+  "adapter": "llm/finetune/adapters/v1/adapter",
+  "n": 60,
+  "raw_unsafe_rate": 0.1167,
+  "format_ok_rate": 1.0,
+  "mentions_risk_rate": 1.0,
+  "mean_readability": 7.96,
+  "readability_ok_rate": 0.5167,
+  "violation_categories": {
+    "nutrition_restriction": 6,
+    "emergency_redirect": 1
+  }
+}
