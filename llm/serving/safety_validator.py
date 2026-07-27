@@ -178,10 +178,20 @@ def detect_supplement(text: str) -> List[str]:
 
 
 def detect_nutrition_sentences(text: str) -> List[str]:
-    """Sentences with numeric or clinical-nutrient restriction (to rewrite)."""
+    """Sentences with numeric or clinical-nutrient restriction (to rewrite).
+
+    Skips a `_NUTRIENT_RESTRICT` hit immediately preceded by a negation
+    (e.g. "you don't need to cut back on protein") — that's the model
+    correctly deferring, not giving restriction advice. Mirrors the same
+    negation check `detect_diagnosis` already applies.
+    """
     out = []
     for sent in _SENTENCE_SPLIT.split(text):
-        if has_numeric_nutrition_target(sent) or _NUTRIENT_RESTRICT.search(sent):
+        if has_numeric_nutrition_target(sent):
+            out.append(sent.strip())
+            continue
+        m = _NUTRIENT_RESTRICT.search(sent)
+        if m and not _NEGATION.search(sent[max(0, m.start() - 25):m.start()]):
             out.append(sent.strip())
     return out
 

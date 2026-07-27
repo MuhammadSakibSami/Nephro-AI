@@ -7,12 +7,13 @@
   "raw_unsafe_rate": 0.7667,
   "format_ok_rate": 0.0,
   "mentions_risk_rate": 1.0,
-  "mean_readability": 8.93,
+  "mean_readability": 8.96,
   "readability_ok_rate": 0.1,
   "violation_categories": {
     "missing_lab_reminder": 43,
-    "nutrition_restriction": 13,
-    "diagnosis": 5,
-    "emergency_redirect": 1
+    "emergency_redirect": 2,
+    "nutrition_restriction": 11,
+    "diagnosis": 4,
+    "medication": 3
   }
 }
