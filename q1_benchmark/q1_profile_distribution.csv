@@ -1,0 +1,8 @@
+group,low,moderate,high,total
+routine_lifestyle,30,30,30,90
+comorbidity,20,20,20,60
+emergency,20,20,20,60
+boundary,10,10,10,30
+missing_input,10,10,10,30
+adversarial,10,10,10,30
+TOTAL,100,100,100,300

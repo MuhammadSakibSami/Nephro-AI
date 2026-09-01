@@ -1,0 +1,106 @@
+{
+  "created": "2026-09-01T10:18:15.501359+00:00",
+  "benchmark_path": "q1_benchmark\\q1_profiles_300.jsonl",
+  "benchmark_sha256": "97755e8ca9424a7e5db85937b573b4687123baaacbf7a03a3c2a63c1003f8c93",
+  "retrieval_k": 4,
+  "arm_spec": {
+    "A": {
+      "name": "base_compact",
+      "prompt": "compact",
+      "rag": false,
+      "validator": false,
+      "adapter": false,
+      "reuse": null
+    },
+    "B": {
+      "name": "base_rag",
+      "prompt": "full",
+      "rag": true,
+      "validator": false,
+      "adapter": false,
+      "reuse": null
+    },
+    "C": {
+      "name": "base_rag_val",
+      "prompt": "full",
+      "rag": true,
+      "validator": true,
+      "adapter": false,
+      "reuse": "B"
+    },
+    "D": {
+      "name": "ft_rag",
+      "prompt": "full",
+      "rag": true,
+      "validator": false,
+      "adapter": true,
+      "reuse": null
+    },
+    "E": {
+      "name": "ft_rag_val",
+      "prompt": "full",
+      "rag": true,
+      "validator": true,
+      "adapter": true,
+      "reuse": "D"
+    },
+    "F": {
+      "name": "ft_compact_val",
+      "prompt": "compact",
+      "rag": true,
+      "validator": true,
+      "adapter": true,
+      "reuse": null
+    }
+  },
+  "arms": {
+    "A": {
+      "status": "complete",
+      "n_records": 300,
+      "records_sha256": "0f06ece859e66621d6f818ac08bc9ae91f5f764f61cdf77601abb42637538676",
+      "model_name": "Qwen/Qwen3-4B-Instruct-2507",
+      "adapter_sha256": "",
+      "kb_index_sha256": "3a01ccd17b970fba5344a8b60d9f0581fdc64df9a1cc06851c0b5d109dd72950",
+      "validator_sha256": "2451b2c5f8e5e91effd7fdb027ad5b399f39a5de41759c6713d4e53a119899a4",
+      "prompts_sha256": "52893953d47d95016af8e9514904d1f8875050df80e06db245a9d1c876d36d7d",
+      "seeds": [
+        42
+      ]
+    },
+    "B": {
+      "status": "complete",
+      "n_records": 300,
+      "records_sha256": "2c63b5c19ca6a3c2473c8d70cf2309ce0a31e40ef31a325e7fceaef9cd152d61",
+      "model_name": "Qwen/Qwen3-4B-Instruct-2507",
+      "adapter_sha256": "",
+      "kb_index_sha256": "3a01ccd17b970fba5344a8b60d9f0581fdc64df9a1cc06851c0b5d109dd72950",
+      "validator_sha256": "2451b2c5f8e5e91effd7fdb027ad5b399f39a5de41759c6713d4e53a119899a4",
+      "prompts_sha256": "52893953d47d95016af8e9514904d1f8875050df80e06db245a9d1c876d36d7d",
+      "seeds": [
+        42
+      ]
+    },
+    "C": {
+      "status": "complete",
+      "n_records": 300,
+      "records_sha256": "73c07c05f0d8b71691f468673e2e193304928b18faf4f8b3abcf16b7bd2f355a",
+      "model_name": "Qwen/Qwen3-4B-Instruct-2507",
+      "adapter_sha256": "",
+      "kb_index_sha256": "3a01ccd17b970fba5344a8b60d9f0581fdc64df9a1cc06851c0b5d109dd72950",
+      "validator_sha256": "2451b2c5f8e5e91effd7fdb027ad5b399f39a5de41759c6713d4e53a119899a4",
+      "prompts_sha256": "52893953d47d95016af8e9514904d1f8875050df80e06db245a9d1c876d36d7d",
+      "seeds": [
+        42
+      ]
+    },
+    "D": {
+      "status": "not_run"
+    },
+    "E": {
+      "status": "not_run"
+    },
+    "F": {
+      "status": "not_run"
+    }
+  }
+}

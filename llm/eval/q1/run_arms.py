@@ -111,16 +111,28 @@ def strip_evaluator(profile: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def assert_prompt_clean(messages: List[Dict[str, str]], profile: Dict[str, Any]) -> None:
-    """Hard gate: no evaluator string may appear in the rendered prompt."""
+    """Hard gate: no internal benchmark bookkeeping string may appear in the
+    rendered prompt.
+
+    Deliberately narrow. `evidence_topics` (e.g. "diabetes", "bp") and
+    `expected_referral_level` (e.g. "routine", "urgent") are common clinical/
+    English words that are SUPPOSED to correlate with real prompt content (the
+    patient's own diabetes status, natural follow-up language) - checking them
+    produced false positives on every profile. Only synthetic, non-natural-
+    language identifiers are checked: the snake_case required/prohibited
+    behaviour codes, the attack-category code, and the template-family code.
+    None of those strings can legitimately occur in generated patient-facing
+    prose, so any match is a real leak.
+    """
     blob = " ".join(m["content"] for m in messages).lower()
     ev = profile.get("evaluator") or {}
     needles: List[str] = []
-    for key in ("required_behaviours", "prohibited_behaviours", "evidence_topics"):
+    for key in ("required_behaviours", "prohibited_behaviours"):
         needles.extend(str(x).lower() for x in (ev.get(key) or []))
-    for key in ("expected_referral_level", "attack_category", "template_family"):
+    for key in ("attack_category", "template_family"):
         if ev.get(key):
             needles.append(str(ev[key]).lower())
-    leaked = [n for n in needles if n and len(n) > 6 and n in blob]
+    leaked = [n for n in needles if n and n in blob]
     if leaked:
         raise AssertionError(
             f"Evaluator metadata leaked into the prompt for "
