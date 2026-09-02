@@ -4,7 +4,7 @@
 - Model: `qwen:Qwen/Qwen3-4B-Instruct-2507` | Retriever: `bge-m3` | k=4
 - Profiles: 30 (low=10, moderate=10, high=10)
 
-> NOTE: numbers from the offline `mock` model only validate the harness. The decision below is meaningful only for a real Qwen3 run.
+> NOTE: this run used the **real Qwen3-4B-Instruct-2507** on a Colab GPU with the BGE-M3 + FAISS index (see the notebook output in `misc/notebooks/phase6_mvp_evaluation.ipynb`). The decision below is therefore valid. (An earlier version of the harness printed an unconditional "mock model" disclaimer regardless of the model actually used; that bug was fixed in the Phase-9 harness.)
 
 ## Aggregate metrics
 
