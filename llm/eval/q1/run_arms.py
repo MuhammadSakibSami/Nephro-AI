@@ -140,18 +140,57 @@ def assert_prompt_clean(messages: List[Dict[str, str]], profile: Dict[str, Any])
         )
 
 
+def reported_symptom(profile: Dict[str, Any]) -> Optional[str]:
+    """The free-text acute symptom for an `emergency`-group profile, if any.
+
+    `context.red_flags` also carries structured BP-threshold flags (e.g.
+    "systolic_bp_>=180") for the subset of emergency profiles whose target
+    category is "high" - those already appear in `patient_inputs` and need no
+    separate signal. Only the free-text `symptom:...` entry represents
+    information NOT otherwise visible to the model or validator.
+    """
+    for flag in (profile.get("context") or {}).get("red_flags") or []:
+        if isinstance(flag, str) and flag.startswith("symptom:"):
+            return flag.split("symptom:", 1)[1].strip()
+    return None
+
+
 def build_arm_messages(profile: Dict[str, Any], chunks: List[Dict[str, Any]],
                        prompt_kind: str) -> List[Dict[str, str]]:
     inp = LLMInput.from_predict_response(strip_evaluator(profile))
     builder = build_compact_messages if prompt_kind == "compact" else build_messages
     messages = builder(inp, chunks)
-    # An adversarial profile's instruction arrives the way a real one would:
-    # appended to the user turn.
+    # An adversarial profile's instruction, and a reported acute symptom not
+    # captured by the screening inputs, arrive the way a real one would:
+    # appended to the user turn as something the patient said.
     adv = (profile.get("context") or {}).get("adversarial_instruction")
     if adv:
         messages[-1]["content"] += f"\n\nPATIENT MESSAGE\n{adv}\n"
+    symptom = reported_symptom(profile)
+    if symptom:
+        messages[-1]["content"] += (
+            f"\n\nPATIENT MESSAGE\nI also wanted to mention: I have been "
+            f"experiencing {symptom}.\n"
+        )
     assert_prompt_clean(messages, profile)
     return messages
+
+
+def context_with_symptoms(profile: Dict[str, Any], inp: LLMInput) -> Dict[str, Any]:
+    """`context_from_llm_input` plus the profile's reported symptom (if any).
+
+    The deployed `context_from_llm_input` hardcodes `symptoms: ""`, since the
+    production system has no free-text symptom input. Q1's benchmark does carry
+    a reported symptom for some `emergency`-group profiles (see
+    `reported_symptom`), and the validator's own `is_emergency()` only sees it
+    through `context["symptoms"]` - so it must be added here for the validator
+    to have the same information the (patched) prompt now conveys.
+    """
+    ctx = context_from_llm_input(inp)
+    symptom = reported_symptom(profile)
+    if symptom:
+        ctx["symptoms"] = symptom
+    return ctx
 
 
 def count_tokens(model: Any, messages: List[Dict[str, str]], text: str = "") -> Tuple[int, int]:
@@ -227,7 +266,8 @@ def run_arm(arm: str, benchmark_path: Path, out_dir: Path,
             seeds: Optional[List[int]] = None, do_sample: bool = False,
             temperature: float = 0.2, top_p: float = 0.9,
             max_new_tokens: int = 700, k: int = RETRIEVAL_K,
-            limit: Optional[int] = None) -> Path:
+            limit: Optional[int] = None,
+            force_group: Optional[str] = None) -> Path:
     if arm not in ARM_SPEC:
         raise ValueError(f"Unknown arm {arm}; expected one of {ARM_ORDER}")
     spec = ARM_SPEC[arm]
@@ -239,6 +279,18 @@ def run_arm(arm: str, benchmark_path: Path, out_dir: Path,
     if limit:
         profiles = profiles[:limit]
     done = load_done_keys(out_path)
+    if force_group:
+        # Regenerate only this group: drop its existing entries from `done` so
+        # the normal not-already-done logic below regenerates them. Freshly
+        # generated rows are appended after the stale ones; both `run_arm`'s
+        # own resume check and `report.score_all` read via `load_done_keys`,
+        # which collapses duplicate (profile_id, seed) keys to the LAST line
+        # in the file - so nothing needs to be deleted from disk.
+        forced_ids = {p["profile_id"] for p in profiles if p.get("group") == force_group}
+        if not forced_ids:
+            raise ValueError(f"No profiles found with group={force_group!r}")
+        done = {k: v for k, v in done.items() if k[0] not in forced_ids}
+        print(f"  --force-group {force_group}: {len(forced_ids)} profiles will be regenerated")
     print(f"Arm {arm} ({spec['name']}): {len(profiles)} profiles x {len(seeds)} seed(s); "
           f"{len(done)} already done")
 
@@ -261,8 +313,8 @@ def run_arm(arm: str, benchmark_path: Path, out_dir: Path,
             raw = src["raw_output"]
             if sha256_text(raw) != src["raw_sha256"]:
                 raise AssertionError(f"Source raw text corrupted for {pid}/{seed}")
-            ctx = context_from_llm_input(
-                LLMInput.from_predict_response(strip_evaluator(profile)))
+            ctx = context_with_symptoms(
+                profile, LLMInput.from_predict_response(strip_evaluator(profile)))
             t0 = time.perf_counter()
             result = validate(raw, ctx)
             vt = time.perf_counter() - t0
@@ -358,7 +410,7 @@ def run_arm(arm: str, benchmark_path: Path, out_dir: Path,
             }
 
             if spec["validator"]:
-                ctx = context_from_llm_input(inp)
+                ctx = context_with_symptoms(profile, inp)
                 t1 = time.perf_counter()
                 result = validate(raw, ctx)
                 rec.update({
@@ -473,6 +525,9 @@ def main(argv=None) -> int:
     ap.add_argument("--max-new-tokens", type=int, default=700)
     ap.add_argument("--k", type=int, default=RETRIEVAL_K)
     ap.add_argument("--limit", type=int, default=None)
+    ap.add_argument("--force-group", default=None,
+                    help="regenerate only this benchmark group, even if this arm "
+                         "already has entries for it (e.g. after a harness fix)")
     a = ap.parse_args(argv)
 
     if a.arm == "manifest":
@@ -486,7 +541,8 @@ def main(argv=None) -> int:
     seeds = [int(s) for s in a.seeds.split(",") if s.strip()]
     run_arm(a.arm, Path(a.benchmark), Path(a.out_dir), adapter=a.adapter,
             model_name=a.model, seeds=seeds, do_sample=a.sample,
-            max_new_tokens=a.max_new_tokens, k=a.k, limit=a.limit)
+            max_new_tokens=a.max_new_tokens, k=a.k, limit=a.limit,
+            force_group=a.force_group)
     write_manifest(Path(a.out_dir), Path(a.benchmark))
     return 0
 
