@@ -123,8 +123,8 @@ The first version of the alert was generic ("blood pressure is in the
 emergency range") and was silently ignored whenever systolic looked normal
 and only diastolic was elevated — the model was anchoring on systolic as
 "the" blood pressure number. Citing the patient's own value fixed the fully
-lopsided cases immediately: **all 3 profiles with clearly extreme systolic
-(≥184) now pass in every arm**, up from 0.
+lopsided cases immediately: **all 4 profiles with clearly extreme systolic
+(184, 202, 202, 204 mmHg) now pass in every arm**, up from 0.
 
 **What's left.** Two profiles with borderline, isolated diastolic elevation
 (SBP≈125 — looks unremarkable, DBP=122 — just over the emergency threshold)

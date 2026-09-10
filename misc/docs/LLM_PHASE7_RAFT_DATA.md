@@ -1,9 +1,14 @@
 # LLM Phase 7 — RAFT Training-Data Generation
 
-**Status:** ✅ Pipeline built + validated offline. ⏳ Real dataset generated in Colab (Qwen3 + Gemini).
+**Status:** ✅ DONE — real dataset generated in Colab (600 examples, `ckd_risk_app/phase7_data/`).
 **Plan reference:** `LLM_PLAN.md` → Phase 7 (revised after Phase 6)
-**Date implemented:** June 2026
-**Teacher (chosen):** Gemini free tier for the ~20% subset; self-distillation for the bulk.
+**Date implemented:** June 2026 (pipeline); dataset generated 2026-07-26
+**Teacher (as actually run):** **100% self-distillation** (base Qwen3-4B + RAG + safety validator).
+The Gemini subset was designed and implemented but **not used** in the final run — free-tier
+quota made it unreliable, and the self-distilled set passed the safety gate at 1.00. See
+`phase7_data/data_card.md` (`teacher mix: {'self': 600}`, Gemini share 0.0). **Report
+100% self-distillation in the paper** — it is also the stronger claim, since no external
+model was involved at any point in the pipeline.
 
 ---
 
@@ -15,11 +20,12 @@ automatically.
 
 Phase 6 showed the base model is already strong, so we don't need an expensive
 teacher to "fix" it. Instead:
-- **~80% of the answers come from the model itself** (base Qwen3 + RAG + the safety
+- **All answers come from the model itself** (base Qwen3 + RAG + the safety
   validator) — *self-distillation*. The model learns to directly produce what
   currently needs the validator's help.
-- **~20% come from Gemini (free tier)** for harder/emergency/diverse cases, to add
-  variety the model can't teach itself.
+- A **Gemini (free-tier) teacher backend** is implemented and pluggable for
+  harder/emergency/diverse cases, but was **not used in the final dataset**
+  (`teacher_share=0.0` as run). Keep it available for a future diversity experiment.
 
 Every answer is checked by the safety validator before it can enter the dataset,
 and each example is paired with a **short prompt** so the fine-tuned model runs
