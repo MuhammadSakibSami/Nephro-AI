@@ -10,6 +10,14 @@ Model selection (env `CKD_LLM_MODEL`, default "auto"):
   * "auto"   -> qwen if transformers available, else ollama if running, else mock
   * falls back to the deterministic MockGuidanceModel                -> mode "local_demo"
 
+Fine-tuned adapter (env `CKD_LLM_ADAPTER`, optional, only used when `CKD_LLM_MODEL`
+resolves to "qwen"): path to a Phase-8 LoRA adapter directory (e.g.
+`llm/finetune/adapters/v1/adapter`). When set, `GuidanceRuntime` loads it AND
+automatically switches to the compact system prompt (the fine-tune was trained
+against that prompt specifically) - see `llm_runtime.GuidanceRuntime`. Unset by
+default, so the base (un-fine-tuned) model is what actually serves requests
+unless this is explicitly configured.
+
 **Local demo mode** lets the app run with no GPU: guidance is produced by a
 deterministic safe generator, still passed through the SAME safety validator, and
 clearly labelled. The real Qwen3 evaluation evidence is the frozen Phase-6 results.
@@ -56,7 +64,9 @@ def get_runtime() -> GuidanceRuntime:
     global _runtime
     if _runtime is None:
         spec = os.getenv("CKD_LLM_MODEL", "auto")
-        _runtime = GuidanceRuntime(model=spec)
+        adapter_path = os.getenv("CKD_LLM_ADAPTER") or None
+        model_kwargs = {"adapter_path": adapter_path} if adapter_path else None
+        _runtime = GuidanceRuntime(model=spec, model_kwargs=model_kwargs)
     return _runtime
 
 
@@ -65,6 +75,17 @@ def runtime_mode(rt: GuidanceRuntime) -> str:
     if spec.startswith("qwen") or spec.startswith("ollama"):
         return "production"
     return "local_demo"
+
+
+def adapter_status(rt: Optional[GuidanceRuntime]) -> Dict[str, Any]:
+    """Is the fine-tuned model actually active, answerable without archaeology."""
+    configured = os.getenv("CKD_LLM_ADAPTER") or None
+    active = bool(getattr(getattr(rt, "model", None), "adapter_path", None)) if rt else False
+    return {
+        "configured_adapter": configured,
+        "adapter_active": active,
+        "prompt": getattr(rt, "prompt", None) if rt else None,
+    }
 
 
 def build_guidance_response(predict_response: Union[Dict[str, Any], LLMInput],
@@ -102,7 +123,12 @@ def build_guidance_response(predict_response: Union[Dict[str, Any], LLMInput],
 
 
 def health() -> Dict[str, Any]:
-    """Lightweight status for the endpoint (does not force model load)."""
+    """Lightweight status for the endpoint (does not force model load).
+
+    `model_spec` bakes in adapter status (e.g. "qwen:...+lora:v1/adapter") once
+    the runtime is loaded, so "is the fine-tuned model actually serving
+    requests" is answerable from this endpoint alone.
+    """
     spec = os.getenv("CKD_LLM_MODEL", "auto")
     loaded = _runtime is not None
     return {
@@ -110,4 +136,5 @@ def health() -> Dict[str, Any]:
         "runtime_loaded": loaded,
         "model_spec": _runtime.model.spec if loaded else None,
         "mode": runtime_mode(_runtime) if loaded else None,
+        **adapter_status(_runtime),
     }

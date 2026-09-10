@@ -18,11 +18,11 @@ export default function PatientForm({ values, setValues, onSubmit, loading }) {
     <div className="space-y-5">
       <Card>
         <SectionTitle icon="health" title="Kidney-Risk Screening"
-          sub="Enter routine, non-invasive values. Missing fields are estimated by the model."
+          sub="Enter values from a routine checkup or blood test. Missing fields are estimated by the model."
           right={<CompletenessPill pct={completeness} />} />
-        <p className="text-sm text-ink-500 -mt-1">
+        {/* <p className="text-sm text-ink-500 -mt-1">
           This is a screening tool, not a diagnosis. Results come with educational guidance only.
-        </p>
+        </p> */}
       </Card>
 
       {FORM_SECTIONS.map((section) => (

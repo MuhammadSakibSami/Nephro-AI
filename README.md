@@ -1,13 +1,15 @@
 # Kidney-Risk Screening + Guideline-Grounded Education
 
-A non-invasive **chronic-kidney-disease (CKD) risk screening** system that pairs a
-two-stage machine-learning model with a **safety-guarded, guideline-grounded LLM**
-that turns the risk result into personalized, plain-language kidney-health
-**education**.
+A routine-blood-test-based, cross-sectional **chronic-kidney-disease (CKD) risk
+screening** system that pairs a two-stage machine-learning model with a
+**safety-guarded, guideline-grounded LLM** that turns the risk result into
+personalized, plain-language kidney-health **education**.
 
 - **ML model** — predicts a KDIGO-aligned risk level (low / moderate / high) from
-  14 routine, non-invasive inputs (vitals, standard labs, history) — *no
-  creatinine / eGFR / UACR required as inputs*.
+  14 routine, low-cost inputs (vitals, standard blood tests, history) already
+  covered by a general checkup — *no creatinine / eGFR / UACR required as
+  inputs*. Each screening is a cross-sectional, point-in-time estimate, not a
+  longitudinal diagnosis.
 - **LLM component** — retrieves relevant clinical-guideline snippets (RAG), writes
   5-section education, and passes every output through a strict **safety
   validator** before the user sees it.
@@ -309,5 +311,5 @@ its planned value is safety self-containment + cheaper inference, not a quality 
   used under their respective terms, scoped to prevention/lifestyle content. CDC
   materials are US-government public domain (with attribution).
 
-> Built as a thesis project on non-invasive kidney-disease risk screening with
-> ML + LLM-powered patient education.
+> Built as a thesis project on routine-blood-test-based, cross-sectional
+> kidney-disease risk screening with ML + LLM-powered patient education.

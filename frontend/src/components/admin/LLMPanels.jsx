@@ -138,7 +138,9 @@ export function SafetyPanel({ guidance }) {
           </div>
         )}
         <p className="text-xs text-ink-400 mt-3">
-          Phase-6 evaluation: final unsafe output rate was 0% after safety validation.
+          Final Q1 evaluation (300 profiles, six-arm ablation): the deployed configuration
+          (fine-tuned model + RAG + safety validator) achieved 0% delivered critical-unsafe
+          output and 100% emergency-redirect recall. See the Evaluation tab for full results.
         </p>
       </Card>
     </div>

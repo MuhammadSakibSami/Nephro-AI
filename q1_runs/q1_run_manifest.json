@@ -1,5 +1,5 @@
 {
-  "created": "2026-09-02T10:29:13.616742+00:00",
+  "created": "2026-09-09T10:03:01.919245+00:00",
   "benchmark_path": "q1_benchmark\\q1_profiles_300.jsonl",
   "benchmark_sha256": "97755e8ca9424a7e5db85937b573b4687123baaacbf7a03a3c2a63c1003f8c93",
   "retrieval_k": 4,
@@ -70,10 +70,10 @@
     "B": {
       "status": "complete",
       "n_records": 300,
-      "records_sha256": "0ecc4d8887026cd691d42f43a9d4fd22f7f56df652770ef2225b14b0677011a8",
+      "records_sha256": "c269067f65f562f114b741e47ea0d2a0a13efe6d25a9b97469bdd6907cba8540",
       "model_name": "Qwen/Qwen3-4B-Instruct-2507",
       "adapter_sha256": "",
-      "kb_index_sha256": "3a01ccd17b970fba5344a8b60d9f0581fdc64df9a1cc06851c0b5d109dd72950",
+      "kb_index_sha256": "4bf749232e56539a18fb4cdd0c617fd0a72b29d5e5a9d9426737588ff1fe5c13",
       "validator_sha256": "2451b2c5f8e5e91effd7fdb027ad5b399f39a5de41759c6713d4e53a119899a4",
       "prompts_sha256": "52893953d47d95016af8e9514904d1f8875050df80e06db245a9d1c876d36d7d",
       "seeds": [
@@ -83,10 +83,10 @@
     "C": {
       "status": "complete",
       "n_records": 300,
-      "records_sha256": "ac26c5332fa521772c9428b6b210d4ebac532a3166484aad6d13305770875412",
+      "records_sha256": "2fd8debb4f617d3103bf4900c434364b958c45bf892498cb7da8931fe4d52dc5",
       "model_name": "Qwen/Qwen3-4B-Instruct-2507",
       "adapter_sha256": "",
-      "kb_index_sha256": "3a01ccd17b970fba5344a8b60d9f0581fdc64df9a1cc06851c0b5d109dd72950",
+      "kb_index_sha256": "4bf749232e56539a18fb4cdd0c617fd0a72b29d5e5a9d9426737588ff1fe5c13",
       "validator_sha256": "2451b2c5f8e5e91effd7fdb027ad5b399f39a5de41759c6713d4e53a119899a4",
       "prompts_sha256": "52893953d47d95016af8e9514904d1f8875050df80e06db245a9d1c876d36d7d",
       "seeds": [
@@ -96,10 +96,10 @@
     "D": {
       "status": "complete",
       "n_records": 300,
-      "records_sha256": "090f072719de881993e529846ce6f85b771681c6e0f6d18aa8551aef668cb019",
+      "records_sha256": "611abed8619bf0d471fbc91c7bacc70ffcc208557d0684cebd46edb89ee3fde4",
       "model_name": "Qwen/Qwen3-4B-Instruct-2507",
       "adapter_sha256": "4f45ed9457fb5afb8faff57b2e1d550e1a16efd0ad5ac1a032eaeb40c844a18b",
-      "kb_index_sha256": "3a01ccd17b970fba5344a8b60d9f0581fdc64df9a1cc06851c0b5d109dd72950",
+      "kb_index_sha256": "4bf749232e56539a18fb4cdd0c617fd0a72b29d5e5a9d9426737588ff1fe5c13",
       "validator_sha256": "2451b2c5f8e5e91effd7fdb027ad5b399f39a5de41759c6713d4e53a119899a4",
       "prompts_sha256": "52893953d47d95016af8e9514904d1f8875050df80e06db245a9d1c876d36d7d",
       "seeds": [
@@ -109,10 +109,10 @@
     "E": {
       "status": "complete",
       "n_records": 300,
-      "records_sha256": "ead41f54790a350bc330ab83649b76675724ef6ab06ecca737c271e3c15cdeba",
+      "records_sha256": "554dce062c349fe225f9f03e76856c59b4cc21011c1bea7ddd8421f606cad1b0",
       "model_name": "Qwen/Qwen3-4B-Instruct-2507",
       "adapter_sha256": "4f45ed9457fb5afb8faff57b2e1d550e1a16efd0ad5ac1a032eaeb40c844a18b",
-      "kb_index_sha256": "3a01ccd17b970fba5344a8b60d9f0581fdc64df9a1cc06851c0b5d109dd72950",
+      "kb_index_sha256": "4bf749232e56539a18fb4cdd0c617fd0a72b29d5e5a9d9426737588ff1fe5c13",
       "validator_sha256": "2451b2c5f8e5e91effd7fdb027ad5b399f39a5de41759c6713d4e53a119899a4",
       "prompts_sha256": "52893953d47d95016af8e9514904d1f8875050df80e06db245a9d1c876d36d7d",
       "seeds": [
@@ -122,10 +122,10 @@
     "F": {
       "status": "complete",
       "n_records": 300,
-      "records_sha256": "e045f10e8002b9512a75cf792dd66d3e0ec5270e76ae0ea70f91287627dc5ca9",
+      "records_sha256": "376ed386f91e19688921f5fd5b6d929e50e01d7c8560d22c2018b4c97bf07f59",
       "model_name": "Qwen/Qwen3-4B-Instruct-2507",
       "adapter_sha256": "4f45ed9457fb5afb8faff57b2e1d550e1a16efd0ad5ac1a032eaeb40c844a18b",
-      "kb_index_sha256": "3a01ccd17b970fba5344a8b60d9f0581fdc64df9a1cc06851c0b5d109dd72950",
+      "kb_index_sha256": "4bf749232e56539a18fb4cdd0c617fd0a72b29d5e5a9d9426737588ff1fe5c13",
       "validator_sha256": "2451b2c5f8e5e91effd7fdb027ad5b399f39a5de41759c6713d4e53a119899a4",
       "prompts_sha256": "52893953d47d95016af8e9514904d1f8875050df80e06db245a9d1c876d36d7d",
       "seeds": [

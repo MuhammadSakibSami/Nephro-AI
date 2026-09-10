@@ -5,13 +5,13 @@ import { ML_METRICS, LLM_METRICS, EVAL_META, fmtMetric } from "../../data/evalua
 export default function EvaluationPanel() {
   return (
     <div className="space-y-5">
-      <div className="rounded-xl2 bg-brand-50 ring-1 ring-brand-100 p-4 flex items-start gap-3">
+      {/* <div className="rounded-xl2 bg-brand-50 ring-1 ring-brand-100 p-4 flex items-start gap-3">
         <Icon name="shield" className="w-5 h-5 text-brand-600 mt-0.5 shrink-0" />
         <p className="text-sm text-ink-700">
           <span className="font-semibold">{EVAL_META.safetyClaim}</span>{" "}
           {EVAL_META.deferNote}
         </p>
-      </div>
+      </div> */}
 
       <Card>
         <SectionTitle icon="health" title="ML model — test metrics" sub={EVAL_META.mlSource} />
@@ -19,7 +19,7 @@ export default function EvaluationPanel() {
       </Card>
 
       <Card>
-        <SectionTitle icon="spark" title="LLM — Phase 6 evaluation (frozen)" sub={EVAL_META.llmSource} />
+        <SectionTitle icon="spark" title="LLM Evaluation" sub={EVAL_META.llmSource} />
         <MetricGrid metrics={LLM_METRICS} />
       </Card>
     </div>

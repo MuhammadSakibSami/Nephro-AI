@@ -1,0 +1,277 @@
+\chapter{Discussion}
+\label{ch:discussion}
+
+This chapter interprets the results of Chapter~\ref{ch:results}, examines what
+they do and do not establish, and considers threats to validity, ethical
+implications and deployment requirements.
+
+\section{Interpreting the Screening Performance}
+\label{sec:disc_ml}
+
+\subsection{What 70.9\% accuracy means here}
+
+Taken in isolation, an accuracy of 70.9\% appears modest against a literature
+reporting figures above 98\%. The comparison is not meaningful, for two reasons
+established in Chapters~\ref{ch:literature} and \ref{ch:results}. First, those
+models consume the laboratory markers from which the label is derived; the
+present model is explicitly denied them. Second, they are typically evaluated on
+a small, class-balanced benchmark, whereas this evaluation uses an unselected
+population in which the high-risk class constitutes 4.5\% of participants.
+
+The more informative framings are these. Against a majority-class baseline of
+82.9\% accuracy and 33.3\% balanced accuracy, the model achieves 66.0\% balanced
+accuracy and a macro ROC AUC of 0.79---substantial discrimination where a
+trivial classifier has none. And the ordinal structure of the errors matters: a
+quadratic weighted $\kappa$ of 0.479, with a confusion matrix in which errors are
+overwhelmingly adjacent-category, indicates the model has learned a graded risk
+surface rather than an arbitrary partition.
+
+\subsection{Was the cascade justified?}
+
+The cascade was adopted to create an explicit control point for the high-to-low
+error. On the held-out set, 2 of 38 high-risk participants were assigned to the
+low category, and 36 of 38 (94.7\%) received some referral-generating category.
+This is the design working as intended: the Stage-1 threshold of 0.44, below the
+naive 0.50, widens the gate at a known and accepted cost in precision.
+
+That cost is substantial and should not be understated. Moderate precision is
+0.242, meaning roughly three in four moderate predictions are false positives.
+A deployment would need to be explicit with users that a moderate or high result
+means ``this warrants a confirmatory test'', not ``you probably have kidney
+disease''. The system's patient-facing text is written accordingly, but the
+underlying statistical reality is a screening instrument tuned for sensitivity,
+and its precision must be communicated honestly to both patients and clinicians.
+
+An important caveat on the cascade claim: this thesis reports the cascade's
+performance but did not conduct a controlled comparison against a single
+three-class classifier trained on the same features and splits. The architectural
+argument for the cascade---that it provides a natural place to encode asymmetric
+error costs---is sound in principle, but the empirical claim that it outperforms
+a well-tuned single model on the high-to-low error specifically remains untested
+here, and is identified as future work.
+
+\subsection{The moderate class}
+
+Moderate recall of 0.505 is the weakest metric in the evaluation. The failure is
+structurally explicable: moderate is the middle band of a continuous risk
+surface, bounded on both sides, and its 52 errors split almost evenly between
+the two neighbouring categories. From a clinical-consequence standpoint, the
+moderate class is also the least costly place to err---a moderate participant
+misclassified as high still receives a referral, and one misclassified as low is
+the least severe of the possible missed-referral cases. Nonetheless, this is
+where the greatest headroom for improvement lies.
+
+\section{What Actually Delivers Safety}
+\label{sec:disc_safety}
+
+The most consequential finding of this work is a negative one about language
+models and a positive one about guardrails.
+
+Across all six arms, including both fine-tuned configurations, between 6.3\% and
+10.3\% of raw model outputs contained a critical safety violation. Prompting the
+model with nine explicit safety rules did not eliminate this. Grounding it in
+retrieved clinical guidance did not eliminate this. Fine-tuning it on 540
+safety-screened examples did not eliminate this---and the improvement it did
+produce ($-3.0$ points) failed to reach significance. Only the deterministic
+post-generation validator eliminated it, reducing the delivered rate to zero and
+lifting emergency-redirect recall from 65--75\% to 100\%, with both effects
+surviving Holm correction at $p<0.001$.
+
+This has a direct architectural implication that generalises beyond kidney
+screening. In a patient-facing generative system, safety should be treated as a
+property of the \emph{pipeline}, not of the \emph{model}. Techniques that shape
+the model's distribution---prompting, retrieval, fine-tuning---improve the prior
+but provide no guarantee, because they operate probabilistically. A deterministic
+gate applied to the produced text is the only component in this architecture
+that can offer a bounded guarantee, and the measurements here indicate it is
+carrying essentially the entire safety burden.
+
+It is worth being precise about the scope of that guarantee. The validator
+guarantees that no text matching a pattern in its detector set will be delivered.
+It guarantees nothing about patterns outside that set. The ten false-positive
+defects documented in Section~\ref{sec:corrections} are evidence of this
+limitation operating in the opposite direction---rules that were too broad---but
+the symmetric risk, of rules that are too narrow, is not directly measurable
+from within the same rule system. This is the fundamental epistemic limit of
+rule-based safety and is discussed further in Section~\ref{sec:validity}.
+
+\section{The Role of Fine-Tuning}
+\label{sec:disc_finetune}
+
+If fine-tuning did not deliver a statistically established safety improvement,
+was it worth doing? The evaluation supports a qualified yes, on grounds other
+than safety.
+
+The decisive evidence is the format result. The base model given the compact
+prompt (arm A) produced correctly structured output in 0\% of cases; the
+fine-tuned model given the same prompt (arm F) achieved 100\%. Since the compact
+prompt is what makes the 25\% prompt-token reduction possible, fine-tuning is
+the enabling condition for that saving. Fine-tuning also reduced destructive
+fallbacks ninefold (3.00\% to 0.33\%), meaning the patient receives a
+personalised answer rather than a generic template far more often; improved
+readability by roughly half a grade level; and---when served with its matched
+prompt---raised grounding to 99.7\%.
+
+The honest summary is therefore that fine-tuning bought efficiency, format
+reliability and answer quality, and that these are legitimate returns. It did
+not buy the safety guarantee, and the thesis does not claim it did. This
+distinction is only visible because the ablation was designed to separate the
+components; an end-to-end evaluation of the deployed system alone would have
+reported 0\% unsafe output and invited the incorrect inference that the
+fine-tuned model is safe.
+
+\subsection{The prompt--model matching effect}
+
+An unanticipated and practically useful finding is the grounding collapse when
+the fine-tuned model is served with the full prompt: 99.7\% grounding under the
+compact prompt it was trained with, against 67--69\% under the full prompt, with
+retrieval held identical. Fine-tuning on a specific prompt format appears to
+induce a dependence on that format, such that serving the adapter with a
+different prompt degrades precisely the behaviours the adapter was trained to
+produce. The practical rule---serve a fine-tuned model with the prompt it was
+trained against---is obvious in retrospect but is easy to violate in a system
+that supports multiple prompt variants, which is why the implementation binds
+prompt selection automatically to adapter presence rather than leaving it as an
+independent configuration option.
+
+\section{Personalisation}
+\label{sec:disc_personal}
+
+Personalisation was pursued through three mechanisms: factor-aware retrieval,
+inclusion of the complete patient profile in the prompt, and explicitly computed
+per-section personalisation instructions. The measured personalisation score of
+1.99 out of 2 across 300 profiles indicates the objective was met, though the
+metric is a rule-based proxy for whether the text references the individual's
+own reported values, not a human judgement of usefulness.
+
+The development history is instructive. The system initially produced nearly
+identical text for every patient in a given risk category, and the cause was
+twofold: a safety rule instructing the model to give ``only general wellness
+education'', which directly contradicted the personalisation objective, and an
+abstract instruction to ``personalise'' that provided nothing concrete to act
+on. Rewriting the rule to authorise condition-specific reference while retaining
+every prohibition, and computing explicit per-section instructions from the
+patient's own values, resolved it. The general lesson is that instructions to a
+language model must be operationally specific; ``personalise this'' is not an
+instruction a model can reliably execute, whereas ``mention reducing salt because
+this person has high blood pressure'' is.
+
+\section{Threats to Validity}
+\label{sec:validity}
+
+\subsection{Internal validity}
+
+The chief internal threat is that the safety evaluation and the deployed
+validator share a methodological lineage: both are rule-based detectors written
+by the same authors. A pattern neither anticipates will be neither blocked nor
+counted, which could inflate the apparent safety of the delivered output. The
+ten corrected false positives demonstrate that the detectors were imperfect in
+the direction of over-triggering; nothing in the design can rule out symmetric
+under-triggering. Independent adjudication---ideally clinician review of a
+sample of delivered outputs---is required to bound this, and is the single most
+valuable next evaluation step.
+
+A second internal threat concerns the label. The target is a KDIGO grid category
+computed from measured \eGFR{} and \UACR{} at a single point in time. KDIGO
+requires abnormality persisting beyond three months for a CKD diagnosis, which a
+cross-sectional survey cannot establish. The label is therefore correctly
+described as a laboratory-derived risk stratification rather than a confirmed
+diagnosis, and the model's task is to predict that stratification.
+
+\subsection{External validity}
+
+The model is trained on a United States adult survey population. Applying it to
+a Bangladeshi population---the setting most relevant to this institution---would
+require local validation, because the distribution of the predictors, the
+prevalence of the outcome, and the relationships between them may all differ.
+Nothing in this work establishes transfer.
+
+The language-model evaluation uses 300 synthetic profiles, scored by the
+deployed cascade rather than drawn from real patients. This is appropriate for
+measuring the internal behaviour of the safety mechanisms---it allows full
+control of the emergency and adversarial subgroups, which could not be
+ethically constructed from real patients---but it measures mechanism
+effectiveness, not real-world outcome validity. No claim is made that patients
+who read this output understand it better or act on it, which would require a
+user study.
+
+\subsection{Statistical validity}
+
+The emergency subgroup ($n=60$) and adversarial subgroup ($n=30$) are modest.
+A 100\% or 0\% result at these sizes is precise for this benchmark---the Wilson
+interval for 60/60 is $[94.0, 100]$---but should not be read as a guarantee at
+larger scale. The F vs E comparison in particular has limited power because both
+arms sit at the ceiling on the primary metrics.
+
+All reported language-model results use deterministic decoding at a single seed.
+Sampling variability across seeds was not characterised for the final
+configuration, so the reported figures describe this decoding configuration
+rather than an expectation over stochastic decoding.
+
+\subsection{Construct validity}
+
+Two metric definitions deserve scrutiny. \emph{Grounding} measures whether the
+model cited at least one identifier that was actually supplied to it. It is a
+measure of source presence and citation honesty, not of factual correctness: a
+response could cite a genuinely retrieved passage while mischaracterising its
+content. \emph{Retrieval relevance} uses knowledge-base topic matching as a
+proxy, with no human relevance labelling. Both metrics are therefore weaker than
+their names might suggest, and are described accordingly wherever they appear.
+
+\section{Ethical Considerations}
+\label{sec:ethics}
+
+\textbf{Risk of false reassurance.} The most serious ethical hazard of a
+screening tool is a false negative that discourages a person from seeking care.
+The system mitigates this through a sensitivity-first threshold, through
+explicit statements that a low result is not a guarantee, and through a
+validator rule that blocks reassurance language inconsistent with the computed
+risk. It cannot eliminate the hazard.
+
+\textbf{Scope discipline.} The system never diagnoses, never mentions
+medication, and never issues individualised nutrient targets. These constraints
+are enforced deterministically rather than requested, precisely because the
+consequences of violation---a patient stopping an antihypertensive on the advice
+of a web application---are severe and irreversible.
+
+\textbf{Data protection.} No real patient data was used in development. NHANES is
+public and de-identified, and the fine-tuning corpus is entirely synthetic. At
+inference, all computation is local: the language model, embedder and vector
+index run on the deployment machine, and no patient input is transmitted to any
+external service. This is a direct consequence of choosing a 4B open-weight
+model over a hosted frontier API, and it is a meaningful privacy property for
+health data.
+
+\textbf{Equity.} The training population is not the deployment population for
+this institution's context. Deploying without local validation risks
+systematically miscalibrated risk estimates for the served population, which is
+an equity concern and not merely a technical one.
+
+\textbf{Automation bias.} A fluent, confident, well-formatted explanation can
+induce more trust than its underlying accuracy warrants. The reliability
+indicator, the explicit ``screening, not diagnosis'' framing, and the display of
+input completeness are all countermeasures, but the tension between
+persuasiveness and epistemic honesty is intrinsic to using a language model in
+this role.
+
+\section{Deployment Considerations}
+\label{sec:disc_deploy}
+
+Three practical gaps stand between the current system and a real deployment.
+
+First, the input schema exposes no free-text symptom field, so the validator's
+emergency detection is reachable in production only through the vitals pathway.
+The symptom vocabulary is implemented and exercised by the evaluation harness,
+but a deployed system intended to catch symptom-reported emergencies requires
+that field to be added end to end.
+
+Second, persistence is best-effort by design: a database outage silently skips
+the write. This is correct for a research demonstrator, where a failed save must
+never block a screening, but a production clinical record system would require
+durable queuing.
+
+Third, latency of roughly 31 seconds per full guidance request on the
+development hardware is acceptable for a demonstration but not for a
+high-throughput clinic. Serving optimisation---batching, quantised inference,
+adapter merging---was not pursued, since it does not affect any scientific claim
+in this thesis.

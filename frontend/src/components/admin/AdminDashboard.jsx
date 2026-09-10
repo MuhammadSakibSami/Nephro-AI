@@ -56,7 +56,7 @@ function Header({ guidance }) {
     <div className="flex items-center justify-between flex-wrap gap-3">
       <div>
         <h2 className="text-lg font-bold text-ink-900">Admin / Research dashboard</h2>
-        <p className="text-sm text-ink-500">Model internals, RAG/LLM details, safety, and thesis evaluation.</p>
+        {/* <p className="text-sm text-ink-500">Model internals, RAG/LLM details, safety, and thesis evaluation.</p> */}
       </div>
       {guidance && (
         <div className="flex items-center gap-2">

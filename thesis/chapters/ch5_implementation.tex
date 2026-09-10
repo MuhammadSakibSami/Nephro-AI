@@ -1,0 +1,265 @@
+\chapter{Implementation}
+\label{ch:implementation}
+
+This chapter describes the realised system: the technology stack and the
+reasoning behind each choice, the service interface, the two web interfaces, the
+research database, the deployment modes, and the reproducibility measures.
+
+\section{Technology Stack}
+\label{sec:stack}
+
+Table~\ref{tab:stack} records each major technology, where it is used, why it
+was selected, and its principal drawback. The drawbacks are stated explicitly
+because several of them constrain claims made later in this report.
+
+\begin{table}[H]
+\centering
+\caption{Technology stack with rationale and trade-offs.}
+\label{tab:stack}
+\scriptsize
+\begin{tabularx}{\textwidth}{@{}L{0.92in} L{0.85in} X X@{}}
+\toprule
+\textbf{Technology} & \textbf{Where used} & \textbf{Why chosen} &
+\textbf{Drawback} \\
+\midrule
+scikit-learn \cite{pedregosa2011} & Cascade training and inference & Mature,
+interpretable, strong on tabular clinical data; fast CPU inference &
+Lower ceiling than deep tabular methods on very large data \\
+imbalanced-learn & Training-time resampling & Standard implementations of
+over/under-sampling &
+Risk of overfitting synthetic minority patterns if not cross-validated \\
+joblib & Model serialisation & Plain-\texttt{dict} package with no custom
+classes; self-describing; service trusts the package's own feature list &
+Python-specific format \\
+FastAPI \cite{fastapi} + Uvicorn & Backend service & Async, automatic OpenAPI
+documentation, native Pydantic validation &
+Blocking ML/LLM calls must be managed carefully in an async context \\
+Pydantic & Request validation & \texttt{extra="forbid"} plus per-field ranges
+reject malformed input before the model sees it &
+Schema must track the model's feature list \\
+BGE-M3 via Ollama & RAG embedding (1024-d) & Strong open multilingual embedder;
+serving via Ollama avoids a \texttt{torch.load} version restriction &
+Requires the Ollama service to be running \\
+FAISS & Vector search & Fast, standard, integrates cleanly &
+Overkill at 162 passages; value is headroom for a larger corpus \\
+Qwen3-4B-Instruct-2507 & Text generation & Strong instruction-following at a
+size that is fine-tunable and self-hostable; no patient data leaves the machine &
+Quality ceiling below frontier models; needs a GPU for comfortable latency \\
+PEFT + bitsandbytes & QLoRA fine-tuning & Trains a 4B model on a single GPU;
+adapter is small and swappable &
+Adapter quality bounded by the 540-example corpus \\
+Safety validator (pure Python) & Post-generation gate & Deterministic,
+auditable, zero inference cost &
+Cannot cover unseen unsafe phrasings \\
+PostgreSQL + SQLAlchemy + Alembic & Research persistence & JSONB for nested
+records, typed columns for queries, versioned migrations &
+An extra service; absence is silent unless health is checked \\
+React + Vite + Tailwind & Web interfaces & Fast builds, small bundle,
+no heavyweight state library needed &
+No server-side rendering or routing framework \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{A note on the embedding runtime}
+
+During development the retrieval index was found to have been built with a
+lexical hashing fallback rather than the intended BGE-M3 embedder. The cause was
+a library-level security restriction: the installed PyTorch version predates the
+floor required for a safe \texttt{torch.load} path, so the
+\texttt{sentence-transformers} loader raised, and an automatic embedder-selection
+routine caught the exception and silently degraded to the fallback, emitting only
+a printed warning.
+
+Two remedies were available: upgrade PyTorch, or serve the same embedding model
+through a different runtime. The second was chosen, because the language-model
+serving stack was already verified working against the installed version and an
+upgrade risked destabilising it for no modelling benefit. BGE-M3 is therefore
+served through Ollama, which does not use the restricted loading path. The index
+was rebuilt, and the retrieval evaluation reported in Chapter~\ref{ch:results}
+was re-run entirely against the corrected index.
+
+The episode is documented here rather than omitted because it is
+methodologically relevant: a silent fallback of this kind degrades results
+without producing an error, and the corrected and uncorrected runs were both
+re-scored so that the difference could be attributed.
+
+\section{Backend Service}
+\label{sec:backend}
+
+The backend exposes the endpoints in Table~\ref{tab:api}. The model is loaded
+once at startup; the language-model runtime is a lazily initialised singleton so
+that a deployment which never requests guidance never pays the model-loading
+cost.
+
+\begin{table}[H]
+\centering
+\caption{HTTP API surface.}
+\label{tab:api}
+\small
+\begin{tabularx}{\textwidth}{@{}l L{1.85in} X@{}}
+\toprule
+\textbf{Method} & \textbf{Endpoint} & \textbf{Purpose} \\
+\midrule
+GET & \texttt{/health} & Service and model status, library versions, database state \\
+GET & \texttt{/db/health} & Database connectivity and stored record count \\
+GET & \texttt{/features} & Feature schema, metadata, numeric and binary lists \\
+GET & \texttt{/model-info} & Thresholds and per-stage feature lists \\
+POST & \texttt{/predict} & Cascade scoring: category, probabilities,
+explanation, reliability \\
+POST & \texttt{/reload-model} & Hot-reload the serialised model package \\
+GET & \texttt{/generate-guidance/health} & Language-model mode, model
+specification, active prompt variant \\
+POST & \texttt{/generate-guidance} & Full pipeline: predict, retrieve,
+generate, validate, cite \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Two design details support auditability. First, the model specification string
+reported by the health endpoint encodes adapter status directly---for example
+\texttt{qwen:Qwen/Qwen3-4B-Instruct-2507+lora:v1/adapter}---so the question
+``is the fine-tuned model actually serving this request?'' is answerable from a
+single response, and from any stored run record, without inspecting the process
+that produced it. Second, \texttt{/generate-guidance} returns the entire audit
+trail alongside the patient-facing text: the retrieval query, the retrieved
+passage identifiers with similarity scores, the raw pre-validator text, the
+validator status and the list of violations, and the complete prediction object.
+
+\section{Web Interfaces}
+\label{sec:frontend}
+
+The frontend is a single-page React application presenting two distinct
+interfaces over the same backend.
+
+The \textbf{patient interface} presents a fourteen-field form grouped into
+sections, with per-field normal ranges, inline validation and a live
+completeness indicator. The result view shows the risk category with a plain
+statement that it is a screening result and not a diagnosis, the reliability
+level with an input-completeness bar, a row of ``main signals'' derived from the
+top attributed factors expressed in everyday language, and the five education
+sections with inline citation markers and a reference list.
+
+The \textbf{research interface} exposes the full audit trail: both stage
+probabilities and thresholds, the normalised class probabilities, the input
+quality panel listing imputed and out-of-range values, the complete factor
+attribution table with contribution magnitudes, the retrieval panel with the
+query string and per-passage scores and topics, a side-by-side view of raw and
+post-validator text, the safety panel showing which validator layers fired, a
+live system-health panel, and the frozen evaluation metrics.
+
+Exposing the raw pre-validator text next to the delivered text was a deliberate
+decision. It makes the guardrail's effect directly observable during a
+demonstration---one can see precisely what the model produced and what was
+delivered instead---rather than asking an audience to take the safety claim on
+trust.
+
+\section{Research Database}
+\label{sec:database}
+
+Every screening is recorded in a PostgreSQL table, whose schema is given in
+Table~\ref{tab:dbschema}. Nested structures (raw inputs, full prediction, full
+guidance response) are stored as JSONB so that the schema does not require
+migration each time a field is added, while the fields most useful for research
+queries are additionally materialised as typed, indexed columns.
+
+\begin{table}[H]
+\centering
+\caption{The \texttt{screenings} table.}
+\label{tab:dbschema}
+\small
+\begin{tabularx}{\textwidth}{@{}L{1.55in} L{1.15in} X@{}}
+\toprule
+\textbf{Column} & \textbf{Type} & \textbf{Contents} \\
+\midrule
+\texttt{id} & INTEGER PK & Row identifier \\
+\texttt{created\_at} & TIMESTAMPTZ & Time of screening (indexed) \\
+\texttt{source} & VARCHAR(32) & \texttt{predict} or \texttt{generate-guidance} (indexed) \\
+\texttt{input\_features} & JSONB & Raw submitted values \\
+\texttt{n\_missing\_features} & INTEGER & Count of imputed inputs \\
+\texttt{risk\_class} & VARCHAR(16) & low / moderate / high (indexed) \\
+\texttt{risk\_class\_display} & VARCHAR(64) & Human-readable category label \\
+\texttt{confidence} & FLOAT & Maximum class probability \\
+\texttt{probabilities} & JSONB & Full probability vector \\
+\texttt{prediction} & JSONB & Complete \texttt{/predict} response \\
+\texttt{guidance} & JSONB & Complete guidance response, when applicable \\
+\texttt{safety\_status} & VARCHAR(16) & pass / sanitized / fallback \\
+\texttt{llm\_mode} & VARCHAR(32) & production / local\_demo \\
+\texttt{model\_spec} & VARCHAR(128) & Model identifier including adapter status \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Persistence is best-effort by design. The database layer initialises lazily and,
+if the connection fails, every helper degrades to a no-op while the API
+continues to serve screenings normally. A failed write is logged, never
+surfaced to the user, and never allowed to fail a request. Schema is managed
+explicitly through Alembic migrations rather than automatic table creation, so
+that the deployed schema is version-controlled.
+
+\section{Deployment Modes}
+\label{sec:modes}
+
+Three interchangeable modes are supported behind one interface, selected by
+environment variable and reported by the health endpoint
+(Table~\ref{tab:modes}).
+
+\begin{table}[H]
+\centering
+\caption{Deployment modes.}
+\label{tab:modes}
+\scriptsize
+\begin{tabularx}{\textwidth}{@{}L{0.85in} X X X@{}}
+\toprule
+& \textbf{local\_demo} & \textbf{ollama} & \textbf{qwen (deployed)} \\
+\midrule
+Language model & Deterministic mock generator & Qwen3-4B via Ollama REST &
+Qwen3-4B via \texttt{transformers} + LoRA adapter \\
+Embedder & Hashing TF-IDF (4096-d) & BGE-M3 (1024-d) & BGE-M3 (1024-d) \\
+Vector search & Brute force & Brute force / FAISS & FAISS \\
+Prompt variant & Full & Full & Compact (adapter active) \\
+GPU required & No & No & Recommended \\
+Safety validator & Identical & Identical & Identical \\
+Purpose & Offline demonstration, CI & Laptop GPU without the ML stack &
+The evaluated configuration \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The offline mode exists so that the complete pipeline---retrieval, prompt
+construction, validation, citation---can be exercised on any machine without a
+GPU or network. Its generator is deterministic and is never used for any
+reported evaluation figure. The safety validator is identical across all three
+modes, which means the guardrail behaviour can be demonstrated even where the
+production model cannot run.
+
+\section{Reproducibility}
+\label{sec:repro}
+
+Several measures support reproduction of the reported results.
+
+\begin{itemize}
+  \item \textbf{Dataset integrity.} The prepared modelling file is
+        hash-verified, and the split audit is re-run and asserted at training
+        time.
+  \item \textbf{Configuration fingerprinting.} Cross-validation seeds, model
+        seed, bootstrap replicate count, evaluation seeds and thresholds are
+        recorded together with a configuration fingerprint.
+  \item \textbf{Serialisation verification.} After the model package is written,
+        it is reloaded and its predictions compared against the in-memory model;
+        agreement was exact to within $2.2\times10^{-16}$, and the package
+        checksum is recorded.
+  \item \textbf{Frozen evaluation benchmark.} The 300-profile language-model
+        benchmark is content-fingerprinted, and the fingerprint was re-verified
+        before and after every generation run to confirm that all arms were
+        evaluated against an identical benchmark.
+  \item \textbf{Append-only run records.} Every generated response is stored
+        with the hash of its own raw text, allowing a later re-scoring to prove
+        that only scoring changed and generation did not.
+  \item \textbf{Deterministic decoding.} All reported language-model results use
+        a fixed seed with deterministic decoding.
+\end{itemize}
+
+The deployed model package is 302~KB, which together with the 132~MB adapter and
+the 162-passage index constitutes the entire deployable artefact set beyond the
+base model weights.

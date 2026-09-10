@@ -50,6 +50,8 @@ class QwenChatModel:
         self.top_p = top_p
         self._torch = torch
 
+        self.adapter_path = adapter_path
+
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModelForCausalLM.from_pretrained(
             model_name, torch_dtype="auto", device_map="auto",
@@ -62,6 +64,17 @@ class QwenChatModel:
 
     @property
     def spec(self) -> str:
+        # Adapter status is baked into `spec` (not just `adapter_path`) because
+        # every caller that logs/records a run reads `spec`, not internals - so
+        # "is the fine-tuned model actually active" is answerable from a run
+        # record alone, without inspecting the process that produced it.
+        if self.adapter_path:
+            from pathlib import Path
+            p = Path(self.adapter_path)
+            # Last two segments (e.g. "v1/adapter"): the leaf alone is often
+            # just "adapter" for every version, which defeats traceability.
+            tag = "/".join(p.parts[-2:]) if len(p.parts) >= 2 else p.name
+            return f"qwen:{self.model_name}+lora:{tag}"
         return f"qwen:{self.model_name}"
 
     def _device(self):

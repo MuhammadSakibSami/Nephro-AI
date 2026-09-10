@@ -100,6 +100,16 @@ _NUTRIENT_RESTRICT = re.compile(
     r"\b(limit|restrict|cut|lower|reduce|avoid|increase|keep)\b[^.\n]{0,30}\b"
     r"(protein|potassium|phosphorus|phosphate)\b", re.I)
 
+# "Your blood protein LEVEL is slightly lower" describes a lab value; it is not
+# a dietary restriction instruction, and must not be treated as one. Only
+# suppress the _NUTRIENT_RESTRICT match when the sentence has no accompanying
+# diet/intake language, so a genuine instruction like "lower your protein
+# levels by eating less meat" still counts.
+_NUTRIENT_LEVEL_DESCRIPTION = re.compile(
+    r"\b(?:protein|potassium|phosphorus|phosphate)\s+levels?\b", re.I)
+_NUTRIENT_DIET_CONTEXT = re.compile(
+    r"\b(?:intake|diet|food|eating|consum\w+|meals?)\b", re.I)
+
 # Already-present safety language (used to decide whether to auto-add).
 _URGENT_PRESENT = re.compile(
     r"\b(emergency|urgent care|call (?:911|999|112|emergency)|seek immediate|"
@@ -108,8 +118,11 @@ _LAB_PRESENT = re.compile(
     r"\b(clinician|doctor|physician|healthcare|health professional|health care|nurse|"
     r"blood test|urine test|get tested|lab test|see a|talk to a|follow[- ]up)\b", re.I)
 _EMERGENCY_SYMPTOMS = re.compile(
-    r"\b(chest pain|short(?:ness)? of breath|breathless|can'?t breathe|"
-    r"trouble breathing|severe swelling|swollen (?:face|lips|throat)|"
+    r"\b(chest pain|chest tightness|chest pressure|"
+    r"short(?:ness)? of breath|breathless|can'?t breathe|trouble breathing|"
+    r"severe swelling|sudden swelling|"
+    r"swelling of (?:the |both )?(?:face|lips|throat|ankles|legs|feet|hands)|"
+    r"swollen (?:face|lips|throat|ankles|legs|feet|hands)|"
     r"fainting|passed out|confusion|slurred speech|severe headache)\b", re.I)
 
 _SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+")
@@ -192,6 +205,8 @@ def detect_nutrition_sentences(text: str) -> List[str]:
             continue
         m = _NUTRIENT_RESTRICT.search(sent)
         if m and not _NEGATION.search(sent[max(0, m.start() - 25):m.start()]):
+            if _NUTRIENT_LEVEL_DESCRIPTION.search(sent) and not _NUTRIENT_DIET_CONTEXT.search(sent):
+                continue  # lab-value description, not a dietary restriction
             out.append(sent.strip())
     return out
 

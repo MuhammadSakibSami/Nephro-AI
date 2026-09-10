@@ -1,0 +1,386 @@
+%=============================================================================
+%  A Two-Stage Cascade and Safety-Constrained Language Model for
+%  Kidney-Risk Screening and Patient Education
+%
+%  Institute of Information Technology, Jahangirnagar University
+%  Compile with pdfLaTeX (Overleaf: Menu -> Compiler -> pdfLaTeX). Two passes
+%  are needed for the table of contents / cross-references to settle.
+%=============================================================================
+\documentclass[12pt,a4paper,oneside]{report}
+
+%------------------------- page geometry & spacing ---------------------------
+\usepackage[left=1.5in,right=1in,top=1in,bottom=1in]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+
+%------------------------------- encoding ------------------------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{textcomp}
+
+%--------------------- justification / line breaking -------------------------
+\usepackage{microtype}
+% Allow TeX a little extra slack before it lets a line run into the margin.
+\setlength{\emergencystretch}{3em}
+\hyphenpenalty=1000
+\tolerance=1500
+
+%------------------------------- graphics ------------------------------------
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+\usepackage{float}
+\usepackage[font=small,labelfont=bf,justification=centering]{caption}
+
+%------------------------------- maths ---------------------------------------
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{bm}
+
+%------------------------------- tables --------------------------------------
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{ragged2e}
+\newcolumntype{L}[1]{>{\RaggedRight\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\Centering\arraybackslash}p{#1}}
+\newcolumntype{R}[1]{>{\RaggedLeft\arraybackslash}p{#1}}
+
+%------------------------------- lists ---------------------------------------
+\usepackage{enumitem}
+\setlist{itemsep=2pt,parsep=0pt,topsep=3pt}
+
+%------------------------------- algorithms ----------------------------------
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+
+%------------------------------- colour & links ------------------------------
+\usepackage[table]{xcolor}
+\definecolor{linknavy}{HTML}{1F3864}
+\usepackage[hidelinks,colorlinks=true,linkcolor=black,citecolor=black,%
+            urlcolor=linknavy,breaklinks=true]{hyperref}
+\usepackage{url}
+
+%------------------------------- headings ------------------------------------
+\usepackage{titlesec}
+\renewcommand{\thechapter}{\Roman{chapter}}
+\titleformat{\chapter}[display]
+  {\normalfont\centering\bfseries}
+  {\Large CHAPTER \thechapter}{10pt}{\Large}
+\titlespacing*{\chapter}{0pt}{-20pt}{28pt}
+\titleformat{\section}{\normalfont\large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalfont\normalsize\bfseries}{\thesubsection}{1em}{}
+
+%------------------------------- page style ----------------------------------
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0pt}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\thepage}%
+  \renewcommand{\headrulewidth}{0pt}}
+
+%--------------------- front-matter heading names ----------------------------
+\renewcommand{\listfigurename}{LIST OF FIGURES}
+\renewcommand{\listtablename}{LIST OF TABLES}
+\renewcommand{\contentsname}{TABLE OF CONTENTS}
+\renewcommand{\bibname}{References}
+
+% Roman chapter numbers are wide (e.g. VIII.10.2), so the number columns in the
+% contents/figure/table lists must be widened or numbers collide with titles.
+\usepackage{tocloft}
+\setlength{\cftchapnumwidth}{3.4em}
+\setlength{\cftsecnumwidth}{3.8em}
+\setlength{\cftsubsecnumwidth}{4.8em}
+\setlength{\cftfignumwidth}{3.8em}
+\setlength{\cfttabnumwidth}{3.8em}
+\setlength{\cftsecindent}{3.4em}
+\setlength{\cftsubsecindent}{7.2em}
+
+%------------------------------- shortcuts -----------------------------------
+\newcommand{\eGFR}{eGFR}
+\newcommand{\UACR}{UACR}
+\newcommand{\pone}{p_{1}}
+\newcommand{\ptwo}{p_{2}}
+\newcommand{\tauone}{\tau_{1}}
+\newcommand{\tautwo}{\tau_{2}}
+
+\begin{document}
+
+%=============================================================================
+%  TITLE PAGE
+%=============================================================================
+\begin{titlepage}
+\centering
+\singlespacing
+\vspace*{0.35in}
+{\Large\bfseries A Two-Stage Cascade and Safety-Constrained\\[4pt]
+Language Model for Kidney-Risk Screening and\\[4pt]
+Patient Education\par}
+\vspace{0.40in}
+{\large by\par}
+\vspace{0.18in}
+{\large
+Muhammad Sakib Sami \quad Roll: 210525\\[5pt]
+Mohammad Walid Hasan \quad Roll: 210536\\[5pt]
+Zunaid Ali \quad Roll: 210548\par}
+\vspace{0.40in}
+{\large A Research Project Report submitted to the\\
+Institute of Information Technology\\
+in partial fulfillment of the requirements for the degree of\par}
+\vspace{0.18in}
+{\large\bfseries Bachelor of Science in\\
+Information and Communication Technology\par}
+\vspace{0.35in}
+{\large Supervisor: M. Shamim Kaiser, PhD\\
+Professor, Institute of Information Technology\par}
+\vspace{0.35in}
+{\large Institute of Information Technology\\
+Jahangirnagar University\\
+Savar, Dhaka-1342\par}
+\vspace{0.30in}
+{\large September 2026\par}
+\vfill
+\end{titlepage}
+
+\pagenumbering{roman}
+\setcounter{page}{2}
+
+%=============================================================================
+%  DECLARATION
+%=============================================================================
+\chapter*{DECLARATION}
+\addcontentsline{toc}{chapter}{DECLARATION}
+\thispagestyle{fancy}
+
+\noindent We hereby declare that this thesis is based on the results found by
+ourselves. Materials of work found by other researchers are mentioned by
+reference. This thesis, neither in whole nor in part, has been previously
+submitted for any degree.
+
+\vspace{1.1in}
+
+\noindent\begin{tabularx}{\textwidth}{XXX}
+\centering Muhammad Sakib Sami & \centering Mohammad Walid Hasan &
+\Centering Zunaid Ali \tabularnewline[2pt]
+\centering Roll: 210525 & \centering Roll: 210536 & \Centering Roll: 210548
+\tabularnewline
+\end{tabularx}
+
+%=============================================================================
+%  CERTIFICATE
+%=============================================================================
+\chapter*{CERTIFICATE}
+\addcontentsline{toc}{chapter}{CERTIFICATE}
+\thispagestyle{fancy}
+
+\noindent This is to certify that the thesis entitled \textbf{``A Two-Stage
+Cascade and Safety-Constrained Language Model for Kidney-Risk Screening and
+Patient Education''} has been prepared and submitted by \textbf{Muhammad Sakib
+Sami}, \textbf{Mohammad Walid Hasan} and \textbf{Zunaid Ali} in partial
+fulfilment of the requirement for the degree of Bachelor of Science (honours) in
+Information and Communication Technology.
+
+\vspace{1.0in}
+
+\noindent\hspace{0.35\textwidth}\begin{minipage}{0.5\textwidth}
+\centering
+\rule{2.6in}{0.4pt}\\
+M. Shamim Kaiser, PhD\\
+Supervisor
+\end{minipage}
+
+\vspace{0.6in}
+
+\noindent Accepted and approved in partial fulfilment of the requirement for the
+degree of Bachelor of Science (honours) in Information and Communication
+Technology.
+
+\vspace{0.9in}
+
+\noindent\begin{tabularx}{\textwidth}{XXX}
+\centering \rule{1.5in}{0.4pt} & \centering \rule{1.5in}{0.4pt} &
+\Centering \rule{1.5in}{0.4pt} \tabularnewline[2pt]
+\centering Chairman & \centering Member & \Centering Member \tabularnewline
+\end{tabularx}
+
+%=============================================================================
+%  ACKNOWLEDGEMENTS
+%=============================================================================
+\chapter*{ACKNOWLEDGEMENTS}
+\addcontentsline{toc}{chapter}{ACKNOWLEDGEMENTS}
+\thispagestyle{fancy}
+
+We feel pleased to have the opportunity of expressing our heartfelt thanks and
+gratitude to all who rendered their cooperation in making this report.
+
+This research was performed under the supervision of \textbf{M. Shamim Kaiser,
+PhD}, Professor, Institute of Information Technology (IIT), Jahangirnagar
+University, Savar, Dhaka. Throughout the work he supplied us with books,
+journal articles and reference materials related to the present investigation,
+and gave generously of his time in reviewing our design decisions, our
+evaluation methodology and our statistical analysis. Without his guidance, kind
+support and patient supervision we could not have completed this project
+successfully within the available time. First and foremost, we wish to
+acknowledge our profound and sincere gratitude to him for his guidance,
+valuable suggestions, encouragement and cordial cooperation.
+
+We express our utmost gratitude to the Director, IIT, Jahangirnagar University,
+for the advice and institutional support that encouraged us to complete the
+work within the time frame. We would also like to thank the other faculty
+members of IIT who have helped us directly or indirectly by providing their
+valuable support in completing this work.
+
+We gratefully acknowledge the Centers for Disease Control and Prevention and
+the National Center for Health Statistics for making the NHANES 2021--2023
+cycle publicly available, and the KDIGO, ADA, NKF/KDOQI and CDC organisations
+whose published clinical guidance forms the knowledge base of the education
+component of this system.
+
+Finally, we would like to thank all the staff of IIT, Jahangirnagar University,
+our families and our friends, who have helped us with their encouragement and
+cooperation throughout the work.
+
+%=============================================================================
+%  ABSTRACT
+%=============================================================================
+\chapter*{ABSTRACT}
+\addcontentsline{toc}{chapter}{ABSTRACT}
+\thispagestyle{fancy}
+
+Chronic kidney disease (CKD) affects an estimated 800 million people worldwide
+and remains undetected in most cases until an advanced stage, because the
+confirmatory markers---estimated glomerular filtration rate (\eGFR) and urine
+albumin-to-creatinine ratio (\UACR)---require a kidney-specific laboratory
+order that is rarely placed before a clinician already suspects disease. This
+work presents Nephro-AI, a cross-sectional kidney-risk screening and patient
+education system built exclusively on routine, low-cost measurements that a
+standard general checkup already produces. A two-stage cascade---a
+random-forest at-risk gate followed by a gradient-boosting high-risk
+discriminator---was trained on 4{,}719 adult participants from NHANES
+2021--2023 using fourteen routine inputs, deliberately excluding creatinine,
+\eGFR{} and \UACR, which are used only to construct the KDIGO-aligned target
+label. On a held-out test set of 833 participants the cascade attains 70.9\%
+accuracy, 66.0\% balanced accuracy and 73.7\% recall on the high-risk class,
+with only two high-to-low misclassifications, the most safety-critical error
+type. A second contribution converts the numeric risk output into personalised,
+plain-language education using a retrieval-augmented Qwen3-4B language model
+fine-tuned with a low-rank adapter and constrained by a deterministic
+post-generation safety validator. This component was evaluated with a
+pre-registered six-arm ablation on a frozen 300-profile benchmark that isolates
+the causal contribution of retrieval, fine-tuning, the validator and prompt
+compression, analysed with McNemar tests, Wilson intervals and Holm correction.
+The deployed configuration delivers zero critical-unsafe outputs and 100\%
+emergency-redirect recall, with the validator---not fine-tuning---identified as
+the component responsible for the safety guarantee.
+
+\vspace{10pt}
+\noindent\textbf{Keywords:} Chronic kidney disease, Risk screening, Two-stage
+cascade, Retrieval-augmented generation, Large language model safety,
+Low-rank adaptation.
+
+%=============================================================================
+%  LIST OF ABBREVIATIONS
+%=============================================================================
+\chapter*{LIST OF ABBREVIATIONS}
+\addcontentsline{toc}{chapter}{LIST OF ABBREVIATIONS}
+\thispagestyle{fancy}
+
+\begin{longtable}{@{}p{1.3in}L{4.0in}@{}}
+\textbf{ADA} & American Diabetes Association \\
+\textbf{API} & Application Programming Interface \\
+\textbf{AUC} & Area Under the Curve \\
+\textbf{BGE-M3} & BAAI General Embedding, Multi-lingual/Multi-granularity model \\
+\textbf{BUN} & Blood Urea Nitrogen \\
+\textbf{CDC} & Centers for Disease Control and Prevention \\
+\textbf{CI} & Confidence Interval \\
+\textbf{CKD} & Chronic Kidney Disease \\
+\textbf{CV} & Cross-Validation \\
+\textbf{eGFR} & Estimated Glomerular Filtration Rate \\
+\textbf{FAISS} & Facebook AI Similarity Search \\
+\textbf{FK} & Flesch--Kincaid (readability grade) \\
+\textbf{GB} & Gradient Boosting \\
+\textbf{HbA1c} & Glycated Haemoglobin \\
+\textbf{IIT} & Institute of Information Technology \\
+\textbf{JU} & Jahangirnagar University \\
+\textbf{JSONB} & Binary JavaScript Object Notation (PostgreSQL type) \\
+\textbf{KDIGO} & Kidney Disease: Improving Global Outcomes \\
+\textbf{KDOQI} & Kidney Disease Outcomes Quality Initiative \\
+\textbf{LLM} & Large Language Model \\
+\textbf{LoRA} & Low-Rank Adaptation \\
+\textbf{MCC} & Matthews Correlation Coefficient \\
+\textbf{ML} & Machine Learning \\
+\textbf{NF4} & 4-bit NormalFloat quantisation \\
+\textbf{NHANES} & National Health and Nutrition Examination Survey \\
+\textbf{NKF} & National Kidney Foundation \\
+\textbf{PEFT} & Parameter-Efficient Fine-Tuning \\
+\textbf{QLoRA} & Quantised Low-Rank Adaptation \\
+\textbf{RAG} & Retrieval-Augmented Generation \\
+\textbf{RF} & Random Forest \\
+\textbf{SBP / DBP} & Systolic / Diastolic Blood Pressure \\
+\textbf{SHAP} & SHapley Additive exPlanations \\
+\textbf{UACR} & Urine Albumin-to-Creatinine Ratio \\
+\end{longtable}
+
+%=============================================================================
+%  LIST OF NOTATIONS
+%=============================================================================
+\chapter*{LIST OF NOTATIONS}
+\addcontentsline{toc}{chapter}{LIST OF NOTATIONS}
+\thispagestyle{fancy}
+
+\begin{longtable}{@{}p{1.3in}L{4.0in}@{}}
+$x$ & Feature vector of one participant (14 routine inputs) \\
+$\pone$ & Stage-1 output, $P(\text{at risk}\mid x)$ \\
+$\ptwo$ & Stage-2 output, $P(\text{high}\mid \text{at risk}, x)$ \\
+$\tauone$ & Stage-1 decision threshold ($0.44$) \\
+$\tautwo$ & Stage-2 decision threshold ($0.50$) \\
+$\hat{y}$ & Predicted screening category (low / moderate / high) \\
+$P(c\mid x)$ & Reported probability of class $c$ \\
+$\phi_f$ & Perturbation contribution of feature $f$ \\
+$r_f$ & Clinical reference value of feature $f$ \\
+$m$ & Probability margin between the top two classes \\
+$n_{\mathrm{miss}}$ & Number of missing (imputed) input features \\
+$r$ & LoRA rank ($16$) \\
+$\alpha$ & LoRA scaling factor ($32$) \\
+$A, B$ & LoRA low-rank factor matrices \\
+$W, W'$ & Base and adapted weight matrices \\
+$k$ & Number of retrieved guideline excerpts ($4$) \\
+$\Delta$ & Paired risk difference between two evaluation arms \\
+$p_{\mathrm{Holm}}$ & Holm-corrected significance level \\
+\end{longtable}
+
+%=============================================================================
+%  LISTS OF FIGURES / TABLES / CONTENTS
+%=============================================================================
+\listoffigures
+\addcontentsline{toc}{chapter}{LIST OF FIGURES}
+\clearpage
+
+\listoftables
+\addcontentsline{toc}{chapter}{LIST OF TABLES}
+\clearpage
+
+\tableofcontents
+\clearpage
+
+%=============================================================================
+%  MAIN MATTER
+%=============================================================================
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\input{chapters/ch1_introduction}
+\input{chapters/ch2_literature}
+\input{chapters/ch3_system_model}
+\input{chapters/ch4_methodology}
+\input{chapters/ch5_implementation}
+\input{chapters/ch6_results}
+\input{chapters/ch7_discussion}
+\input{chapters/ch8_conclusion}
+
+\input{chapters/references}
+\input{chapters/appendix}
+
+\end{document}

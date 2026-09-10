@@ -1,7 +1,7 @@
 # Kidney-Risk Screening — Frontend
 
-A modern, thesis-demo-ready frontend for the non-invasive kidney-risk screening
-project. Two interfaces in one app:
+A modern, thesis-demo-ready frontend for the routine-blood-test-based,
+cross-sectional kidney-risk screening project. Two interfaces in one app:
 
 - **Patient View** — simple, calm, non-technical: enter routine values → risk
   result + personalized, guideline-grounded kidney-risk **education**.

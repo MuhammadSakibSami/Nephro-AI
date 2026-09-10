@@ -72,11 +72,11 @@ function Brand({ compact }) {
       </span>
       {!compact && (
         <div className="leading-tight">
-          <div className="font-extrabold text-ink-900">KidneyScreen</div>
-          <div className="text-[11px] text-ink-400 font-medium">Risk screening + education</div>
+          <div className="font-extrabold text-ink-900">Nephro AI</div>
+          <div className="text-[11px] text-ink-400 font-medium">Kidney Risk Screening</div>
         </div>
       )}
-      {compact && <span className="font-extrabold text-ink-900">KidneyScreen</span>}
+      {compact && <span className="font-extrabold text-ink-900">Nephro AI</span>}
     </div>
   );
 }

@@ -11,8 +11,10 @@ Chains the four prior phases into one call:
       -> GuidanceResult      (safe text + provenance + audit trail)
 
 This is the MVP: it uses the BASE (un-fine-tuned) Qwen3-4B so Phase 6 can measure
-whether fine-tuning is needed. Phase 8 swaps in the fine-tuned model with no other
-change.
+whether fine-tuning is needed. Phase 8 swaps in the fine-tuned model via
+`model_kwargs={"adapter_path": ...}`; the compact prompt is then selected
+automatically (see `GuidanceRuntime.__init__`'s `prompt` parameter), since the
+fine-tune was trained specifically against it.
 
 Usage (Colab / GPU):
     from ckd_risk_app.llm.serving.llm_runtime import GuidanceRuntime
@@ -31,7 +33,7 @@ from typing import Any, Dict, List, Optional, Union
 from ..rag.retriever import Retriever
 from .contract import GuidanceOutput, LLMInput, parse_guidance
 from .model_backends import get_model
-from .prompts import build_messages
+from .prompts import build_compact_messages, build_messages
 from .safety_validator import (
     Violation, context_from_llm_input, enforce,
 )
@@ -80,12 +82,28 @@ class GuidanceResult:
 class GuidanceRuntime:
     def __init__(self, model: str = "auto", k: int = 4, max_retries: int = 1,
                  log_path: Optional[Union[str, Path]] = None,
-                 retriever: Optional[Retriever] = None, model_kwargs: Optional[Dict] = None):
+                 retriever: Optional[Retriever] = None, model_kwargs: Optional[Dict] = None,
+                 prompt: str = "auto"):
+        """`prompt`: "auto" (compact when `model_kwargs["adapter_path"]` is set,
+        else full), or force "compact"/"full" explicitly. Phase 7/8 trained the
+        fine-tuned model against the compact prompt specifically (gold answers
+        generated under the full prompt, paired with the compact one at train
+        time) - serving it the full prompt anyway would silently forfeit both
+        the prompt-compression objective and the format/safety internalization
+        the fine-tune was for.
+        """
         self.retriever = retriever or Retriever.load()
         self.model = get_model(model, **(model_kwargs or {}))
         self.k = k
         self.max_retries = max_retries
         self.log_path = Path(log_path) if log_path else None
+
+        if prompt == "auto":
+            prompt = "compact" if (model_kwargs or {}).get("adapter_path") else "full"
+        if prompt not in ("compact", "full"):
+            raise ValueError(f"prompt must be 'auto', 'compact', or 'full', got {prompt!r}")
+        self.prompt = prompt
+        self._build_messages = build_compact_messages if prompt == "compact" else build_messages
 
     def generate_guidance(self, predict_response: Union[Dict[str, Any], LLMInput],
                           k: Optional[int] = None) -> GuidanceResult:
@@ -101,7 +119,7 @@ class GuidanceRuntime:
 
         def _generate(attempt: int) -> str:
             captured["attempts"] += 1
-            messages = build_messages(inp, chunks)
+            messages = self._build_messages(inp, chunks)
             if attempt > 0:
                 messages[-1]["content"] += _RETRY_NOTE
             raw = self.model.generate(messages)

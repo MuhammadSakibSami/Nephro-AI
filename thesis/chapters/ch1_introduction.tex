@@ -1,0 +1,308 @@
+\chapter{Introduction}
+\label{ch:introduction}
+
+\section{Background}
+\label{sec:background}
+
+Chronic kidney disease (CKD) is a progressive, largely irreversible loss of
+kidney function that affects an estimated 800 million people worldwide, or
+roughly one adult in ten \cite{cdcbasics,kdigo2024}. It is a leading cause of
+cardiovascular mortality, and in its terminal stage it requires dialysis or
+transplantation---interventions that are financially and logistically out of
+reach for a large proportion of the population in low- and middle-income
+countries such as Bangladesh.
+
+The clinical tragedy of CKD is that it is both \emph{slow} and \emph{silent}.
+The disease typically develops over years, and a person can lose a substantial
+fraction of kidney function before experiencing any symptom that would prompt a
+medical visit. By the time symptoms such as oedema, persistent fatigue, or
+reduced urine output appear, the disease has often reached a stage at which the
+remaining clinical options are limited to slowing further decline rather than
+restoring function. Early identification is therefore the single most effective
+lever available, because the dominant drivers of CKD progression---elevated
+blood pressure, poorly controlled blood glucose, and central obesity---are
+precisely the factors that respond to early lifestyle modification and routine
+clinical follow-up.
+
+\subsection{How CKD is confirmed clinically}
+
+The internationally accepted framework for staging CKD is the KDIGO risk grid
+\cite{kdigo2024}, which combines two laboratory measurements:
+
+\begin{itemize}
+  \item the \textbf{estimated glomerular filtration rate} (\eGFR), computed
+        from serum creatinine, which measures how effectively the kidneys
+        filter blood; and
+  \item the \textbf{urine albumin-to-creatinine ratio} (\UACR), which measures
+        how much protein is leaking into the urine.
+\end{itemize}
+
+Together these two axes define the low, moderate, high and very-high risk
+categories shown later in Figure~\ref{fig:kdigo}. This grid is the diagnostic
+gold standard, and nothing in this thesis proposes to replace it.
+
+The practical difficulty is one of \emph{ordering}, not of accuracy. Neither
+\eGFR{} nor \UACR{} is part of a routine general health checkup. A creatinine
+assay with an \eGFR{} calculation, and particularly a urine albumin test, are
+kidney-specific orders that a clinician places when they already have a reason
+to suspect kidney disease. For an asymptomatic patient there is usually no such
+trigger. The result is a circular detection gap: the test that would reveal
+early CKD is not ordered because there is no symptom, and there is no symptom
+because the disease is still early. This gap---not the cost of a blood draw as
+such---is the specific problem this research addresses.
+
+\subsection{What a routine checkup already provides}
+
+A standard general health checkup, by contrast, routinely produces a
+substantial amount of information that is physiologically related to kidney
+health: blood pressure, waist circumference, fasting glucose, glycated
+haemoglobin (HbA1c), blood urea nitrogen (BUN), uric acid, serum albumin and
+haemoglobin, together with a self-reported history of diabetes and
+hypertension. These measurements are inexpensive, widely available, and---
+critically---\emph{already being collected} in general practice, community
+health camps and population health surveys. If a sufficiently reliable risk
+signal can be extracted from measurements that already exist, then screening
+becomes an act of computation rather than an act of additional testing.
+
+\subsection{Language models as a patient-education layer}
+
+A risk score on its own has limited value to the person being screened. Being
+told ``your kidney risk is moderate'' answers neither ``what does that mean for
+me?'' nor ``what should I do next?''. Health literacy about kidney disease is
+low in the general population, and the gap between a numeric model output and
+an actionable understanding is precisely where most screening tools stop.
+
+Recent instruction-following large language models (LLMs) can produce fluent,
+readable explanations, and are therefore an attractive candidate for closing
+that gap. They are also, however, unreliable in exactly the ways that matter
+most in a medical context: they can state a diagnosis that the underlying model
+never made, recommend or adjust medication, invent numeric dietary targets, or
+reassure a patient whose reported vital signs indicate an emergency. Deploying
+an LLM in a health-screening pathway is therefore not primarily a generation
+problem but a \emph{constraint} problem.
+
+\section{Overview}
+\label{sec:overview}
+
+This thesis presents \textbf{Nephro-AI}, an end-to-end system that pairs a
+cross-sectional machine-learning kidney-risk screening model with a
+safety-constrained, guideline-grounded language-model education layer. The
+system is built around two design commitments that run through every chapter
+that follows.
+
+\begin{enumerate}
+  \item \textbf{The screening model consumes only routine, low-cost inputs.}
+        Creatinine, \eGFR, \UACR{} and urine protein are excluded from the
+        feature set entirely. They are used exclusively to construct the
+        training label from the KDIGO grid, and never as model inputs. The
+        deployed model therefore runs on data a general checkup already
+        produces.
+  \item \textbf{Safety is enforced deterministically, not merely requested.}
+        The language model is instructed to behave safely, is fine-tuned on
+        safety-screened examples, and---decisively---has every one of its
+        outputs passed through a rule-based validator that blocks diagnosis,
+        medication and supplement advice, rewrites numeric dietary targets, and
+        injects urgent-care redirection when the reported vitals demand it.
+\end{enumerate}
+
+The complete system is implemented as a working web application with a
+patient-facing interface and a researcher-facing audit interface, backed by a
+FastAPI service, a PostgreSQL research database, and a local language-model
+runtime. Both the screening model and the education layer are evaluated
+quantitatively, the latter through a pre-registered six-arm ablation designed
+to attribute the observed safety behaviour to specific architectural
+components rather than to the system as an undifferentiated whole.
+
+\section{Problem Statement}
+\label{sec:problem}
+
+The problem addressed by this research can be stated as follows.
+
+\begin{quote}
+\emph{Given only the routine, low-cost measurements produced by a standard
+general health checkup---and explicitly excluding the kidney-specific
+confirmatory tests (\eGFR, creatinine, \UACR)---can a machine-learning system
+stratify an adult into a clinically meaningful kidney-risk category with
+sufficient reliability to justify referral for confirmatory testing; and can
+the resulting risk assessment be communicated to that person as personalised,
+guideline-grounded education by a large language model whose output is
+guaranteed, by construction, never to diagnose, prescribe, or withhold urgent
+care?}
+\end{quote}
+
+Two sub-problems follow. The first is a supervised learning problem under
+severe class imbalance: in the population data used here, 82.9\% of
+participants fall in the low-risk category and only 4.5\% in the high-risk
+category, so a classifier optimised for aggregate accuracy will systematically
+under-detect exactly the group that most needs detection. The second is a
+constrained natural-language generation problem: the education text must be
+simultaneously personalised (referring to the individual's actual measurements),
+grounded (traceable to published clinical guidance), readable (approximately
+eighth-grade level), and unconditionally safe.
+
+\section{Motivation}
+\label{sec:motivation}
+
+Three observations motivated this work.
+
+\textbf{First, the existing machine-learning literature on CKD is
+methodologically circular for screening purposes.} A large body of published
+work reports very high accuracy---frequently above 95\%---for CKD
+classification \cite{chittora2021,aljaaf2019,yildirim2017}. On inspection,
+these models almost universally include serum creatinine, blood urea, or
+\eGFR{} among their input features, and are frequently evaluated on a small,
+clean, well-balanced benchmark dataset. A model that consumes creatinine to
+predict a creatinine-derived label is performing a computation, not a
+screening: it requires the very test whose ordering is the bottleneck. The
+reported accuracy is real but the clinical utility for early detection is
+limited.
+
+\textbf{Second, screening tools stop at the score.} Systematic review of kidney
+prediction models \cite{ramspek2021} finds that the overwhelming majority
+terminate at a risk estimate, with no patient-facing communication component
+and no evaluation of whether the information conveyed is understood or
+actionable. The educational half of the problem is treated as out of scope.
+
+\textbf{Third, health-domain LLM systems rarely publish measured safety
+guarantees.} Where language models are deployed for patient-facing health
+information, safety is typically pursued through prompt engineering alone,
+which offers no guarantee, or through fine-tuning, whose effect is difficult to
+verify. Published, component-attributed, statistically tested measurements of
+unsafe output rates are uncommon. Since safety is the property on which
+deployment permission ultimately depends, it deserves the same evaluative rigour
+normally reserved for accuracy.
+
+\section{Objectives}
+\label{sec:objectives}
+
+The overall goal of this research is to design, implement and evaluate a
+kidney-risk screening and education system that is deployable on routinely
+available data and demonstrably safe in its patient-facing output. The specific
+objectives are:
+
+\begin{enumerate}
+  \item To construct a KDIGO-aligned, cross-sectional kidney-risk dataset from
+        NHANES 2021--2023 in which the target label is derived from \eGFR{} and
+        \UACR{} while the feature set contains neither.
+  \item To design and train a two-stage classification cascade that is
+        explicitly optimised to minimise the clinically most dangerous error---
+        classifying a genuinely high-risk person as low risk---rather than to
+        maximise aggregate accuracy.
+  \item To produce a per-patient explanation of each prediction and a
+        transparent reliability indicator, so that the screening output is
+        interpretable rather than opaque.
+  \item To construct a safety-scoped knowledge base from published clinical
+        guidance (KDIGO, ADA, NKF/KDOQI, CDC) and a retrieval mechanism that
+        selects guidance according to the individual's own dominant risk
+        factors.
+  \item To adapt a compact open-weight language model, by parameter-efficient
+        fine-tuning, to produce structured, personalised, guideline-grounded
+        education from a short prompt.
+  \item To implement a deterministic post-generation safety validator that
+        enforces the clinical constraints unconditionally, independently of
+        what the language model produces.
+  \item To evaluate the education layer with a pre-registered ablation that
+        attributes the measured safety behaviour to individual components, using
+        appropriate paired statistical inference.
+  \item To deliver the whole system as a working, auditable web application.
+\end{enumerate}
+
+This work also seeks to answer the following research questions:
+
+\begin{enumerate}
+  \item How much kidney-risk discrimination is recoverable from routine, low-cost
+        inputs alone, once the confirmatory markers are withheld?
+  \item Does decomposing the three-class problem into a cascade of two binary
+        decisions reduce the rate of high-to-low misclassification relative to a
+        single multi-class classifier?
+  \item Which architectural component---retrieval, fine-tuning, or the
+        deterministic validator---is actually responsible for the safety of the
+        delivered patient education?
+  \item Can a fine-tuned model reproduce full-prompt safety behaviour from a
+        substantially shorter prompt, and at what measurable cost?
+\end{enumerate}
+
+\section{Scope, Assumptions and Limitations}
+\label{sec:scope}
+
+The following assumptions delimit the work.
+
+\begin{itemize}
+  \item \textbf{Screening, not diagnosis.} The system outputs a risk category
+        intended to trigger confirmatory testing. It does not diagnose CKD, and
+        every patient-facing surface states this explicitly.
+  \item \textbf{Cross-sectional design.} Both the training data and each
+        individual screening are point-in-time. NHANES provides a single
+        observation per participant, so the model cannot represent trajectory,
+        and the system does not track change across visits.
+  \item \textbf{Label fidelity.} The target variable is a KDIGO-grid category
+        computed from measured \eGFR{} and \UACR{} within the survey. It is a
+        laboratory-derived risk stratification, not an adjudicated clinical
+        diagnosis with imaging or biopsy confirmation.
+  \item \textbf{Population.} The model is trained on a United States adult
+        survey population. Transfer to a Bangladeshi or other South Asian
+        population is untested and would require local validation.
+  \item \textbf{Language-model evaluation is synthetic.} The 300-profile
+        benchmark used to evaluate the education layer is generated and scored
+        against the deployed cascade, not drawn from real patients, and no
+        clinician review of the generated text was conducted in this phase.
+  \item \textbf{Rule-based safety detection.} Both the deployed validator and
+        the evaluation detectors are deterministic rule systems. They provide
+        reproducibility and auditability, but cannot be assumed complete against
+        an unbounded space of unsafe phrasings.
+\end{itemize}
+
+\section{Contributions}
+\label{sec:contributions}
+
+The principal contributions of this thesis are:
+
+\begin{enumerate}
+  \item \textbf{A routine-input kidney-risk cascade.} A two-stage
+        random-forest/gradient-boosting cascade trained on 4{,}719 NHANES
+        participants using fourteen routine inputs, achieving 70.9\% accuracy
+        and 73.7\% high-risk recall on a held-out test set of 833 participants
+        with only two high-to-low misclassifications, without access to
+        creatinine, \eGFR{} or \UACR.
+  \item \textbf{Factor-aware retrieval for per-patient grounding.} A retrieval
+        strategy that derives a priority topic ordering from the individual's own
+        model-attributed risk factors and guarantees topic coverage, so that two
+        people in the same risk category receive different guideline grounding.
+  \item \textbf{A prompt-compression fine-tune.} A LoRA adapter trained on
+        540 safety-screened examples in which targets generated under a long
+        instruction prompt are paired with a short prompt, reducing prompt cost
+        by 25\% at serving time without a measurable safety penalty.
+  \item \textbf{A component-attributed safety evaluation.} A pre-registered
+        six-arm ablation over a frozen 300-profile benchmark, analysed with
+        McNemar tests, Wilson intervals and Holm correction, which isolates the
+        deterministic validator---rather than fine-tuning---as the component
+        responsible for eliminating critical-unsafe output.
+  \item \textbf{A complete, auditable implementation}, including a
+        patient-facing interface, a researcher-facing audit interface exposing
+        retrieval and validator decisions, and a reproducible artefact trail.
+\end{enumerate}
+
+\section{Research Outline}
+\label{sec:outline}
+
+The remainder of this report is structured as follows.
+\textbf{Chapter~\ref{ch:literature}} reviews the clinical background of CKD
+staging, the machine-learning literature on CKD prediction, techniques for
+learning under class imbalance, model explainability, and the use of large
+language models, retrieval augmentation, parameter-efficient fine-tuning and
+safety guardrails in healthcare, closing with a statement of the research gap.
+\textbf{Chapter~\ref{ch:system}} presents the system model: the layered
+architecture, the formal definition of the cascade, the explanation and
+reliability formulations, and the end-to-end request algorithm.
+\textbf{Chapter~\ref{ch:methodology}} details the methodology---dataset
+construction and label derivation, feature selection, imbalance handling, model
+training and threshold selection, knowledge-base construction, retrieval,
+prompt engineering, training-data generation, fine-tuning, and the safety
+validator. \textbf{Chapter~\ref{ch:implementation}} describes the
+implementation: the technology stack with its trade-offs, the API surface, the
+web interfaces, the database schema and the deployment modes.
+\textbf{Chapter~\ref{ch:results}} reports results for both components,
+including the six-arm ablation and its statistical analysis.
+\textbf{Chapter~\ref{ch:discussion}} interprets these findings, examines
+threats to validity, and discusses ethical and deployment considerations.
+\textbf{Chapter~\ref{ch:conclusion}} concludes and identifies future work.

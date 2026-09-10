@@ -14,7 +14,7 @@ export default function DemoCases({ onRun, loadingId }) {
       <div>
         <h2 className="text-lg font-bold text-ink-900">Demo cases</h2>
         <p className="text-sm text-ink-500">
-          One-click supervisor cases. Each runs the full pipeline (ML → RAG → LLM → safety validator)
+          Each runs the full pipeline (ML → RAG → LLM → safety validator)
           and opens the patient result; switch to Admin to inspect internals.
         </p>
       </div>
@@ -43,7 +43,7 @@ export default function DemoCases({ onRun, loadingId }) {
 
       <Card className="bg-ink-50/60 border-ink-100">
         <SectionTitle icon="shield" title="What to expect"
-          sub="Talking points for the supervisor demo." />
+           />
         <ul className="text-sm text-ink-600 space-y-1.5 list-disc pl-5">
           <li><b>Low risk:</b> calm, preventive education; validator status <code>pass</code>.</li>
           <li><b>Moderate (BP + glucose):</b> guidance personalized to the drivers; clinician + lab follow-up reminder.</li>

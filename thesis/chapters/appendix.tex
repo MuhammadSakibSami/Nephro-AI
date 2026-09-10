@@ -1,0 +1,240 @@
+\appendix
+\renewcommand{\thechapter}{\Alph{chapter}}
+\titleformat{\chapter}[display]
+  {\normalfont\centering\bfseries}
+  {\Large APPENDIX \thechapter}{10pt}{\Large}
+\setcounter{chapter}{0}
+
+\chapter{Input Feature Schema}
+\label{app:features}
+
+Table~\ref{tab:app_schema} gives the complete input specification enforced by
+the API and the web form: the accepted range, the reference value used by the
+perturbation explanation, and the normal range displayed to the user.
+
+\begin{table}[H]
+\centering
+\caption{Input feature schema with validation ranges and explanation reference
+values.}
+\label{tab:app_schema}
+\small
+\begin{tabular}{@{}llrrl@{}}
+\toprule
+\textbf{Field} & \textbf{Unit} & \textbf{Accepted range} &
+\textbf{Reference $r_f$} & \textbf{Type} \\
+\midrule
+age & years & 18--85 & 55.0 & numeric \\
+income\_poverty\_ratio & ratio & 0.0--5.0 & 2.0 & numeric \\
+waist & cm & 40--180 & 98.0 & numeric \\
+mean\_sbp & mmHg & 70--240 & 125.0 & numeric \\
+mean\_dbp & mmHg & 35--140 & 78.0 & numeric \\
+glucose & mg/dL & 40--500 & 100.0 & numeric \\
+hba1c & \% & 3.0--18.0 & 5.6 & numeric \\
+blood\_urea\_nitrogen & mg/dL & 2--150 & 14.0 & numeric \\
+uric\_acid & mg/dL & 1.0--15.0 & 5.5 & numeric \\
+serum\_albumin & g/dL & 1.5--6.0 & 4.2 & numeric \\
+hemoglobin & g/dL & 5.0--20.0 & 14.0 & numeric \\
+diabetes\_yes & 0/1 & \{0, 1\} & 0 & binary \\
+hypertension\_doctor\_told & 0/1 & \{0, 1\} & 0 & binary \\
+taking\_bp\_medicine & 0/1 & \{0, 1\} & 0 & binary \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The API rejects unknown fields (\texttt{extra="forbid"}) and out-of-range values
+with HTTP 422 before the model is invoked. Fields left blank are imputed by the
+fitted preprocessing pipeline and counted in $n_{\mathrm{miss}}$.
+
+\chapter{Safety Rules and Output Contract}
+\label{app:rules}
+
+\section*{B.1 The nine safety rules}
+
+The following rules appear verbatim in the full system prompt and are mirrored
+by the deployed validator.
+
+\begin{enumerate}
+  \item Do not state or imply a diagnosis. Never say the person has CKD, kidney
+        disease, or kidney failure. This is a screening-based risk level, not a
+        diagnosis.
+  \item Do not prescribe, recommend, start, stop, change, or dose any medication
+        or supplement.
+  \item Do not give individualised nutrition restrictions or numeric targets for
+        protein, potassium, phosphorus, or sodium. If diet is relevant, suggest
+        discussing a personalised plan with a clinician or registered/renal
+        dietitian.
+  \item Do not replace clinician judgement, \eGFR{} testing, or urine albumin
+        (\UACR) testing.
+  \item Give wellness education tailored to the patient's specific conditions and
+        risk factors shown in the patient profile. Reference their actual
+        conditions when giving food, activity, or monitoring advice; do not
+        diagnose, prescribe, or treat.
+  \item For a moderate or high screening result, always include a reminder to
+        confirm the result with a clinician and appropriate laboratory tests.
+  \item If the inputs suggest an urgent problem (for example chest pain, severe
+        shortness of breath, severe swelling, or very high blood pressure),
+        advise seeking prompt medical care.
+  \item Base the education on the provided guideline excerpts. If the excerpts do
+        not cover something, keep the advice general, safe, and non-specific.
+  \item Use calm, supportive, non-alarming, plain language at about an
+        eighth-grade reading level.
+\end{enumerate}
+
+\section*{B.2 Output contract}
+
+Every response must contain exactly five labelled sections in the following
+order, followed by a machine-readable grounding line listing the identifiers of
+the guideline excerpts actually used:
+
+\begin{enumerate}
+  \item \textbf{Summary} --- names the screening risk level in everyday terms
+        and the one or two factors that most influenced it.
+  \item \textbf{Food habits} --- eating habits tied to this individual's
+        factors; no numeric nutrient targets.
+  \item \textbf{Rest and sleep} --- practical sleep and rest habits.
+  \item \textbf{Daily routine} --- movement, hydration and monitoring habits
+        chosen for this individual's factors.
+  \item \textbf{Follow-up reminder} --- when and why to consult a clinician and
+        which routine tests to ask about; mandatory for moderate and high.
+\end{enumerate}
+
+\chapter{Validator Detection Layers}
+\label{app:validator}
+
+\begin{table}[H]
+\centering
+\caption{Validator layers, severity and disposition.}
+\label{tab:app_validator}
+\small
+\begin{tabularx}{\textwidth}{@{}L{1.35in} X l L{1.05in}@{}}
+\toprule
+\textbf{Layer} & \textbf{Detects} & \textbf{Severity} & \textbf{Action} \\
+\midrule
+Structural check & A required section is absent &
+--- & Regenerate once, then fall back \\
+Diagnosis blocker & Assertion that the person has CKD, kidney disease or kidney
+failure & Severe & Safe template \\
+Medication blocker & Drug names or classes, dosing expressions, or
+start/stop/change instructions & Severe & Safe template \\
+Supplement blocker & Recommendation to take a supplement & Severe &
+Safe template \\
+Nutrition restriction & Numeric individualised protein, potassium, phosphorus or
+sodium target & Moderate & Rewrite to dietitian referral \\
+Lab-confirmation reminder & Moderate or high result lacking a clinician and
+laboratory follow-up mention & Moderate & Append reminder \\
+Emergency redirect & Systolic $\geq$180 or diastolic $\geq$120 mmHg, or red-flag
+symptom vocabulary & Moderate & Prepend urgent-care advice \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Detection is sentence-scoped and negation-aware throughout: a candidate match is
+discarded when governed by a negation or an explicit deferral to a clinician,
+so that safe guidance containing clinical vocabulary (``do not stop or change
+any medicine without talking to your doctor'') is not misclassified as a
+violation.
+
+\chapter{Worked Example}
+\label{app:example}
+
+The following illustrates a complete request for a high-risk profile. Values are
+representative of the benchmark's emergency subgroup.
+
+\section*{D.1 Input}
+
+\begin{quote}\footnotesize\ttfamily\raggedright
+age 65,\; waist 112 cm,\; mean\_sbp 186 mmHg,\; mean\_dbp 104 mmHg,\;
+glucose 168 mg/dL,\; hba1c 8.5\%,\; blood\_urea\_nitrogen 26 mg/dL,\;
+uric\_acid 8.1 mg/dL,\; serum\_albumin 3.6 g/dL,\; hemoglobin 11.9 g/dL,\;
+income\_poverty\_ratio 1.2,\; diabetes\_yes 1,\;
+hypertension\_doctor\_told 1,\; taking\_bp\_medicine 1
+\end{quote}
+
+\section*{D.2 Screening output}
+
+\begin{quote}\footnotesize\ttfamily\raggedright
+stage1: p\_atrisk = 0.7447 ($\geq$ 0.44) $\rightarrow$ sent to stage 2\\
+stage2: p\_high\_given\_atrisk = 0.7290 ($\geq$ 0.50)\\
+risk\_class = high\\
+probabilities: low 0.2553, moderate 0.2018, high 0.5428\\
+confidence = 0.5428, reliability = moderate\\
+top factors: mean\_sbp (raises), hba1c (raises),\\
+\hspace*{2em}blood\_urea\_nitrogen (raises), waist (raises)
+\end{quote}
+
+\section*{D.3 Retrieval}
+
+Priority topics derived from the risk-raising factors are
+\texttt{bp}, \texttt{diabetes}, \texttt{weight}, \texttt{followup}; four
+passages are selected, one per topic, drawn from KDIGO 2021 (blood pressure),
+the ADA/KDIGO consensus (diabetes), NKF patient education (weight and activity)
+and CDC prevention material (follow-up).
+
+\section*{D.4 Validator action}
+
+Because systolic 186 mmHg exceeds the emergency threshold of 180 mmHg, the
+urgent-vitals alert block is inserted into the prompt, and the emergency-redirect
+layer verifies that urgent-care advice is present in the delivered text,
+prepending it otherwise. The disposition for this profile is
+\texttt{sanitized}, and the delivered Summary opens with an urgent-care
+instruction before restating the screening category.
+
+\chapter{Reproduction Instructions}
+\label{app:repro}
+
+\section*{E.1 Environment}
+
+\begin{quote}\footnotesize\ttfamily\raggedright
+python -m venv .venv \\
+.venv\textbackslash Scripts\textbackslash activate \\
+pip install -r requirements.txt \\
+pip install -r requirements-llm.txt
+\end{quote}
+
+\section*{E.2 Configuration}
+
+\begin{quote}\footnotesize\ttfamily\raggedright
+CKD\_LLM\_MODEL=qwen \\
+CKD\_LLM\_ADAPTER=llm/finetune/adapters/v1/adapter \\
+DATABASE\_URL=postgresql+psycopg2:// \\
+\hspace*{2em}user:password@localhost:5432/ckd\_research \\
+CKD\_DB\_AUTO\_CREATE=false
+\end{quote}
+
+\section*{E.3 Pipeline commands}
+
+\begin{quote}\footnotesize\ttfamily\raggedright
+\# database schema \\
+python -m alembic upgrade head \\[4pt]
+\# build the retrieval index \\
+ollama pull bge-m3 \\
+python -m llm.rag.embed\_index --embedder ollama-bge-m3 \\[4pt]
+\# generate fine-tuning data and train the adapter \\
+python -m llm.data.generate\_dataset --n 600 --out-dir phase7\_data \\
+python -m llm.finetune.qlora\_train --data-dir phase7\_data \\[4pt]
+\# build the evaluation benchmark and run the ablation \\
+python -m llm.eval.q1.benchmark \textbackslash \\
+\hspace*{2em}--out q1\_benchmark/q1\_profiles\_300.jsonl \\
+python -m llm.eval.q1.run\_arms --arm A ... --arm F \\
+python -m llm.eval.q1.report --runs q1\_runs --out-dir q1\_report \\[4pt]
+\# regenerate thesis figures \\
+python thesis/make\_figures.py \\[4pt]
+\# run the application \\
+uvicorn backend.main:app --reload \\
+cd frontend \&\& npm run dev
+\end{quote}
+
+\section*{E.4 Verification}
+
+The health endpoint confirms which model is actually serving requests:
+
+\begin{quote}\footnotesize\ttfamily\raggedright
+GET /generate-guidance/health \\[3pt]
+\{ \\
+\hspace*{1.5em}"model\_spec": \\
+\hspace*{3em}"qwen:Qwen/Qwen3-4B-Instruct-2507+lora:v1/adapter", \\
+\hspace*{1.5em}"adapter\_active": true, \\
+\hspace*{1.5em}"prompt": "compact", \\
+\hspace*{1.5em}"mode": "production" \\
+\}
+\end{quote}

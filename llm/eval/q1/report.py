@@ -403,7 +403,15 @@ def make_figures(rows: List[Dict[str, Any]], out_dir: Path) -> List[Path]:
         if not vals:
             return 0.0, 0.0, 0.0
         lo, hi = st.wilson_ci(sum(vals), len(vals))
-        return 100 * sum(vals) / len(vals), 100 * lo, 100 * hi
+        pct = 100 * sum(vals) / len(vals)
+        # `pct` and `wilson_ci`'s bounds are computed via separate arithmetic
+        # paths; at the p=0/p=1 boundary they can disagree at the ~1e-14 level,
+        # giving a technically-negative error bar that matplotlib rejects.
+        # Clamp the bound to the point estimate rather than let a float-noise
+        # sliver crash the whole figure step.
+        lo_pct = min(100 * lo, pct)
+        hi_pct = max(100 * hi, pct)
+        return pct, lo_pct, hi_pct
 
     def _save(fig, name: str) -> None:
         p = out_dir / name
@@ -503,8 +511,9 @@ def make_figures(rows: List[Dict[str, Any]], out_dir: Path) -> List[Path]:
         if target:
             xs = [r["arm"] for r in target]
             ys = [r["mean_pct"] for r in target]
-            err = [[r["mean_pct"] - r["cluster_ci_lo_pct"] for r in target],
-                   [r["cluster_ci_hi_pct"] - r["mean_pct"] for r in target]]
+            # Same float-boundary clamp as _prop() above.
+            err = [[max(0.0, r["mean_pct"] - r["cluster_ci_lo_pct"]) for r in target],
+                   [max(0.0, r["cluster_ci_hi_pct"] - r["mean_pct"]) for r in target]]
             ax.bar(xs, ys, yerr=err, capsize=4)
         ax.set_ylabel("delivered critical-unsafe (%)")
         ax.set_title("Multi-seed robustness (profile-clustered 95% CI)")

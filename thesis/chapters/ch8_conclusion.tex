@@ -1,0 +1,143 @@
+\chapter{Conclusion and Future Work}
+\label{ch:conclusion}
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+This thesis set out to answer whether a clinically meaningful kidney-risk
+stratification can be produced from the measurements a routine general checkup
+already yields---without the kidney-specific confirmatory tests whose ordering
+is the actual bottleneck to early detection---and whether the resulting risk
+assessment can be communicated to a lay reader by a large language model whose
+output is guaranteed never to diagnose, prescribe, or withhold urgent care.
+
+On the first question, the answer is a qualified yes. A two-stage cascade
+trained on 4{,}719 NHANES 2021--2023 participants using fourteen routine inputs
+achieves, on a held-out test set of 833 participants, an accuracy of 70.9\%, a
+balanced accuracy of 66.0\%, a macro ROC AUC of 0.79, and a high-risk recall of
+73.7\%, with only 2 of 38 high-risk participants assigned to the low category.
+Set against a majority-class baseline that would achieve higher raw accuracy
+while detecting nobody, this represents substantial recoverable signal. The
+qualification is that precision on the at-risk categories is low---0.242 for
+moderate and 0.394 for high---which is the deliberate and openly reported price
+of a gate tuned so that individuals who need a confirmatory test are not
+filtered out before they can be referred to one.
+
+On the second question, the answer is more definite, and the mechanism
+responsible is not the one that might have been expected. The six-arm ablation
+established that between 6.3\% and 10.3\% of raw language-model outputs contain
+a critical safety violation in every configuration tested, including the
+fine-tuned ones. Neither explicit safety prompting, nor retrieval grounding, nor
+fine-tuning on 540 safety-screened examples eliminated this. The deterministic
+post-generation validator did: it reduced the delivered critical-unsafe rate to
+zero and raised emergency-redirect recall from 65--75\% to 100\%, and these were
+the only effects in the entire evaluation to survive multiplicity correction,
+doing so at $p<0.001$ for both the base and the fine-tuned model. The safety of
+the delivered product is a property of the pipeline, not of the model.
+
+Fine-tuning nonetheless earned its place, on different grounds than safety. It
+took format adherence under the compact prompt from 0\% to 100\%, which is what
+makes a 25\% reduction in prompt tokens possible; it reduced destructive
+fallbacks ninefold, so that patients receive a personalised answer rather than a
+generic template far more often; it improved readability by roughly half a
+grade level; and, when served with the prompt it was trained against, it
+achieved 99.7\% grounding. An unanticipated finding---that serving the adapter
+with a different prompt collapses grounding to 67--69\%---yields a practical rule
+for deploying fine-tuned models that the implementation now enforces
+automatically.
+
+Beyond the two components, the work contributes a factor-aware retrieval
+strategy that gives two individuals in the same risk category different
+guideline grounding drawn from their own dominant risk factors; a deterministic
+citation layer that makes fabricated references structurally impossible; and a
+complete, auditable implementation in which every intermediate artefact---stage
+probabilities, attributed factors, retrieved passages, raw pre-validator text
+and validator decisions---is exposed for inspection.
+
+Finally, the evaluation methodology is itself a contribution. Reporting the
+deployed system alone would have produced a headline of ``0\% unsafe output'' and
+invited the inference that the fine-tuned model is safe. Only the
+component-isolating ablation revealed that the model is not safe and that a
+78-line rule system is carrying the guarantee. For safety-critical applications
+of generative models, evaluations that cannot attribute the observed behaviour
+to a specific mechanism are of limited value, however favourable their headline
+numbers.
+
+\section{Future Work}
+\label{sec:future}
+
+Eight directions follow from the limitations identified in
+Chapter~\ref{ch:discussion}, ordered by the strength of the case for pursuing
+them.
+
+\textbf{1. Clinician review of delivered output.} The single most valuable next
+step. Both the evaluation detectors and the deployed validator are rule systems
+written by the same authors, so a violation neither anticipates is neither
+blocked nor counted. Independent adjudication of a stratified sample of
+delivered outputs by practising nephrologists or general physicians would place
+an empirical bound on the false-negative rate of the guardrail, which no
+internal measurement can do.
+
+\textbf{2. Local validation and recalibration.} The model is trained on a United
+States survey population and is untested elsewhere. Validation on a Bangladeshi
+cohort, with recalibration of the two thresholds against local prevalence and
+local costs of referral, is a prerequisite for any deployment in this
+institution's context.
+
+\textbf{3. A controlled cascade-versus-single-model comparison.} The
+architectural argument for the cascade is sound, but this work did not train a
+single three-class classifier on the identical features and splits to test
+whether the cascade actually reduces the high-to-low error. That experiment
+would convert a design rationale into an empirical claim.
+
+\textbf{4. Closing the emergency-symptom pathway.} The validator's symptom
+vocabulary is implemented and tested but unreachable in production, because the
+input schema exposes no free-text symptom field. Adding that field end to
+end---frontend, schema, contract, validator context---would make an already-built
+safety capability live.
+
+\textbf{5. Improving the moderate class.} At 0.505 recall, the moderate category
+is the weakest part of the model and the greatest source of headroom. Options
+include ordinal-aware loss functions that penalise distant errors more than
+adjacent ones, cost-sensitive learning with an explicit clinical cost matrix,
+and calibrated probability outputs that would allow the moderate band to be
+expressed as an interval rather than a hard category.
+
+\textbf{6. A hybrid safety layer.} The rule-based validator provides a bounded
+guarantee for known patterns and cannot generalise. A language-model judge
+generalises to novel phrasings but reintroduces probabilistic behaviour. A
+layered design---deterministic rules as the non-negotiable floor, with a judge
+above it flagging suspicious output that no rule matched, for offline review and
+rule extension---would combine the guarantee with a discovery mechanism for the
+patterns the rules do not yet cover.
+
+\textbf{7. Longitudinal extension.} Both the data and the system are
+cross-sectional. Serial screenings would allow risk trajectory rather than a
+point estimate, which is closer to how kidney disease is actually managed and
+would make the follow-up guidance substantially more actionable.
+
+\textbf{8. Multilingual education.} The knowledge base and prompts are English
+only. For the intended deployment population, Bengali-language education is not
+an enhancement but a requirement. BGE-M3 is already multilingual, so the
+retrieval layer would transfer; the generation and validation layers would both
+need adaptation, and the validator's rule patterns would need to be rewritten
+per language---a non-trivial undertaking, since the safety guarantee is only as
+good as the language coverage of its rules.
+
+\section{Closing Remarks}
+\label{sec:closing}
+
+The system described in this thesis does not diagnose chronic kidney disease and
+does not replace a clinician, a creatinine assay, or a urine albumin test. What
+it does is convert measurements that a routine checkup already produces into a
+risk category with a stated reliability, and then convert that category into
+personalised, guideline-grounded, readable education that has passed a
+deterministic safety gate before it reaches the reader.
+
+The most transferable lesson concerns where safety comes from. It is tempting,
+given a fluent and well-behaved model, to conclude that the model is safe. The
+measurements reported here say otherwise: the same model that produced zero
+unsafe delivered outputs produced unsafe raw output in one case out of every ten
+to sixteen. The difference between those two numbers is not the model. It is the
+guardrail---and the only reason that is visible at all is that the evaluation was
+designed to look.

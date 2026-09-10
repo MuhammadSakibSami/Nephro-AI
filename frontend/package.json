@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Thesis-demo frontend for the non-invasive kidney-risk screening project (patient + admin/research views).",
+  "description": "Thesis-demo frontend for the routine-blood-test-based, cross-sectional kidney-risk screening project (patient + admin/research views).",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

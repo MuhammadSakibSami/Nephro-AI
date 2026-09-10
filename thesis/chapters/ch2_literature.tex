@@ -1,0 +1,305 @@
+\chapter{Literature Review}
+\label{ch:literature}
+
+This chapter surveys the four bodies of work on which this thesis draws: the
+clinical definition of kidney risk, machine-learning approaches to CKD
+prediction, techniques for learning under class imbalance and for explaining
+individual predictions, and the use of large language models---with retrieval
+augmentation, parameter-efficient fine-tuning, and safety guardrails---in
+patient-facing healthcare applications. It closes with an explicit statement of
+the gap this research addresses.
+
+\section{Clinical Background: Defining Kidney Risk}
+\label{sec:clinical}
+
+\subsection{The KDIGO risk grid}
+
+The KDIGO 2024 clinical practice guideline \cite{kdigo2024} defines CKD as
+abnormalities of kidney structure or function present for more than three
+months. Risk is stratified on two orthogonal axes. The first is the estimated
+glomerular filtration rate (\eGFR), computed from serum creatinine and
+expressed in mL/min/1.73\,m$^2$, which is binned into categories G1 ($\geq$90)
+through G5 ($<$15). The second is albuminuria, measured by the urine
+albumin-to-creatinine ratio (\UACR) in mg/g, binned as A1 ($<$30), A2 (30--300)
+and A3 ($>$300). The cross-product of these two axes yields the four risk
+categories---low, moderately increased, high and very high---shown in
+Figure~\ref{fig:kdigo} of Chapter~\ref{ch:methodology}.
+
+This grid is the label source for the present work. It is important to be
+precise about the direction of the dependency: \eGFR{} and \UACR{} define
+\emph{what the model is trying to predict}, and are deliberately withheld from
+\emph{what the model is allowed to see}.
+
+\subsection{Modifiable risk factors}
+
+The epidemiological literature and the CDC's public health guidance
+\cite{cdcbasics,cdcprevent,cdcrisk} identify diabetes and hypertension as the
+two dominant causes of CKD, together accounting for the majority of incident
+cases, followed by obesity, cardiovascular disease, age, and family history.
+The ADA/KDIGO consensus on diabetes management in CKD \cite{adakdigo2022} and
+the KDIGO blood-pressure guideline \cite{kdigo2021bp} both emphasise that
+glycaemic and blood-pressure control materially alter the trajectory of kidney
+decline. The KDOQI nutrition guideline \cite{kdoqi2020} governs dietary advice
+and is the source of an important constraint adopted in this work: individualised
+numeric targets for protein, potassium, phosphorus or sodium must not be issued
+to a patient without the involvement of a registered or renal dietitian.
+
+The practical consequence for a screening model is favourable: the dominant
+causal drivers of CKD---blood pressure, glycaemic markers, and adiposity---are
+all routinely measured, and none of them require a kidney-specific laboratory
+order.
+
+\section{Machine Learning for CKD Prediction}
+\label{sec:ml_ckd}
+
+\subsection{The high-accuracy literature and its input dependency}
+
+A substantial body of work applies supervised learning to CKD detection.
+Chittora et al.\ \cite{chittora2021} compare a range of classifiers on the UCI
+CKD dataset and report accuracies above 98\%. Aljaaf et al.\ \cite{aljaaf2019}
+report comparable performance with predictive analytics support, and Yildirim
+\cite{yildirim2017} examines multilayer perceptron performance on imbalanced
+CKD data. These results are internally valid, but two properties limit their
+applicability to community screening.
+
+First, the feature sets almost universally contain serum creatinine, blood urea,
+or \eGFR{} itself. Since the CKD label in these datasets is defined by kidney
+function, a model given creatinine is effectively re-deriving a quantity that
+the label already encodes. High reported accuracy is then expected, and it does
+not demonstrate that the disease could have been detected \emph{before} the
+confirmatory test was ordered.
+
+Second, the widely used UCI CKD dataset contains only 400 records, with a
+relatively balanced class distribution that does not reflect the roughly
+10:1 prevalence imbalance found in an unselected adult population. Models
+validated only on such data have not been tested against the imbalance that
+dominates real screening.
+
+\subsection{Prediction models for kidney-failure progression}
+
+A separate and more clinically rigorous line of work predicts \emph{progression}
+among patients already diagnosed with CKD. Ramspek et al.\ \cite{ramspek2021}
+systematically review such models and find substantial heterogeneity in
+predictor sets, frequent risk of bias, and limited external validation. The
+canonical example, the Kidney Failure Risk Equation, requires \eGFR{} and
+\UACR{} as inputs by design. These models answer a different question from the
+one posed here: they estimate how fast a known patient will deteriorate,
+whereas this thesis asks who should be tested in the first place.
+
+\subsection{Positioning of the present work}
+
+Table~\ref{tab:lit_ml} summarises the contrast between representative prior work
+and the approach taken here.
+
+\begin{table}[H]
+\centering
+\caption{Representative machine-learning work on CKD compared with this thesis.}
+\label{tab:lit_ml}
+\small
+\begin{tabularx}{\textwidth}{@{}L{1.25in} L{0.85in} X L{0.95in}@{}}
+\toprule
+\textbf{Work} & \textbf{Data} & \textbf{Input features} & \textbf{Screening
+usable pre-test?} \\
+\midrule
+Chittora et al.\ \cite{chittora2021} & UCI CKD ($n$=400) &
+Includes serum creatinine, blood urea, specific gravity, albumin &
+No --- requires the confirmatory assay \\
+Aljaaf et al.\ \cite{aljaaf2019} & UCI CKD ($n$=400) &
+Includes creatinine-derived markers & No \\
+Yildirim \cite{yildirim2017} & UCI CKD ($n$=400) &
+Includes laboratory renal markers & No \\
+Ramspek et al.\ \cite{ramspek2021} (review) & Cohorts of diagnosed patients &
+\eGFR{} and \UACR{} required by design & No --- assumes diagnosis \\
+\textbf{This work} & \textbf{NHANES 2021--23 ($n$=5{,}552)} &
+\textbf{Vitals, routine blood chemistry, comorbidity history; creatinine /
+\eGFR{} / \UACR{} excluded} & \textbf{Yes} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Learning under Class Imbalance}
+\label{sec:imbalance}
+
+In an unselected adult population the high-risk class is rare. A classifier
+trained to minimise overall error can achieve high accuracy by predicting the
+majority class almost everywhere, at the cost of failing precisely on the
+minority class of interest. Lema\^{i}tre et al.\ \cite{lemaitre2017} provide the
+standard toolbox for addressing this: random over-sampling of the minority
+class, under-sampling of the majority, and hybrid schemes such as SMOTE-based
+synthesis.
+
+Three consequences guide the design in this thesis. First, aggregate accuracy is
+an inadequate primary metric; balanced accuracy, per-class recall and the
+confusion matrix are reported instead. Second, resampling should be applied
+within the training pipeline only, so that evaluation reflects the true class
+prior. Third---and central to the present design---not all misclassifications
+are equally harmful: predicting ``low'' for a truly high-risk person removes
+the very referral the system exists to generate, whereas predicting ``high''
+for a low-risk person causes an unnecessary but ultimately corrective
+confirmatory test. This asymmetry motivates decision thresholds tuned against a
+specific error type rather than against symmetric loss.
+
+\section{Cascaded and Hierarchical Classification}
+\label{sec:cascade_lit}
+
+Decomposing a multi-class problem into a sequence of binary decisions is a
+long-standing technique in detection systems, where an early stage is tuned for
+high sensitivity to pass a manageable candidate set to a more discriminative
+later stage. The advantage relevant here is that each stage can be optimised,
+and its operating threshold selected, against a different criterion: the first
+stage for recall of the at-risk population, the second for separating severity
+within that population. A single three-class model, by contrast, exposes only
+one implicit decision boundary structure and offers no natural place to encode
+the asymmetric cost described above.
+
+\section{Explainability of Individual Predictions}
+\label{sec:xai}
+
+For a screening tool intended for non-expert users, an unexplained category is
+of limited value. Two families of local explanation are widely used. SHAP
+\cite{lundberg2017} computes Shapley-value attributions with strong theoretical
+guarantees but requires either a model-specific efficient implementation or
+substantial sampling; LIME \cite{ribeiro2016} fits a local surrogate model
+around the instance. A third, simpler family is single-feature perturbation: the
+value of one feature is replaced by a reference value and the change in
+predicted probability is recorded.
+
+The present work uses the perturbation approach, applied against the complete
+deployed cascade rather than a surrogate, and reports it explicitly as such.
+The trade-off is accepted deliberately: the method is fast enough to run inside
+a request, requires no additional dependency, and is trivially auditable, but it
+does not capture interactions between features and is not a Shapley
+attribution. Chapter~\ref{ch:methodology} states the method formally and
+Chapter~\ref{ch:discussion} returns to its limitations.
+
+\section{Large Language Models in Healthcare}
+\label{sec:llm_health}
+
+Singhal et al.\ \cite{singhal2023} demonstrated that large language models
+encode a substantial amount of clinical knowledge, achieving strong performance
+on medical question-answering benchmarks, while also documenting failure modes
+in which fluent output is factually wrong. Thirunavukarasu et al.\
+\cite{thirunavukarasu2023} survey clinical applications and identify
+hallucination, outdated knowledge, and the absence of provenance as the primary
+barriers to deployment. The consistent finding across this literature is that
+fluency and correctness are decoupled: an incorrect statement is delivered with
+exactly the same confidence as a correct one, which is particularly hazardous
+for a lay audience with no basis for scepticism. Broader reviews of natural
+language processing over clinical text \cite{li2022nlp} reach a similar
+conclusion regarding the need for explicit provenance.
+
+For patient education specifically, the requirements are narrower than for
+clinical decision support but no less strict. The output must not diagnose,
+must not alter medication, must not issue individualised clinical targets, and
+must escalate appropriately when presented with red-flag findings.
+
+\section{Retrieval-Augmented Generation}
+\label{sec:rag_lit}
+
+Retrieval-augmented generation \cite{lewis2020} conditions a language model on
+passages retrieved from an external corpus at inference time, rather than
+relying solely on knowledge stored in the model's parameters. For a clinical
+education application this offers three concrete advantages: the knowledge
+source is explicit and citable, it can be updated by re-indexing rather than
+retraining when guidelines change, and the retrieved passages constrain the
+model's factual claims.
+
+Retrieval quality depends on the embedding model. BGE-M3 \cite{chen2024bgem3}
+provides multilingual, multi-granularity dense embeddings trained with
+self-knowledge distillation, and is used in this work to embed both the
+knowledge-base passages and the per-patient query.
+
+A limitation of naive top-$k$ retrieval, observed directly during development
+and addressed in Chapter~\ref{ch:methodology}, is that in a narrow domain the
+same small set of generic passages tends to be returned for every query,
+because all queries are semantically similar. The retrieval strategy adopted
+here therefore incorporates the patient's own attributed risk factors into the
+selection process rather than relying on similarity ranking alone.
+
+\section{Parameter-Efficient Fine-Tuning}
+\label{sec:peft_lit}
+
+Full fine-tuning of a multi-billion-parameter model requires optimiser state and
+gradients for every weight, which is beyond the memory budget of commonly
+available hardware and risks degrading the model's general instruction-following
+ability. Low-Rank Adaptation (LoRA) \cite{hu2022lora} freezes the pretrained
+weights and injects a trainable low-rank decomposition into selected projection
+matrices, so that the adapted weight becomes
+\begin{equation}
+W' = W + \frac{\alpha}{r} B A ,
+\label{eq:lora_lit}
+\end{equation}
+where $W$ is the frozen weight, $A \in \mathbb{R}^{r \times d}$ and
+$B \in \mathbb{R}^{d \times r}$ are the trainable factors, $r$ is the rank and
+$\alpha$ a scaling constant. Only $A$ and $B$ receive gradients, reducing the
+trainable parameter count by orders of magnitude.
+
+QLoRA \cite{dettmers2023qlora} extends this by holding the frozen base weights
+in 4-bit NormalFloat quantisation during training, further reducing memory
+while keeping the adapter itself in higher precision. It is worth stating the
+relationship precisely, because the terminology is frequently conflated: QLoRA
+is not a different adapter type from LoRA. It is LoRA training performed with a
+quantised frozen base. The artefact produced is an ordinary LoRA adapter, and it
+may subsequently be attached to a base model held at any precision. This
+distinction is exercised directly in the present system, where training used
+4-bit quantisation but serving attaches the same adapter to a full-precision
+base.
+
+\section{Safety Guardrails for Generative Systems}
+\label{sec:guardrails}
+
+Three broad strategies exist for constraining generative output. \emph{Prompt
+engineering} states the rules in the instruction; it is cheap and flexible but
+provides no guarantee, since compliance is probabilistic. \emph{Fine-tuning}
+attempts to internalise the rules in the weights; it improves the prior but
+remains statistical and is difficult to verify exhaustively. \emph{Post-generation
+validation} inspects the produced text and blocks, rewrites, or replaces it; it
+is the only one of the three that can offer a deterministic guarantee for the
+patterns it covers, at the cost of being unable to anticipate patterns it does
+not.
+
+An increasingly common fourth option is to use a second language model as a
+judge. This scales to novel phrasings but reintroduces probabilistic behaviour
+at exactly the point where a guarantee is wanted, and adds inference cost and
+latency.
+
+The literature reporting \emph{measured} unsafe-output rates for deployed
+patient-facing systems---particularly rates attributed to individual
+architectural components---is sparse. This observation directly motivates the
+evaluation design in Chapter~\ref{ch:results}.
+
+\section{Research Gap}
+\label{sec:gap}
+
+Synthesising the above, four gaps are identified.
+
+\begin{enumerate}
+  \item \textbf{Input circularity in CKD screening models.} Existing
+        high-accuracy CKD classifiers consume the confirmatory markers whose
+        unavailability is the actual bottleneck to early detection. There is
+        little work establishing how much risk discrimination survives when
+        those markers are withheld and only routine checkup measurements
+        remain.
+  \item \textbf{Symmetric treatment of asymmetric errors.} Reported CKD models
+        are optimised and reported on aggregate accuracy, without explicit
+        treatment of the high-to-low misclassification as the dominant clinical
+        harm, and without an architecture that provides a natural place to
+        control it.
+  \item \textbf{Risk scores without communication.} Screening models terminate
+        at a numeric output. Personalised, guideline-grounded, readable
+        communication of what that output means---and its evaluation---is
+        largely absent.
+  \item \textbf{Unmeasured, unattributed LLM safety.} Where language models are
+        used for health education, safety is usually asserted through prompt
+        design rather than measured, and where it is measured, the measurement
+        does not isolate \emph{which} component produces it. Consequently there
+        is no evidence base for deciding whether fine-tuning, retrieval, or an
+        explicit guardrail is the mechanism worth investing in.
+\end{enumerate}
+
+This thesis addresses gap~(1) by constructing a routine-input-only feature set
+with a KDIGO-derived label; gap~(2) through a two-stage cascade with
+independently tuned thresholds and explicit reporting of the high-to-low error
+count; gap~(3) by building and deploying a grounded education layer; and
+gap~(4) through a pre-registered six-arm ablation that measures and attributes
+safety behaviour component by component.
