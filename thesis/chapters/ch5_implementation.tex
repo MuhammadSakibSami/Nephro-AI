@@ -45,7 +45,7 @@ Overkill at 162 passages; value is headroom for a larger corpus \\
 Qwen3-4B-Instruct-2507 & Text generation & Strong instruction-following at a
 size that is fine-tunable and self-hostable; no patient data leaves the machine &
 Quality ceiling below frontier models; needs a GPU for comfortable latency \\
-PEFT + bitsandbytes & QLoRA fine-tuning & Trains a 4B model on a single GPU;
+PEFT & LoRA fine-tuning (bf16 base) & Trains a 4B model on a single GPU;
 adapter is small and swappable &
 Adapter quality bounded by the 540-example corpus \\
 Safety validator (pure Python) & Post-generation gate & Deterministic,

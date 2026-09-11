@@ -46,7 +46,7 @@ Risk-conditioned query construction
 Safety-stratified retrieval  (BGE-M3 + FAISS over 118 guideline passages)
         │
         ▼
-Prompt assembly  →  Qwen3-4B (+ QLoRA adapter)  →  structured draft
+Prompt assembly  →  Qwen3-4B (+ LoRA adapter)  →  structured draft
         │
         ▼
 Deterministic safety guardrail  (validate / repair / regenerate / fall back)
@@ -336,11 +336,15 @@ the pipeline.
 
 ## 3.10 Fine-tuning
 
-The base model is **Qwen3-4B-Instruct-2507**, adapted with **QLoRA**
+The base model is **Qwen3-4B-Instruct-2507**, adapted with **LoRA**
 (r = 16, α = 32, dropout 0.05) applied to all seven projection matrices
 (`q,k,v,o,gate,up,down_proj`); 3 epochs, learning rate 2 × 10⁻⁴ with cosine decay
-and 3% warmup, effective batch size 16, maximum sequence length 3,072, seed 42,
-bf16. The best checkpoint is selected by validation loss.
+and 3% warmup, effective batch size 16, maximum sequence length 3,072, seed 42.
+The frozen base was kept in **bf16** rather than 4-bit NF4 — the training
+script supports both (QLoRA's 4-bit mode is its default), but the 24 GB
+training GPU had enough headroom that quantisation was not needed, and bf16
+avoids the extra quantisation error 4-bit would add on a small, 540-example
+training set. The best checkpoint is selected by validation loss.
 
 Loss is masked to the assistant turn only. The mask is computed by **prompt-prefix
 length** rather than by string search for a response template:
@@ -378,7 +382,7 @@ the 600 training-data profiles and from the risk model's own test partition.
 | ① base | Qwen3-4B | full | ✗ | ✗ | intrinsic model capability |
 | ② +RAG | Qwen3-4B | full | ✓ | ✗ | contribution of retrieval |
 | ③ +Guardrail | Qwen3-4B | full | ✓ | ✓ | contribution of the guardrail |
-| ④ Fine-tuned | + QLoRA adapter | compact | ✓ | ✓ | contribution of fine-tuning (deployed configuration) |
+| ④ Fine-tuned | + LoRA adapter | compact | ✓ | ✓ | contribution of fine-tuning (deployed configuration) |
 
 *Table 6. Cumulative ablation design.*
 
@@ -673,7 +677,7 @@ design rather than a limitation of it.
 Generation from the **compact** prompt with the guardrail **disabled**, on the
 60 held-out validation examples:
 
-| Metric | Base Qwen3-4B | Fine-tuned (QLoRA) |
+| Metric | Base Qwen3-4B | Fine-tuned (LoRA) |
 |---|---:|---:|
 | **raw_unsafe_rate** | 0.7667 | **0.0667** |
 | **format_ok_rate** | 0.000 | **1.000** |

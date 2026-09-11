@@ -518,18 +518,24 @@ excluded from the generation pool to prevent leakage into the later evaluation.
 \label{sec:phase8}
 
 The base model is Qwen3-4B-Instruct-2507 \cite{qwen2025}. The adapter was
-trained with QLoRA \cite{dettmers2023qlora,hu2022lora}: the base
-model's weights were frozen and held in 4-bit NormalFloat quantisation, while
-low-rank adapters were trained in bfloat16 on the seven projection matrices of
-each transformer block. The relationship between the training-time and
+trained with LoRA \cite{hu2022lora}: the base model's weights were frozen and
+held in bfloat16 (unquantised), while low-rank adapters were trained, also in
+bfloat16, on the seven projection matrices of each transformer block. The
+training script also supports QLoRA \cite{dettmers2023qlora} (holding the
+frozen base in 4-bit NormalFloat quantisation), which is its default mode for
+GPUs with tighter memory budgets, but the 24\,GB training GPU had sufficient
+headroom that quantisation was not needed, and bfloat16 was used instead to
+avoid the additional quantisation error 4-bit NF4 would add on a comparatively
+small, 540-example training set. The relationship between the training-time and
 serving-time configurations is shown in Figure~\ref{fig:lora}.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{fig_lora.png}
-\caption{QLoRA fine-tuning versus serving. Quantisation reduces the memory of
-the frozen base during training only; the saved artefact is an ordinary LoRA
-adapter, reattached at serving to a full-precision base.}
+\caption{LoRA fine-tuning versus serving. The frozen base is kept in bfloat16
+at both stages in this configuration (no quantisation was used); the saved
+artefact is an ordinary LoRA adapter, precision-independent of the base it is
+trained or served against.}
 \label{fig:lora}
 \end{figure}
 
@@ -539,7 +545,7 @@ the prompt.
 
 \begin{table}[H]
 \centering
-\caption{QLoRA fine-tuning configuration and result.}
+\caption{LoRA fine-tuning configuration and result.}
 \label{tab:finetune}
 \small
 \begin{tabularx}{\textwidth}{@{}L{1.65in} X@{}}
@@ -550,8 +556,8 @@ Base model & Qwen3-4B-Instruct-2507 \\
 Adapter & LoRA, $r=16$, $\alpha=32$, dropout $0.05$ \\
 Target modules & \texttt{q\_proj, k\_proj, v\_proj, o\_proj, gate\_proj,
 up\_proj, down\_proj} \\
-Base precision (training) & 4-bit NF4, double quantisation,
-bfloat16 compute \\
+Base precision (training) & bfloat16, unquantised (QLoRA's 4-bit NF4 mode was
+available but not needed given the 24\,GB training GPU) \\
 Optimisation & 3 epochs, learning rate $2\times10^{-4}$, cosine schedule,
 3\% warmup \\
 Batching & per-device 2 $\times$ gradient accumulation 8 = effective 16 \\

@@ -375,14 +375,14 @@ def fig_rag_pipeline():
 # ===========================================================================
 def fig_lora():
     fig, ax = blank_axes((7.0, 3.5))
-    ax.text(0.25, 0.94, "(a) QLoRA fine-tuning (Phase 8, training time)",
+    ax.text(0.25, 0.94, "(a) LoRA fine-tuning (Phase 8, training time)",
             ha="center", fontsize=8.8, fontweight="bold")
     ax.text(0.78, 0.94, "(b) Serving (inference time)", ha="center",
             fontsize=8.8, fontweight="bold")
     ax.plot([0.545, 0.545], [0.06, 0.90], color="#cccccc", lw=0.9, ls="--")
 
     box(ax, 0.035, 0.505, 0.195, 0.335,
-        "Base model\nQwen3-4B\n\nFROZEN\n\n4-bit NF4 quantised\n(bitsandbytes)",
+        "Base model\nQwen3-4B\n\nFROZEN\n\nbf16\n(unquantised)",
         fc="#eeeeee", ec="#888888", fs=7.3)
     box(ax, 0.295, 0.505, 0.195, 0.335,
         "LoRA matrices\n$A \\in \\mathbb{R}^{r\\times d}$,  $B \\in \\mathbb{R}^{d\\times r}$\n"
@@ -392,8 +392,8 @@ def fig_lora():
     arrow(ax, (0.293, 0.605), (0.232, 0.605), color=C_LOW)
     ax.text(0.2625, 0.627, "gradients", fontsize=5.9, ha="center", color=C_LOW)
     ax.text(0.2625, 0.425,
-            "quantisation shrinks the memory of the\n"
-            "frozen part only — it never changes\nwhat is being trained",
+            "kept in bf16: the 24 GB training GPU had\n"
+            "headroom, so 4-bit quantisation (QLoRA)\nwas not required",
             ha="center", va="center", fontsize=6.4, color="#444444", linespacing=1.45)
     box(ax, 0.055, 0.115, 0.415, 0.135,
         "saved artefact: adapter_model.safetensors\n≈132 MB · peft_type = LORA\n"
@@ -673,7 +673,7 @@ def fig_finetune_loss():
         ax.annotate(f"{v:.4f}", (s, v), textcoords="offset points", xytext=(0, 9),
                     ha="center", fontsize=6.8, color=C_HIGH)
     ax.set_xlabel("Optimiser step"); ax.set_ylabel("Cross-entropy loss (answer tokens)")
-    ax.set_title("QLoRA fine-tuning: 3 epochs, 540 training examples")
+    ax.set_title("LoRA fine-tuning: 3 epochs, 540 training examples")
     ax.legend(fontsize=7.5, frameon=False)
     ax.set_ylim(0, max(tr) * 1.12)
     fig.tight_layout()
