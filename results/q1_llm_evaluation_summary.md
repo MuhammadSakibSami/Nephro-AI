@@ -40,7 +40,7 @@ No target-defining variable (eGFR, UACR, serum creatinine, urine albumin/creatin
 
 Arms C and E never generate text: they load Arm B's / Arm D's raw output and apply the deterministic validator to it, so the validator's contribution is measured on byte-identical generations by construction. Re-verified after every correction: **300/300 records byte-identical, C↔B and E↔D, zero mismatches** — including after the validator-code fixes in §3.3, which change only `delivered_output`, never `raw_output`.
 
-Five pre-specified, non-overlapping contrasts isolate each component: **B vs A** (RAG), **C vs B** (validator, base model), **D vs B** (LoRA fine-tuning, same full-RAG condition), **E vs D** (validator, fine-tuned model), **F vs E** (compact-prompt trade-off).
+Five pre-specified, non-overlapping contrasts isolate each component: **B vs A** (full prompt + RAG — both change between A and B, so this is not a pure RAG effect), **C vs B** (validator, base model), **D vs B** (LoRA fine-tuning, same full-RAG condition), **E vs D** (validator, fine-tuned model), **F vs E** (compact-prompt trade-off).
 
 All decoding was deterministic (`do_sample=False`, seed 42, fixed max output length, fixed profile order, no unplanned retry). All six arms completed 300/300 profiles with **zero technical failures**; the full integrity table passed 11/11 checks, independently re-verified from raw data after every correction.
 
@@ -78,7 +78,16 @@ Investigating an apparent regression between generation runs surfaced false-posi
 
 Both validator fixes were verified with paired true-positive/false-positive tests (genuine dietary instructions and genuine emergency symptoms still fire correctly; the specific false positives above no longer do) and an end-to-end `validate()` check, before being applied to data. **Because the validator runs as a post-processing step over already-generated text, re-applying it to arms C, E, F's stored raw model output required no further generation and no GPU time** — `raw_output` is untouched (re-verified byte-identical to B/D afterward); only `delivered_output`, `validator_status`, and `violation_categories` were recomputed. This changed 14/300 delivered outputs for C, 19/300 for E, and 12/300 for F.
 
-All results below reflect **both** corrections (§3.2 retrieval + §3.3 validator).
+### 3.4 Secondary quality scoring: two metric-definition fixes (scoring only)
+
+A later line-by-line audit of `llm/eval/q1/metrics.py` found two defects in the *secondary* quality/retrieval metrics. Neither touches generation, the validator, or any safety metric — all 25 primary-safety and 75 secondary-safety paired comparisons are byte-identical before and after. The report was regenerated from the same stored records; no GPU time.
+
+- **Recall@4 counted chunks, not topics.** It was `relevant retrieved chunks / expected topics`, so two chunks on the same expected topic counted twice and 11/300 profiles scored above 1.0 (max 1.5). Now `unique expected topics covered / expected topics` (the value the report already published as `evidence_topic_coverage`): **0.8233 → 0.8064**. Precision@4, MRR and nDCG@4 were unaffected.
+- **Content metrics scored the internal grounding line.** Readability, factor relevance, personalization, risk mention, repetition and follow-up detection were computed on the full delivered text, including the internal-only `Grounding used internally: [...]` line of source IDs (e.g. `SYK2015_diabetes_001`). These tokens inflated the Flesch–Kincaid grade and could keyword-match factor themes (`diabetes`, `bp`). They are now scored on the five patient-facing sections only. Arm A (no RAG, hence no grounding line) is unchanged on these metrics.
+
+The same fix to the section-extraction helper also repaired a latent bug: Arm A's compact-prompt outputs use headers without a colon, so the parser found no sections and `non_specific_rate` / `unsupported_numeric_claim` silently scored an empty string (0.0 for every Arm A profile). They now fall back to the full text (Arm A: 0.206 and 94.0%; the latter is expected, since Arm A has no retrieved passages to support any number).
+
+All results below reflect **all** corrections (§3.2 retrieval + §3.3 validator + §3.4 scoring).
 
 ## 4. Primary safety outcomes
 
@@ -101,8 +110,8 @@ n=300 per arm, final corrected run.
 
 | Comparison | Contrast | Metric | Risk difference | 95% paired CI | McNemar p | Holm p |
 |---|---|---|---:|---|---:|---:|
-| B vs A | RAG | raw critical-unsafe | +2.0 pp | [−2.0, 6.0] | 0.418 | 1.0 |
-| B vs A | RAG | emergency-redirect recall | +10.0 pp | [−3.33, 25.0] | 0.263 | 1.0 |
+| B vs A | Full prompt + RAG | raw critical-unsafe | +2.0 pp | [−2.0, 6.0] | 0.418 | 1.0 |
+| B vs A | Full prompt + RAG | emergency-redirect recall | +10.0 pp | [−3.33, 25.0] | 0.263 | 1.0 |
 | **C vs B** | **Validator (base)** | **delivered critical-unsafe** | **−10.33 pp** | **[−14.0, −7.0]** | **9.3×10⁻¹⁰** | **<0.001** |
 | **C vs B** | **Validator (base)** | **emergency-redirect recall** | **+25.0 pp** | **[15.0, 36.7]** | **6.1×10⁻⁵** | **0.0013** |
 | D vs B | LoRA (same full-RAG condition) | raw critical-unsafe | −3.0 pp | [−6.67, 0.67] | 0.150 | 1.0 |
@@ -123,15 +132,19 @@ n=300 per arm, final corrected run.
 | Arm | Format OK | Mentions risk | Readability ≤ grade 8 | Follow-up appropriate | Cited ≥1 source | Factor relevance | Personalization (/2) |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | A | **0.0%** | 100% | 23.0% | 88.7% | 0.0% | 0.814 | 1.993 |
-| B | 100% | 100% | 45.0% | 93.7% | 100% | 0.851 | 1.997 |
-| C | 100% | 100% | 43.0% | 93.0% | 97.0% | 0.851 | 1.993 |
-| D | 100% | 100% | 75.0% | 93.0% | 68.7% | 0.856 | 1.997 |
-| E | 100% | 100% | 73.0% | 92.0% | 67.3% | 0.855 | 1.997 |
-| F | 100% | 100% | 58.7% | 94.0% | **99.7%** | 0.843 | 1.993 |
+| B | 100% | 100% | 84.0% | 93.7% | 100% | 0.821 | 1.993 |
+| C | 100% | 100% | 79.7% | 93.0% | 97.0% | 0.821 | 1.990 |
+| D | 100% | 100% | 95.3% | 93.0% | 68.7% | 0.829 | 1.993 |
+| E | 100% | 100% | 93.3% | 92.0% | 67.3% | 0.828 | 1.993 |
+| F | 100% | 100% | 91.0% | 94.0% | **99.7%** | 0.813 | 1.993 |
 
-*"Cited ≥1 source" (`grounding_any`) measures whether the answer referenced at least one retrieved source id — source presence, not factual correctness.*
+*Readability, factor relevance, personalization and risk mention are scored on the five patient-facing sections only (§3.4). "Cited ≥1 source" (`grounding_any`) measures whether the answer referenced at least one retrieved source id — source presence, not factual correctness.*
 
-Small shifts versus the pre-validator-fix numbers in D/E (e.g. readability 75.0%→73.0%) reflect the validator now editing slightly more of their text (adding redirects/reminders it previously missed), which marginally changes text-based quality metrics computed on `delivered_output`. The two headline quality findings from earlier runs are unchanged: Arm A's **0% format compliance** under the compact prompt without fine-tuning (the compact prompt is not viable on its own), and the fine-tuned model's lower grounding under the **full** prompt (68–69%) versus the compact prompt it was actually trained to pair with (F: 99.7%).
+Mean Flesch–Kincaid grade: A 8.56, B 7.52, C 7.59, D 7.16, E 7.20, F 7.31. Fine-tuning improves readability under the same prompt (D vs B: +11.3 pp ≤ grade 8, Holm-significant). Prompt compression has no measurable readability cost (F vs E: −2.3 pp, not significant) — the earlier apparent 73.0% → 58.7% drop was an artifact of scoring source IDs. The validator slightly lowers readability (C vs B: −4.3 pp, Holm-significant), because its inserted referral notices and fallback templates read at a higher grade than the model's prose.
+
+Retrieval (shared by B–F, k=4): Recall@4 0.806, Precision@4 0.766, MRR 0.919, nDCG@4 0.917.
+
+The two headline quality findings from earlier runs are unchanged: Arm A's **0% format compliance** under the compact prompt without fine-tuning (the compact prompt is not viable on its own), and the fine-tuned model's lower grounding under the **full** prompt (68–69%) versus the compact prompt it was actually trained to pair with (F: 99.7%).
 
 ## 6. False reassurance — now isolated to the diagnostic arms only
 

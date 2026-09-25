@@ -65,8 +65,11 @@ def get_runtime() -> GuidanceRuntime:
     if _runtime is None:
         spec = os.getenv("CKD_LLM_MODEL", "auto")
         adapter_path = os.getenv("CKD_LLM_ADAPTER") or None
-        model_kwargs = {"adapter_path": adapter_path} if adapter_path else None
-        _runtime = GuidanceRuntime(model=spec, model_kwargs=model_kwargs)
+        model_kwargs: Dict[str, Any] = {"adapter_path": adapter_path} if adapter_path else {}
+        if spec.strip().lower() not in {"mock", "local_demo", "demo", "local"}:
+            # Greedy decoding, matching the evaluated Arm F configuration.
+            model_kwargs["temperature"] = 0.0
+        _runtime = GuidanceRuntime(model=spec, model_kwargs=model_kwargs or None)
     return _runtime
 
 
@@ -89,7 +92,7 @@ def adapter_status(rt: Optional[GuidanceRuntime]) -> Dict[str, Any]:
 
 
 def build_guidance_response(predict_response: Union[Dict[str, Any], LLMInput],
-                            k: int = 5) -> Dict[str, Any]:
+                            k: int = 4) -> Dict[str, Any]:
     """Run the LLM runtime and shape an API-ready response.
 
     `predict_response` is a `/predict` response dict (or an `LLMInput`).

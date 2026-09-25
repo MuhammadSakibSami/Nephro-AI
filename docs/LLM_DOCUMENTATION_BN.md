@@ -499,7 +499,7 @@ Benchmark hash: `563c6a66931da2e76eda7c439f70adf6845deea8043bed1fc08502d5822b4fc
 
 Arm C ও E কখনো টেক্সট generate করে না — এরা B ও D-এর *সংরক্ষিত raw byte*-এ validator প্রয়োগ করে। প্রতিটি সংশোধনের পরে পুনরায় যাচাই করা হয়েছে: **৩০০/৩০০ byte-অভিন্ন, শূন্য অমিল** — নিচের validator-code fix গুলোর পরেও, যেগুলো শুধু `delivered_output` বদলায়, `raw_output` কখনো নয়।
 
-**পাঁচটি পূর্বনির্ধারিত তুলনা:** B−A (RAG), C−B (base-এ validator), D−B (LoRA), E−D (fine-tuning-এর পরে validator), F−E (compact prompt)।
+**পাঁচটি পূর্বনির্ধারিত তুলনা:** B−A (full prompt + RAG; দুটোই বদলায়, তাই এটা বিশুদ্ধ RAG effect নয়), C−B (base-এ validator), D−B (LoRA), E−D (fine-tuning-এর পরে validator), F−E (compact prompt)।
 
 সব arm ৩০০/৩০০ সম্পন্ন করেছে, **শূন্য technical failure**; integrity table ১১/১১ pass, প্রতিটি সংশোধনের পরে raw data থেকে স্বাধীনভাবে পুনরায় যাচাই করা।
 
@@ -551,8 +551,8 @@ Arm C ও E কখনো টেক্সট generate করে না — এর
 
 | তুলনা | বিষয় | Metric | Risk diff | ৯৫% paired CI | McNemar p | Holm p |
 |---|---|---|---:|---|---:|---:|
-| B vs A | RAG | raw unsafe | +২.০ pp | [−২.০, ৬.০] | ০.৪১৮ | ১.০ |
-| B vs A | RAG | emergency recall | +১০.০ pp | [−৩.৩৩, ২৫.০] | ০.২৬৩ | ১.০ |
+| B vs A | Full prompt + RAG | raw unsafe | +২.০ pp | [−২.০, ৬.০] | ০.৪১৮ | ১.০ |
+| B vs A | Full prompt + RAG | emergency recall | +১০.০ pp | [−৩.৩৩, ২৫.০] | ০.২৬৩ | ১.০ |
 | **C vs B** | **Validator (base)** | **delivered unsafe** | **−১০.৩৩ pp** | **[−১৪.০, −৭.০]** | **৯.৩×১০⁻¹⁰** | **<0.001** |
 | **C vs B** | **Validator (base)** | **emergency recall** | **+২৫.০ pp** | **[১৫.০, ৩৬.৭]** | **৬.১×১০⁻৫** | **০.০০১৩** |
 | D vs B | LoRA | raw unsafe | −৩.০ pp | [−৬.৬৭, ০.৬৭] | ০.১৫০ | ১.০ |
@@ -575,15 +575,17 @@ Arm C ও E কখনো টেক্সট generate করে না — এর
 | Arm | Format OK | Risk উল্লেখ | Readability ≤ grade 8 | Follow-up যথাযথ | ≥১ source উদ্ধৃত | Factor relevance | Personalization /২ |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | A | **০.০%** | ১০০% | ২৩.০% | ৮৮.৭% | ০.০% | ০.৮১৪ | ১.৯৯৩ |
-| B | ১০০% | ১০০% | ৪৫.০% | ৯৩.৭% | ১০০% | ০.৮৫১ | ১.৯৯৭ |
-| C | ১০০% | ১০০% | ৪৩.০% | ৯৩.০% | ৯৭.০% | ০.৮৫১ | ১.৯৯৩ |
-| D | ১০০% | ১০০% | ৭৫.০% | ৯৩.০% | ৬৮.৭% | ০.৮৫৬ | ১.৯৯৭ |
-| E | ১০০% | ১০০% | ৭৩.০% | ৯২.০% | ৬৭.৩% | ০.৮৫৫ | ১.৯৯৭ |
-| F | ১০০% | ১০০% | ৫৮.৭% | ৯৪.০% | **৯৯.৭%** | ০.৮৪৩ | ১.৯৯৩ |
+| B | ১০০% | ১০০% | ৮৪.০% | ৯৩.৭% | ১০০% | ০.৮২১ | ১.৯৯৩ |
+| C | ১০০% | ১০০% | ৭৯.৭% | ৯৩.০% | ৯৭.০% | ০.৮২১ | ১.৯৯০ |
+| D | ১০০% | ১০০% | ৯৫.৩% | ৯৩.০% | ৬৮.৭% | ০.৮২৯ | ১.৯৯৩ |
+| E | ১০০% | ১০০% | ৯৩.৩% | ৯২.০% | ৬৭.৩% | ০.৮২৮ | ১.৯৯৩ |
+| F | ১০০% | ১০০% | ৯১.০% | ৯৪.০% | **৯৯.৭%** | ০.৮১৩ | ১.৯৯৩ |
+
+*Readability, factor relevance ও personalization কেবল রোগী-দৃশ্যমান পাঁচটি section-এর উপর মাপা হয়েছে — অভ্যন্তরীণ `Grounding used internally` source-ID লাইন বাদ, কারণ রোগী এটা দেখে না। Retrieval (B–F, k=৪): Recall@4 ০.৮০৬ (আলাদা expected topic কতটা ঢাকা পড়েছে), Precision@4 ০.৭৬৬, MRR ০.৯১৯, nDCG@4 ০.৯১৭।*
 
 **সবচেয়ে তাৎপর্যপূর্ণ মানগত ফলাফল অপরিবর্তিত:** Arm A (base model + compact prompt, RAG নেই) এর format compliance **০%** — সে কার্যত কখনোই ৫-section structure বানায় না। বাকি সব arm ১০০%-এ পৌঁছায়। **Compact prompt একা কার্যকর নয়; এটা কেবল fine-tuning-এর সাথে জোড়া লাগলেই কাজ করে।**
 
-Fine-tuning-এ readability উল্লেখযোগ্যভাবে বাড়ে: ২৩–৪৫% (base) → ৭৩–৭৫% (fine-tuned, full prompt)। Compact prompt কিছুটা ফিরিয়ে নেয় (F: ৫৮.৭%) কিন্তু base-এর অনেক উপরেই থাকে।
+Fine-tuning-এ readability বাড়ে: একই full prompt-এ grade ৮ বা তার নিচে ৮৪.০% (B) → ৯৫.৩% (D) (গড় FK grade ৭.৫২ → ৭.১৬; Holm-significant)। Compact prompt-এর কোনো মাপযোগ্য readability খরচ নেই (E ৯৩.৩% বনাম F ৯১.০%, significant নয়)। এই টেবিলের আগের সংস্করণে F ৫৮.৭%-এ নেমে যেতে দেখা যেত; সেটা অভ্যন্তরীণ source-ID লাইন score করার artifact ছিল, আসল প্রভাব নয়।
 
 একটা বাস্তব অদ্ভুত বিষয়, এটাও অপরিবর্তিত: *full* prompt-এ fine-tuned model-এর grounding কমে (D/E: ~৬৮%) base-এর তুলনায় (B/C: ৯৭–১০০%), তারপর *compact* prompt-এ আবার ফিরে আসে (F: ৯৯.৭%)। Adapter যে prompt format-এর সাথে জোড়া লাগতে train হয়নি, সেখানে কম নির্ভরযোগ্যভাবে source উদ্ধৃত করে।
 
@@ -634,7 +636,7 @@ F, E-র চেয়ে **৬০৫টি কম prompt token = −২৫.২%*
 
 ২. **প্রতিটি validated arm এই benchmark-এ ১০০% emergency-redirect recall অর্জন করে, এবং C ও F দুটোই সব ৩০০ profile জুড়ে শূন্য critical-unsafe delivery অর্জন করে।** Audit-এর আগে এটা সত্য ছিল না — একটা harness bug, একটা নীরব RAG fallback, এবং দশটি scoring/validator false positive খুঁজে ঠিক করা লেগেছে (৭.২)। F-এ যেখানেই সমস্যা পাওয়া গেছে তা একটা scoring false positive-এ ফিরে গেছে, আসল model ব্যর্থতা নয়।
 
-৩. **Fine-tuning-এর সবচেয়ে স্পষ্ট প্রমাণিত জয় format ও readability, raw safety নয়।** Arm A-র ০% → Arm F-এর ১০০% format compliance একটা শ্রেণিগত পরিবর্তন। Readability ২৩–৪৫% → ৭৩–৭৫%। LoRA-র raw-safety point estimate অনুকূল কিন্তু একা multiple-comparison correction টেকে না।
+৩. **Fine-tuning-এর সবচেয়ে স্পষ্ট প্রমাণিত জয় format ও readability, raw safety নয়।** Arm A-র ০% → Arm F-এর ১০০% format compliance একটা শ্রেণিগত পরিবর্তন। Grade ৮ বা তার নিচে readability ৮৪.০% → ৯৫.৩% (B → D)। LoRA-র raw-safety point estimate অনুকূল কিন্তু একা multiple-comparison correction টেকে না।
 
 ৪. **Compact prompt কেবল fine-tuning-এর সাথেই কাজ করে।** একা compact prompt = পূর্ণ format ধস (Arm A); compact prompt + adapter = ১০০% format, ৯৯.৭% grounding, −২৫.২% prompt খরচ (Arm F)।
 

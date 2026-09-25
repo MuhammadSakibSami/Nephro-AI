@@ -323,7 +323,7 @@ Two complete system-prompt variants exist, and exactly one is used per request, 
 
 ### 4.6 LLM Generation
 
-**Model:** Qwen3-4B-Instruct-2507 (non-thinking instruct variant), loaded via HuggingFace `transformers` (`llm/serving/model_backends.py::QwenChatModel`). Default generation parameters: `max_new_tokens=700`, `temperature=0.3`, `top_p=0.9` — a fairly low temperature, chosen to keep the guidance consistent and reduce the chance of drifting into unsafe or off-topic phrasing, while still allowing natural variation across patients.
+**Model:** Qwen3-4B-Instruct-2507 (non-thinking instruct variant), loaded via HuggingFace `transformers` (`llm/serving/model_backends.py::QwenChatModel`). Class default generation parameters are `max_new_tokens=700`, `temperature=0.3`, `top_p=0.9`, but the web backend (`backend/llm_endpoint.py::get_runtime`) overrides the temperature to `0.0`, i.e. greedy decoding. This matches the deterministic decoding under which Arm F was evaluated, so the served model is the evaluated configuration rather than a sampled variant of it.
 
 **Fine-tuning (Phase 8, LoRA):** the base model was fine-tuned with a **LoRA adapter** (rank `r=16`, `alpha=32`, dropout `0.05`, targeting all seven attention/MLP projection matrices — `q/k/v/o_proj`, `gate/up/down_proj`) with the **frozen base kept in bf16** (no 4-bit quantization — the 24 GB training GPU had enough headroom, so the training script's `--precision bf16` option was used instead of its `4bit`/QLoRA default, avoiding the extra quantization error 4-bit NF4 would add on a small, 540-example dataset), for **3 epochs** at learning rate `2e-4` (cosine schedule, 3% warmup), effective batch size 16 (2 × 8 gradient-accumulation), on **540 training examples** (60 held out for validation), with the loss masked to only the assistant's answer tokens. Final train loss 0.133, best validation loss 0.155. The adapter is ~132 MB and loads on top of the frozen base weights via `peft.PeftModel.from_pretrained()`.
 
@@ -522,11 +522,12 @@ The Phase-6 30-profile evaluation referenced in earlier project documentation ha
 | Format adherence | 100% |
 | Grounding (cited ≥1 real source) | 99.7% |
 | Personalization (2-point rubric) | 1.99 / 2 |
-| Factor relevance | 0.843 |
-| Readability ≤ grade 8 | 58.7% |
+| Factor relevance | 0.813 |
+| Readability ≤ grade 8 (patient-facing sections) | 91.0% |
+| Retrieval Recall@4 / Precision@4 / MRR / nDCG@4 | 0.806 / 0.766 / 0.919 / 0.917 |
 | Prompt-token reduction vs. full-prompt fine-tuned arm (E) | 25% |
 
-**Not statistically confirmed, reported honestly:** RAG alone does not significantly change raw safety (B vs A). LoRA's raw-safety effect is directionally favorable but does not clear Holm correction on its own (D vs B). The compact prompt shows no statistically confirmed safety cost versus the full prompt (F vs E) — both arms are near the safety ceiling on this benchmark, so there is little room left to detect a difference.
+**Not statistically confirmed, reported honestly:** the full prompt plus retrieval does not significantly change raw safety (B vs A — both the prompt and RAG change between these arms, so this is not a pure RAG effect). LoRA's raw-safety effect is directionally favorable but does not clear Holm correction on its own (D vs B). The compact prompt shows no statistically confirmed safety cost versus the full prompt (F vs E) — both arms are near the safety ceiling on this benchmark, so there is little room left to detect a difference.
 
 **Caveats, stated proactively:** the 300 profiles are synthetic, scored by the deployed cascade rather than drawn from real patients; safety detection (both Q1's scoring and the production validator) is rule-based and reproducible but not a clinical adjudication; no clinician review of generated guidance has been performed. Full methodology, every statistic, and the complete correction history (ten scoring false-positive fixes and two production-validator fixes found and corrected during this evaluation, documented transparently) are in `results/q1_llm_evaluation_summary.md`.
 
@@ -837,7 +838,7 @@ Nephro-AI/
 │   ├── data/                      # Held-out evaluation profiles
 │   ├── finetune/
 │   │   ├── data.py                # Loss-masked SFT dataset construction
-│   │   ├── qlora_train.py         # Phase-8 QLoRA training script
+│   │   ├── qlora_train.py         # Phase-8 LoRA training script (bf16 run; 4-bit QLoRA optional)
 │   │   ├── evaluate_adapter.py
 │   │   └── adapters/v1/adapter/   # Trained LoRA adapter (adapter_config.json, adapter_model.safetensors)
 │   └── eval/
@@ -919,10 +920,11 @@ Nephro-AI/
 | **Deployed configuration (Arm F): emergency-redirect recall** | **100%** |
 | Deployed configuration (Arm F): grounding (cited ≥1 source) | 99.7% |
 | Deployed configuration (Arm F): personalization score | 1.99 / 2 |
-| LLM generation temperature / top_p / max_new_tokens | 0.3 / 0.9 / 700 |
+| LLM generation temperature (web backend) / max_new_tokens | 0.0 (greedy, matches Arm F evaluation) / 700 |
+| Retrieved guideline excerpts per request (k) | 4 (benchmark and web backend) |
 | BGE-M3 embedding dimension | 1024 |
 | Database | PostgreSQL 18, configured and live |
 
 ---
 
-*This documentation reflects the final thesis state as of September 2026, incorporating the completed Phase 8 QLoRA fine-tuning, the final Q1 six-arm safety/quality ablation, the live PostgreSQL research-persistence setup, and the full-project consistency audit performed prior to defense.*
+*This documentation reflects the final thesis state as of September 2026, incorporating the completed Phase 8 LoRA fine-tuning (bf16), the final Q1 six-arm safety/quality ablation, the live PostgreSQL research-persistence setup, and the full-project consistency audit performed prior to defense.*

@@ -9,7 +9,8 @@ Arms
     E  ft_rag_val    reuses Arm D raw output byte-for-byte + validator
     F  ft_compact  compact prompt, RAG k=4,  validator,    LoRA (generates)
 
-Pre-specified comparisons: B-A (RAG), C-B (validator on base), D-B (LoRA),
+Pre-specified comparisons: B-A (full prompt + RAG; both change, so this is not a
+pure RAG effect), C-B (validator on base), D-B (LoRA),
 E-D (validator after fine-tuning), F-E (compact-prompt trade-off).
 
 Arms C and E never call a model. They load the stored raw text from B and D and

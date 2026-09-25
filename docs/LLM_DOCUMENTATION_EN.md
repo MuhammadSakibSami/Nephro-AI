@@ -499,7 +499,7 @@ Every profile's risk category, probabilities, confidence, driving factors and re
 
 Arms C and E never generate text — they apply the validator to the *stored raw bytes* of B and D. Re-verified after every correction: **300/300 byte-identical, zero mismatches** — including after the validator-code fixes below, which change only `delivered_output`, never `raw_output`.
 
-**Five pre-specified contrasts:** B−A (RAG), C−B (validator on base), D−B (LoRA), E−D (validator after fine-tuning), F−E (compact prompt).
+**Five pre-specified contrasts:** B−A (full prompt + RAG; both change, so not a pure RAG effect), C−B (validator on base), D−B (LoRA), E−D (validator after fine-tuning), F−E (compact prompt).
 
 All arms completed 300/300 with **zero technical failures**; integrity table passed 11/11, independently re-verified from raw data after every correction.
 
@@ -553,8 +553,8 @@ All results below reflect both the retrieval fix and the validator fixes.
 
 | Comparison | Contrast | Metric | Risk diff | 95% paired CI | McNemar p | Holm p |
 |---|---|---|---:|---|---:|---:|
-| B vs A | RAG | raw unsafe | +2.0 pp | [−2.0, 6.0] | 0.418 | 1.0 |
-| B vs A | RAG | emergency recall | +10.0 pp | [−3.33, 25.0] | 0.263 | 1.0 |
+| B vs A | Full prompt + RAG | raw unsafe | +2.0 pp | [−2.0, 6.0] | 0.418 | 1.0 |
+| B vs A | Full prompt + RAG | emergency recall | +10.0 pp | [−3.33, 25.0] | 0.263 | 1.0 |
 | **C vs B** | **Validator (base)** | **delivered unsafe** | **−10.33 pp** | **[−14.0, −7.0]** | **9.3×10⁻¹⁰** | **<0.001** |
 | **C vs B** | **Validator (base)** | **emergency recall** | **+25.0 pp** | **[15.0, 36.7]** | **6.1×10⁻⁵** | **0.0013** |
 | D vs B | LoRA | raw unsafe | −3.0 pp | [−6.67, 0.67] | 0.150 | 1.0 |
@@ -577,15 +577,17 @@ All results below reflect both the retrieval fix and the validator fixes.
 | Arm | Format OK | Mentions risk | Readability ≤ grade 8 | Follow-up appropriate | Cited ≥1 source | Factor relevance | Personalization /2 |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | A | **0.0%** | 100% | 23.0% | 88.7% | 0.0% | 0.814 | 1.993 |
-| B | 100% | 100% | 45.0% | 93.7% | 100% | 0.851 | 1.997 |
-| C | 100% | 100% | 43.0% | 93.0% | 97.0% | 0.851 | 1.993 |
-| D | 100% | 100% | 75.0% | 93.0% | 68.7% | 0.856 | 1.997 |
-| E | 100% | 100% | 73.0% | 92.0% | 67.3% | 0.855 | 1.997 |
-| F | 100% | 100% | 58.7% | 94.0% | **99.7%** | 0.843 | 1.993 |
+| B | 100% | 100% | 84.0% | 93.7% | 100% | 0.821 | 1.993 |
+| C | 100% | 100% | 79.7% | 93.0% | 97.0% | 0.821 | 1.990 |
+| D | 100% | 100% | 95.3% | 93.0% | 68.7% | 0.829 | 1.993 |
+| E | 100% | 100% | 93.3% | 92.0% | 67.3% | 0.828 | 1.993 |
+| F | 100% | 100% | 91.0% | 94.0% | **99.7%** | 0.813 | 1.993 |
+
+*Readability, factor relevance and personalization are scored on the five patient-facing sections only — the internal `Grounding used internally` line of source IDs is excluded, since the patient never sees it. Retrieval (B–F, k=4): Recall@4 0.806 (unique expected topics covered), Precision@4 0.766, MRR 0.919, nDCG@4 0.917.*
 
 **The most consequential quality finding is unchanged:** Arm A (base model + compact prompt, no RAG) has **0% format compliance** — it essentially never produces the five-section structure. Every other arm reaches 100%. **The compact prompt is not viable on its own; it only works once paired with fine-tuning.**
 
-Readability improves substantially with fine-tuning: 23–45% (base) → 73–75% (fine-tuned, full prompt). The compact prompt gives some back (F: 58.7%) but stays well above base.
+Readability improves with fine-tuning: 84.0% (B) → 95.3% (D) at or below grade 8 under the same full prompt (mean FK grade 7.52 → 7.16; Holm-significant). The compact prompt costs nothing measurable (E 93.3% vs F 91.0%, not significant). An earlier version of this table showed F dropping to 58.7%; that was an artifact of scoring the internal source-ID line, not a real effect.
 
 A genuine quirk, also unchanged: grounding drops for the fine-tuned model under the *full* prompt (D/E: ~68%) versus base (B/C: 97–100%), then recovers under the *compact* prompt (F: 99.7%). The adapter cites less reliably on the prompt format it wasn't trained to pair with.
 
@@ -636,7 +638,7 @@ The same **4 profiles (1.33%)** show genuine `false_reassurance` in **both D and
 
 2. **Every validated arm reaches 100% emergency-redirect recall on this benchmark, and both C and F reach zero critical-unsafe deliveries across all 300 profiles.** This was not true before the audit — it required finding and fixing a harness bug, a silent RAG fallback, and ten scoring/validator false positives (§7.2). The one issue found anywhere in F traced back to a scoring false positive, not a real model failure.
 
-3. **Fine-tuning's clearest demonstrated win is format and readability, not raw safety.** Arm A's 0% → Arm F's 100% format compliance is categorical. Readability 23–45% → 73–75%. LoRA's raw-safety point estimate is favourable but doesn't clear multiple-comparison correction on its own.
+3. **Fine-tuning's clearest demonstrated win is format and readability, not raw safety.** Arm A's 0% → Arm F's 100% format compliance is categorical. Readability ≤ grade 8 rises 84.0% → 95.3% (B → D). LoRA's raw-safety point estimate is favourable but doesn't clear multiple-comparison correction on its own.
 
 4. **The compact prompt only works with fine-tuning.** Compact prompt alone = total format collapse (Arm A); compact prompt + adapter = 100% format, 99.7% grounding, −25.2% prompt cost (Arm F).
 

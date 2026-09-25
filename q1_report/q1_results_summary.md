@@ -1,6 +1,6 @@
 # Q1 LLM Evaluation - Results
 
-- Generated: 2026-09-10T05:09:40.156275+00:00
+- Generated: 2026-09-25T00:11:43.443242+00:00
 - Benchmark: `q1_benchmark\q1_profiles_300.jsonl`
 - Primary analysis seed: 42 (deterministic decoding)
 - Statistical unit: **profile** (n=300)
@@ -31,11 +31,11 @@
 
 | comparison | contrast | metric | risk_difference_pct | paired_ci_lo_pct | paired_ci_hi_pct | mcnemar_p | p_holm |
 |---|---|---|---|---|---|---|---|
-| B vs A | RAG contribution | raw_critical_unsafe | 2.0 | -2.0 | 6.0 | 0.417692190836533 | 1.0 |
-| B vs A | RAG contribution | delivered_critical_unsafe | 2.0 | -2.0 | 6.0 | 0.417692190836533 | 1.0 |
-| B vs A | RAG contribution | emergency_redirect_recall | 10.0 | -3.333 | 25.0 | 0.26317596435546875 | 1.0 |
-| B vs A | RAG contribution | inappropriate_emergency_redirect | -0.333 | -1.0 | 0.0 | 1.0 | 1.0 |
-| B vs A | RAG contribution | adversarial_attack_success | -6.667 | -16.667 | 0.0 | 0.5 | 1.0 |
+| B vs A | Full-prompt + retrieval contrast | raw_critical_unsafe | 2.0 | -2.0 | 6.0 | 0.417692190836533 | 1.0 |
+| B vs A | Full-prompt + retrieval contrast | delivered_critical_unsafe | 2.0 | -2.0 | 6.0 | 0.417692190836533 | 1.0 |
+| B vs A | Full-prompt + retrieval contrast | emergency_redirect_recall | 10.0 | -3.333 | 25.0 | 0.26317596435546875 | 1.0 |
+| B vs A | Full-prompt + retrieval contrast | inappropriate_emergency_redirect | -0.333 | -1.0 | 0.0 | 1.0 | 1.0 |
+| B vs A | Full-prompt + retrieval contrast | adversarial_attack_success | -6.667 | -16.667 | 0.0 | 0.5 | 1.0 |
 | C vs B | Validator contribution (base) | raw_critical_unsafe | 0.0 | 0.0 | 0.0 | 1.0 | 1.0 |
 | C vs B | Validator contribution (base) | delivered_critical_unsafe | -10.333 | -14.0 | -7.0 | 9.313225746154785e-10 | 0.0 |
 | C vs B | Validator contribution (base) | emergency_redirect_recall | 25.0 | 15.0 | 36.667 | 6.103515625e-05 | 0.001343 |
@@ -62,11 +62,11 @@
 | arm | format_ok_pct | mentions_risk_pct | readability_ok_pct | followup_appropriate_pct | grounding_any_pct | factor_relevance_mean | personalization_mean |
 |---|---|---|---|---|---|---|---|
 | A | 0.0 | 100.0 | 23.0 | 88.667 | 0.0 | 0.8144 | 1.9933 |
-| B | 100.0 | 100.0 | 45.0 | 93.667 | 100.0 | 0.8512 | 1.9967 |
-| C | 100.0 | 100.0 | 43.0 | 93.0 | 97.0 | 0.8512 | 1.9933 |
-| D | 100.0 | 100.0 | 75.0 | 93.0 | 68.667 | 0.8562 | 1.9967 |
-| E | 100.0 | 100.0 | 73.0 | 92.0 | 67.333 | 0.8545 | 1.9967 |
-| F | 100.0 | 100.0 | 58.667 | 94.0 | 99.667 | 0.8428 | 1.9933 |
+| B | 100.0 | 100.0 | 84.0 | 93.667 | 100.0 | 0.8211 | 1.9933 |
+| C | 100.0 | 100.0 | 79.667 | 93.0 | 97.0 | 0.8211 | 1.99 |
+| D | 100.0 | 100.0 | 95.333 | 93.0 | 68.667 | 0.8294 | 1.9933 |
+| E | 100.0 | 100.0 | 93.333 | 92.0 | 67.333 | 0.8278 | 1.9933 |
+| F | 100.0 | 100.0 | 91.0 | 94.0 | 99.667 | 0.8127 | 1.9933 |
 
 > `grounding_any` means the answer cited at least one retrieved source id.
 > It is a measure of source presence, not of factual correctness.
