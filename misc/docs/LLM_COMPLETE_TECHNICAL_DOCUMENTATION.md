@@ -163,7 +163,7 @@ prompts.build_messages(inp, chunks)                      ── Phase 1 prompt
              + guideline excerpts + personalization cues
    │
    ▼
-Qwen3-4B-Instruct-2507  (+ optional QLoRA adapter)       ── Phase 5 / Phase 8
+Qwen3-4B-Instruct-2507  (+ optional LoRA adapter)        ── Phase 5 / Phase 8
    temperature 0.3, top_p 0.9, max_new_tokens 700
    │
    ▼  raw model text
@@ -405,8 +405,10 @@ call that chains all prior phases, plus `model_backends.py` with three interchan
 behind `generate(messages) -> str`:
 
 - **`QwenChatModel`** — Qwen3-4B-Instruct-2507 via transformers; temperature 0.3, top_p 0.9,
-  max_new_tokens 700; **`adapter_path` hook** so Phase 8's QLoRA adapter loads with zero API
-  change.
+  max_new_tokens 700; **`adapter_path` hook** so Phase 8's LoRA adapter loads with zero API
+  change. Loaded with `torch_dtype="auto"` → **bfloat16**, no quantization, fully on GPU
+  (measured on the RTX 3090, 24 GB: 7.62 GiB VRAM with the adapter; adapter weights float32).
+  Runtime: PyTorch 2.5.1+cu121, transformers 5.14.1.
 - **`OllamaChatModel`** — same interface via local Ollama REST; for low-VRAM laptops.
 - **`MockGuidanceModel`** — deterministic, dependency-free, reads the rendered prompt and emits a
   well-formed safe answer; `unsafe_first=True` forces an unsafe first attempt to exercise the
@@ -689,15 +691,19 @@ Three properties make this a defensible contribution:
 3. **It is honest about what fine-tuning does and does not buy.** We predicted, and the results
    confirm, that quality deltas would be small and internalization deltas would be large.
 
-### 7.2 Why QLoRA
+### 7.2 Why LoRA (and why not 4-bit QLoRA)
 
 Full fine-tuning of a 4B model requires optimizer state and gradients for all 4.06B parameters —
-far beyond a 24 GB consumer GPU. QLoRA trains small low-rank adapter matrices while the base model
+far beyond a 24 GB consumer GPU. LoRA trains small low-rank adapter matrices while the base model
 is frozen:
 
 - **Trainable parameters: 33,030,144 of 4,055,498,240 = 0.8145%.**
-- The base model is never modified — it stays swappable, and the adapter is a ~137 MB artifact
-  rather than a 8 GB checkpoint.
+- The base model is never modified — it stays swappable, and the adapter is a ~132 MB artifact
+  (132,187,888 bytes) rather than an 8 GB checkpoint.
+- **No quantization was used.** `qlora_train.py` defaults to a 4-bit NF4 ("QLoRA") base, but the
+  reported adapter was trained with `--precision bf16`: on the 24 GB RTX 3090 the full bf16 base
+  fits alongside the adapter's optimizer state, so 4-bit quantization would only have added
+  error. The phase keeps the name "QLoRA" for historical reasons; the method is bf16 LoRA.
 - The adapter loads through the *existing* `QwenChatModel(adapter_path=...)` hook built in Phase 5,
   so **no runtime code changed** to deploy the fine-tuned model.
 
@@ -735,7 +741,8 @@ truncated examples are **counted and warned about**.
 | Epochs / LR / schedule | 3 / 2e-4 / cosine, warmup 3% | modest epochs because the base is already strong |
 | Effective batch | 2 × 8 accumulation = **16** | VRAM auto-detect ("medium" tier, 24 GB) |
 | max_seq_len | **3072** | measured p95 = 2822, max = 2973 → zero truncation |
-| Memory | gradient checkpointing + paged AdamW 8-bit | fits the 24 GB budget |
+| Memory | gradient checkpointing + `adamw_torch` (verified in `training_args.bin`) | fits the 24 GB budget without 8-bit optimizer state |
+| Hardware / software | NVIDIA GeForce RTX 3090, 24 GB · PyTorch 2.5.1+cu121 · transformers 5.14.1 · PEFT 0.19.1 | local Windows workstation; see `docs/HARDWARE_AND_ENVIRONMENT.md` |
 | Selection | best checkpoint by **val loss** | overfitting is the main risk, not underfitting |
 | Seed | 42 | reproducibility |
 
@@ -833,7 +840,7 @@ Four configurations over the same 30 fresh, real-model-scored profiles:
 | 1. `base` | base Qwen3-4B | full | off | off |
 | 2. `base_rag` | base Qwen3-4B | full | **on** | off |
 | 3. `base_rag_val` | base Qwen3-4B | full | on | **on** |
-| 4. `finetuned` | + QLoRA adapter | **compact** | on | on |
+| 4. `finetuned` | + LoRA adapter | **compact** | on | on |
 
 Arm 4 uses the compact prompt because that is what it was trained for and how it deploys. Each arm
 therefore runs in its own best configuration — the fair comparison (contrast with §4.3's

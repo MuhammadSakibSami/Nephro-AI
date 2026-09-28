@@ -46,7 +46,7 @@ Risk-conditioned query construction
 Safety-stratified retrieval  (BGE-M3 + FAISS over 118 guideline passages)
         │
         ▼
-Prompt assembly  →  Qwen3-4B (+ QLoRA adapter)  →  structured draft
+Prompt assembly  →  Qwen3-4B (+ LoRA adapter)  →  structured draft
         │
         ▼
 Deterministic safety guardrail  (validate / repair / regenerate / fall back)
@@ -336,11 +336,16 @@ the pipeline.
 
 ## 3.10 Fine-tuning
 
-The base model is **Qwen3-4B-Instruct-2507**, adapted with **QLoRA**
+The base model is **Qwen3-4B-Instruct-2507**, adapted with **LoRA**
 (r = 16, α = 32, dropout 0.05) applied to all seven projection matrices
 (`q,k,v,o,gate,up,down_proj`); 3 epochs, learning rate 2 × 10⁻⁴ with cosine decay
-and 3% warmup, effective batch size 16, maximum sequence length 3,072, seed 42,
-bf16. The best checkpoint is selected by validation loss.
+and 3% warmup, effective batch size 16, maximum sequence length 3,072, seed 42.
+Training used **bf16 mixed precision without quantization** (optimizer AdamW,
+gradient checkpointing) on a single NVIDIA GeForce RTX 3090 (24 GB); the 24 GB
+card holds the full bf16 base, so 4-bit QLoRA was unnecessary and was not used,
+which also avoids adding quantization error to a small-data run. The adapter
+trains 33.0 M parameters (0.81% of the model). The best checkpoint is selected
+by validation loss.
 
 Loss is masked to the assistant turn only. The mask is computed by **prompt-prefix
 length** rather than by string search for a response template:
@@ -378,7 +383,7 @@ the 600 training-data profiles and from the risk model's own test partition.
 | ① base | Qwen3-4B | full | ✗ | ✗ | intrinsic model capability |
 | ② +RAG | Qwen3-4B | full | ✓ | ✗ | contribution of retrieval |
 | ③ +Guardrail | Qwen3-4B | full | ✓ | ✓ | contribution of the guardrail |
-| ④ Fine-tuned | + QLoRA adapter | compact | ✓ | ✓ | contribution of fine-tuning (deployed configuration) |
+| ④ Fine-tuned | + LoRA adapter | compact | ✓ | ✓ | contribution of fine-tuning (deployed configuration) |
 
 *Table 6. Cumulative ablation design.*
 
@@ -414,6 +419,29 @@ rated any output, and this bounds the strength of every safety claim we make.
 
 Binomial proportions are reported with **Wilson 95% confidence intervals**; paired
 arm comparisons use the **exact McNemar test** on the 30 matched profiles.
+
+## 3.12 Computational environment
+
+Fine-tuning, the final six-arm evaluation and live serving were all run on one
+workstation with an unchanged software stack (libraries installed before the
+fine-tuning run and not modified afterwards).
+
+| Item | Value |
+|---|---|
+| GPU | NVIDIA GeForce RTX 3090, 24 GB VRAM (driver 560.94) |
+| CPU / RAM | Intel Core i9-12900 / 31.8 GB |
+| OS / Python | Windows 10 Pro / Python 3.10.11 |
+| PyTorch | 2.5.1+cu121 (CUDA 12.1, cuDNN 9.1) |
+| transformers / PEFT / accelerate | 5.14.1 / 0.19.1 / 1.14.0 |
+| Training precision | bf16 mixed precision, no quantization |
+| Inference precision | bfloat16 base weights, no quantization; LoRA weights float32 |
+| Inference memory | 7.62 GiB VRAM (base + adapter) |
+| Embeddings | BGE-M3 (1024-d) served via Ollama; FAISS 1.14.3 index |
+
+*Table 7a. Computational environment.* The risk model was trained separately on
+Kaggle (Python 3.12.13, scikit-learn 1.6.1, imbalanced-learn 0.14.1, CPU). The
+formative 30-profile evaluation (§4.8) was run on a Google Colab GPU whose model
+was not recorded. Reported latencies are specific to the hardware above.
 
 ---
 
@@ -673,7 +701,7 @@ design rather than a limitation of it.
 Generation from the **compact** prompt with the guardrail **disabled**, on the
 60 held-out validation examples:
 
-| Metric | Base Qwen3-4B | Fine-tuned (QLoRA) |
+| Metric | Base Qwen3-4B | Fine-tuned (LoRA) |
 |---|---:|---:|
 | **raw_unsafe_rate** | 0.7667 | **0.0667** |
 | **format_ok_rate** | 0.000 | **1.000** |

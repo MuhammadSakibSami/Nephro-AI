@@ -1,6 +1,6 @@
 # LLM Phase 9 — Ablation Evaluation
 
-**Status:** ✅ DONE — 4-arm ablation run on real Qwen3-4B-Instruct-2507 + the Phase-8 QLoRA adapter.
+**Status:** ✅ DONE — 4-arm ablation run on real Qwen3-4B-Instruct-2507 + the Phase-8 LoRA adapter (trained in bf16, no quantization).
 **Plan reference:** `LLM_PLAN.md` → Phase 9
 **Date implemented:** 2026-07-27
 **Artifacts:** `phase9_eval/phase9_{arm}_results.csv|summary.json|summary.md`, `phase9_eval/phase9_comparison.md`
@@ -40,12 +40,12 @@ raw_unsafe_rate before this phase started.
 
 Same 30 fresh, real-model-scored profiles run through four configurations:
 
-| Arm | Model | Prompt | RAG | Validator |
+| Arm | Model | Prompt | RAG | Validator |                                                        
 |---|---|---|---|---|
 | 1. `base` | base Qwen3-4B | full | off | off |
 | 2. `base_rag` | base Qwen3-4B | full | on | off |
 | 3. `base_rag_val` | base Qwen3-4B | full | on | on *(Phase-6-equivalent, re-run fresh)* |
-| 4. `finetuned` | Phase-8 QLoRA adapter | **compact** | on | on |
+| 4. `finetuned` | Phase-8 LoRA adapter | **compact** | on | on |
 
 Arm 4 deliberately uses the compact prompt (what it was trained for) against
 the base arms' full prompt — this isolates the deployed configuration's

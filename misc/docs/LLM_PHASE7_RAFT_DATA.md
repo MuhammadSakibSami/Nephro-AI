@@ -158,7 +158,7 @@ download `train.jsonl` / `val.jsonl` / `data_card.md`.
 
 ## 8. Next steps
 
-**Phase 8 — QLoRA fine-tuning:** train Qwen3-4B (4-bit NF4 + LoRA) on `train.jsonl`
+**Phase 8 — LoRA fine-tuning:** train Qwen3-4B (LoRA in bf16, no quantization, on an RTX 3090 24 GB — the script's 4-bit NF4 mode was not used) on `train.jsonl`
 with the compact prompt, loss masked to the assistant turn; load via the existing
 `QwenChatModel(adapter_path=...)` hook. Then **Phase 9** ablation: fine-tuned vs the
 frozen Phase-6 base arm (raw_unsafe ↓, prompt-length/cost ↓).

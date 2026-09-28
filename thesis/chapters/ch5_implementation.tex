@@ -45,8 +45,8 @@ Overkill at 162 passages; value is headroom for a larger corpus \\
 Qwen3-4B-Instruct-2507 & Text generation & Strong instruction-following at a
 size that is fine-tunable and self-hostable; no patient data leaves the machine &
 Quality ceiling below frontier models; needs a GPU for comfortable latency \\
-PEFT + bitsandbytes & QLoRA fine-tuning & Trains a 4B model on a single GPU;
-adapter is small and swappable &
+PEFT & LoRA fine-tuning (bf16) & Trains a 4B model on a single GPU by updating
+0.81\% of parameters; adapter is small and swappable &
 Adapter quality bounded by the 540-example corpus \\
 Safety validator (pure Python) & Post-generation gate & Deterministic,
 auditable, zero inference cost &
@@ -83,6 +83,52 @@ The episode is documented here rather than omitted because it is
 methodologically relevant: a silent fallback of this kind degrades results
 without producing an error, and the corrected and uncorrected runs were both
 re-scored so that the difference could be attributed.
+
+\section{Experimental Environment}
+\label{sec:env}
+
+All language-model work---fine-tuning, the six-arm evaluation of
+Chapter~\ref{ch:results}, and live serving---was carried out on a single local
+workstation, summarised in Table~\ref{tab:env}. The software stack was installed
+before the fine-tuning run and not changed afterwards, so every reported
+language-model result was produced with identical library versions. All values
+were read from the machine or from the saved training arguments rather than
+recalled.
+
+\begin{table}[H]
+\centering
+\caption{Experimental environment for fine-tuning, evaluation and serving.}
+\label{tab:env}
+\small
+\begin{tabularx}{\textwidth}{@{}L{1.75in} X@{}}
+\toprule
+\textbf{Item} & \textbf{Value} \\
+\midrule
+GPU model & NVIDIA GeForce RTX 3090 \\
+VRAM & 24 GB (24{,}576 MiB); driver 560.94 \\
+CPU / system memory & Intel Core i9-12900 / 31.8 GB \\
+Operating system & Windows 10 Pro \\
+Python & 3.10.11 \\
+PyTorch & 2.5.1 (CUDA 12.1 build, cuDNN 9.1) \\
+transformers & 5.14.1 \\
+PEFT / accelerate & 0.19.1 / 1.14.0 \\
+Training precision & bfloat16 mixed precision, no quantisation \\
+Inference precision & bfloat16 base weights, no quantisation; LoRA
+weights float32 \\
+Inference memory & 7.62 GiB VRAM (base model plus adapter) \\
+Decoding (evaluation) & Greedy (deterministic), seed 42 \\
+Decoding (live serving) & Sampling, temperature 0.3, top-$p$ 0.9 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The inference precision was verified empirically by loading the model exactly as
+the backend does: every one of the 398 base-weight tensors is bfloat16, the
+model reports no quantisation configuration, and all parameters reside on the
+GPU with no CPU offload. The screening cascade, by contrast, requires no GPU; it
+was trained on Kaggle (Python 3.12, scikit-learn 1.6.1) and is served on the CPU
+with the same scikit-learn version. Latency figures reported in
+Chapter~\ref{ch:results} are specific to this hardware.
 
 \section{Backend Service}
 \label{sec:backend}

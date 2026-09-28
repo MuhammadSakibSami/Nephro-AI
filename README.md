@@ -88,10 +88,25 @@ Safe, personalized kidney-risk education  ── /generate-guidance ──►  R
 | Backend API | FastAPI + Uvicorn |
 | ML model | scikit-learn, imbalanced-learn (two-stage cascade, `.joblib`) |
 | RAG | BGE-M3 embeddings + FAISS (prod) · pure-Python TF-IDF (offline) |
-| LLM | Qwen3-4B-Instruct-2507 (prod) · deterministic safe generator (demo) |
+| LLM | Qwen3-4B-Instruct-2507 + LoRA adapter (prod) · deterministic safe generator (demo) |
+| Fine-tuning | PEFT LoRA (r=16, α=32), trained in bf16 without quantization |
 | Safety | Rule-based validator (pure Python) |
 | Frontend | React 18 + Vite + Tailwind CSS |
+| Database | PostgreSQL + SQLAlchemy + Alembic |
 | Config | `.env` (python-dotenv) · `VITE_*` env |
+
+### Compute environment (verified)
+
+| Item | Value |
+|---|---|
+| GPU model | NVIDIA GeForce RTX 3090 |
+| VRAM | 24 GB |
+| PyTorch version | 2.5.1+cu121 (CUDA 12.1) |
+| Inference precision | bfloat16, no quantization (LoRA adapter weights float32) |
+| transformers version | 5.14.1 |
+
+The same machine and library versions were used for fine-tuning, the final Q1
+evaluation and live serving. Full record: [docs/HARDWARE_AND_ENVIRONMENT.md](docs/HARDWARE_AND_ENVIRONMENT.md).
 
 ---
 
@@ -265,16 +280,16 @@ validation.** Details: [`results/phase6_summary.md`](results/phase6_summary.md).
 - ✅ LLM runtime + `/generate-guidance` endpoint with local-demo fallback
 - ✅ Phase-6 real-Qwen3 evaluation (**frozen** as the thesis LLM result)
 - ✅ React frontend (patient + admin)
+- ✅ Phase-7 training-data generation (600 self-distilled, safety-gated examples)
+- ✅ Phase-8 LoRA fine-tuning of Qwen3-4B (bf16, RTX 3090) — adapter live in production
+- ✅ Final Q1 six-arm ablation (300 profiles): deployed configuration at 0% delivered
+  critical-unsafe, 100% emergency-redirect recall — see
+  [results/q1_llm_evaluation_summary.md](results/q1_llm_evaluation_summary.md)
+- ✅ PostgreSQL research persistence
 
-**Deferred to the paper extension** (the codebase is kept extensible — pluggable
-model/teacher backends, a fine-tuned-adapter hook, frozen eval profiles):
-- ⏸ RAFT training-data generation (pipeline built)
-- ⏸ QLoRA fine-tuning of Qwen3-4B
-- ⏸ Base-vs-fine-tuned ablation + expert review
-- ⏸ GGUF/Ollama packaging
-
-Fine-tuning is deferred because base **Qwen3 + RAG + validator is already strong**;
-its planned value is safety self-containment + cheaper inference, not a quality fix.
+**Still open:**
+- ⏸ Clinician / expert review of generated guidance
+- ⏸ GGUF/Ollama packaging of the fine-tuned model
 
 ---
 
@@ -284,7 +299,10 @@ its planned value is safety self-containment + cheaper inference, not a quality 
 |---|---|
 | [SETUP.md](SETUP.md) | Full setup & run guide (Windows + cross-platform), troubleshooting, optional GPU LLM |
 | [frontend/README.md](frontend/README.md) | Frontend usage, components, env config |
-| [results/phase6_summary.md](results/phase6_summary.md) | Frozen LLM evaluation summary |
+| [docs/HARDWARE_AND_ENVIRONMENT.md](docs/HARDWARE_AND_ENVIRONMENT.md) | Verified GPU, VRAM, PyTorch/transformers versions, inference and training precision |
+| [docs/TECHNICAL_DOCUMENTATION.md](docs/TECHNICAL_DOCUMENTATION.md) | Full end-to-end technical documentation |
+| [results/q1_llm_evaluation_summary.md](results/q1_llm_evaluation_summary.md) | Final Q1 six-arm LLM evaluation |
+| [results/phase6_summary.md](results/phase6_summary.md) | Earlier Phase-6 LLM evaluation (superseded by Q1) |
 | [results/thesis_demo_cases.md](results/thesis_demo_cases.md) | The three supervisor demo cases |
 
 ---

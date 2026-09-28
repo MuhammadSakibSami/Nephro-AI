@@ -240,10 +240,11 @@ while keeping the adapter itself in higher precision. It is worth stating the
 relationship precisely, because the terminology is frequently conflated: QLoRA
 is not a different adapter type from LoRA. It is LoRA training performed with a
 quantised frozen base. The artefact produced is an ordinary LoRA adapter, and it
-may subsequently be attached to a base model held at any precision. This
-distinction is exercised directly in the present system, where training used
-4-bit quantisation but serving attaches the same adapter to a full-precision
-base.
+may subsequently be attached to a base model held at any precision. Quantisation
+is therefore a memory-saving choice rather than a methodological one: where the
+GPU can hold the full-precision base, as in the present work, standard LoRA in
+bfloat16 is preferable because it avoids adding quantisation error to the frozen
+weights. This thesis uses standard LoRA, not QLoRA.
 
 \section{Safety Guardrails for Generative Systems}
 \label{sec:guardrails}

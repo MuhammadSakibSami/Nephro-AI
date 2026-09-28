@@ -61,7 +61,7 @@ Existing ML-based CKD detection models almost universally rely on eGFR or serum 
 ### 1.3 Solution
 
 - **Routine, low-cost-blood-test-based, cross-sectional screening:** the ML model is trained entirely on features that are already collected in a standard general checkup or population health survey — vitals, comorbidity history, and common blood tests (glucose, HbA1c, BUN, uric acid, albumin, hemoglobin) — deliberately excluding creatinine, eGFR, and UACR. It is *cross-sectional* in the epidemiological sense: each screening is a single point-in-time risk estimate, trained on cross-sectional NHANES survey data (one measurement per participant, not a repeated-measures/longitudinal design). This makes the tool usable anywhere a routine blood panel is already run, without ordering the additional specialized kidney-function test up front.
-- **Explainable, personalized, safety-guaranteed education:** the LLM pipeline translates the ML result + patient profile into five-section patient education, grounded in retrieved clinical-guideline text, personalized to the patient's own reported values, and passed through a deterministic post-generation safety validator before delivery. This configuration has been fine-tuned (Phase 8, QLoRA) and rigorously evaluated on a 300-profile, six-arm ablation ("Q1") that isolates the individual contribution of RAG, fine-tuning, the validator, and prompt compression (§7).
+- **Explainable, personalized, safety-guaranteed education:** the LLM pipeline translates the ML result + patient profile into five-section patient education, grounded in retrieved clinical-guideline text, personalized to the patient's own reported values, and passed through a deterministic post-generation safety validator before delivery. This configuration has been fine-tuned (Phase 8, bf16 LoRA) and rigorously evaluated on a 300-profile, six-arm ablation ("Q1") that isolates the individual contribution of RAG, fine-tuning, the validator, and prompt compression (§7).
 
 > **Scope disclaimer:** This is a screening and education tool. It does not diagnose CKD, prescribe treatment, or replace clinician judgment, eGFR/UACR testing, or medical evaluation.
 
@@ -184,7 +184,7 @@ The active mode, model spec (including whether the LoRA adapter is attached, e.g
 | **Lexical Embeddings (fallback only)** | Pure-Python HashingTFIDF (stdlib) | Offline demo-mode RAG, no dependencies |
 | **Vector Store** | FAISS (production) / custom pure-Python brute-force (offline fallback) | Nearest-neighbor chunk search |
 | **LLM (production)** | Qwen3-4B-Instruct-2507 via HuggingFace `transformers` | Guideline-grounded education generation |
-| **LLM fine-tuning** | QLoRA (4-bit NF4 quantization + LoRA adapters) via `peft` + `bitsandbytes` | Phase 8: internalizes format/safety/personalization, enables the compact prompt |
+| **LLM fine-tuning** | LoRA adapters via `peft`, trained in **bf16 without quantization** (the script also supports a 4-bit QLoRA mode, not used for the reported adapter) | Phase 8: internalizes format/safety/personalization, enables the compact prompt |
 | **LLM (offline demo)** | `MockGuidanceModel` (deterministic Python) | Full-pipeline testing with no GPU/network |
 | **Safety Validator** | Pure Python (stdlib + project modules only) | Deterministic post-generation rule enforcement |
 | **Citation layer** | Pure Python, deterministic | IEEE-style `[n]` markers + reference list from KB `sources.csv` |
@@ -194,7 +194,8 @@ The active mode, model spec (including whether the LoRA adapter is attached, e.g
 | **Database** | PostgreSQL 18 (configured, live; best-effort at runtime) | Research persistence of every screening + guidance call |
 | **Schema migration** | Alembic | Explicit, version-controlled schema (`CKD_DB_AUTO_CREATE=false` once migrations are in use) |
 | **Config** | python-dotenv + Vite env | Backend and frontend environment configuration |
-| **Platform** | Windows (primary, dev machine) / cross-platform | Runs on any OS |
+| **Platform** | Windows 10 Pro (primary, dev machine) / cross-platform | Runs on any OS |
+| **GPU / compute** | NVIDIA GeForce RTX 3090, 24 GB VRAM; PyTorch 2.5.1+cu121; transformers 5.14.1 | Fine-tuning, Q1 evaluation and live serving all ran on this card; inference in bfloat16 (no quantization). See [HARDWARE_AND_ENVIRONMENT.md](HARDWARE_AND_ENVIRONMENT.md) |
 | **Training data** | NHANES 2021–23 (CDC/NCHS) | Population-level health survey (US) |
 
 ### 3.1 Key Python Dependencies
@@ -203,7 +204,8 @@ The active mode, model spec (including whether the LoRA adapter is attached, e.g
 fastapi, uvicorn, python-dotenv, joblib, scikit-learn, imbalanced-learn,
 pandas, numpy, requests            # core serving + ML
 sqlalchemy, psycopg2-binary, alembic  # database
-sentence-transformers, torch, transformers, peft, bitsandbytes, faiss-cpu  # production LLM + fine-tuning + RAG
+torch 2.5.1+cu121, transformers 5.14.1, peft 0.19.1, accelerate 1.14.0, faiss 1.14.3  # production LLM + fine-tuning + RAG
+# bitsandbytes is only needed for the optional 4-bit mode of qlora_train.py; it is not installed or used.
 ```
 
 ### 3.2 Frontend Dependencies
@@ -323,9 +325,11 @@ Two complete system-prompt variants exist, and exactly one is used per request, 
 
 ### 4.6 LLM Generation
 
-**Model:** Qwen3-4B-Instruct-2507 (non-thinking instruct variant), loaded via HuggingFace `transformers` (`llm/serving/model_backends.py::QwenChatModel`). Default generation parameters: `max_new_tokens=700`, `temperature=0.3`, `top_p=0.9` — a fairly low temperature, chosen to keep the guidance consistent and reduce the chance of drifting into unsafe or off-topic phrasing, while still allowing natural variation across patients.
+**Model:** Qwen3-4B-Instruct-2507 (non-thinking instruct variant), loaded via HuggingFace `transformers` (`llm/serving/model_backends.py::QwenChatModel`) with `torch_dtype="auto"`, which resolves to the checkpoint's native **bfloat16** — measured: all base weights bf16, no quantization, fully on the GPU, 7.62 GiB VRAM with the adapter attached. Live-serving generation parameters: `max_new_tokens=700`, `temperature=0.3`, `top_p=0.9` — a fairly low temperature, chosen to keep the guidance consistent and reduce the chance of drifting into unsafe or off-topic phrasing, while still allowing natural variation across patients. The Q1 evaluation instead used **greedy (deterministic) decoding**, seed 42, so its results are exactly reproducible.
 
-**Fine-tuning (Phase 8, QLoRA):** the base model was fine-tuned with a **LoRA adapter** (rank `r=16`, `alpha=32`, dropout `0.05`, targeting all seven attention/MLP projection matrices — `q/k/v/o_proj`, `gate/up/down_proj`) under **4-bit NF4 quantization** (`bitsandbytes`), for **3 epochs** at learning rate `2e-4` (cosine schedule, 3% warmup), effective batch size 16 (2 × 8 gradient-accumulation), on **540 training examples** (60 held out for validation), with the loss masked to only the assistant's answer tokens. Final train loss 0.133, best validation loss 0.155. The adapter is ~132 MB and loads on top of the frozen base weights via `peft.PeftModel.from_pretrained()`.
+**Hardware and versions:** NVIDIA GeForce RTX 3090 (24 GB), PyTorch 2.5.1+cu121, transformers 5.14.1, PEFT 0.19.1 — used for fine-tuning, the Q1 evaluation and live serving alike. Full verified record: [HARDWARE_AND_ENVIRONMENT.md](HARDWARE_AND_ENVIRONMENT.md).
+
+**Fine-tuning (Phase 8):** the base model was fine-tuned with a **LoRA adapter** (rank `r=16`, `alpha=32`, dropout `0.05`, targeting all seven attention/MLP projection matrices — `q/k/v/o_proj`, `gate/up/down_proj`) in **bf16 without quantization** (`--precision bf16`, optimizer `adamw_torch`; the phase and script are named "QLoRA" after the script's default 4-bit mode, which was not used for the reported adapter), for **3 epochs** at learning rate `2e-4` (cosine schedule, 3% warmup), effective batch size 16 (2 × 8 gradient-accumulation), on **540 training examples** (60 held out for validation), with the loss masked to only the assistant's answer tokens. Final train loss 0.133, best validation loss 0.155. The adapter is ~132 MB and loads on top of the frozen base weights via `peft.PeftModel.from_pretrained()`.
 
 **Training data provenance (Phase 7):** 600 synthetic, class-balanced (200/200/200 low/moderate/high) patient profiles, each with a gold answer generated under the *full* prompt via **self-distillation** — i.e., the same base Qwen3 + RAG + safety-validator pipeline generating its own training targets, with every single one required to pass `scan_unsafe` (0 unsafe) and contain all 5 required sections before being kept (100% pass rate on this run; the architecture also supports an external teacher (Gemini) for diversity, but the actual v1 adapter run used 100% self-distillation, `teacher_mix: {"self": 600}`). No real patient data was used; the 30 Phase-6 held-out evaluation profiles and the ML test set were explicitly excluded from the training pool to avoid leakage.
 
@@ -548,7 +552,7 @@ The Phase-6 30-profile evaluation referenced in earlier project documentation ha
 
 ### 8.4 Fine-Tuning as a Complement, Not a Replacement, for RAG and the Validator
 
-**Decision:** add QLoRA fine-tuning (Phase 8) on top of the already-RAG-grounded, validator-guarded base pipeline, rather than treating fine-tuning as an alternative safety mechanism. **Rationale:** the Q1 ablation shows fine-tuning's own raw-safety effect is directionally favorable but not independently significant (D vs B) — its real, measured value is enabling the **compact prompt** (25% token reduction) with a validator-confirmed lack of safety regression (F vs E), plus real quality gains (grounding rose from ~68% under the full prompt to 99.7% under the compact prompt it was actually trained for). **Tradeoff:** fine-tuning requires a training pipeline, GPU time, and a held-out data-generation phase (Phase 7) — justified by the token-cost saving and quality improvement it delivers on top of the safety guarantees that RAG + the validator already provide independently.
+**Decision:** add LoRA fine-tuning (Phase 8) on top of the already-RAG-grounded, validator-guarded base pipeline, rather than treating fine-tuning as an alternative safety mechanism. **Rationale:** the Q1 ablation shows fine-tuning's own raw-safety effect is directionally favorable but not independently significant (D vs B) — its real, measured value is enabling the **compact prompt** (25% token reduction) with a validator-confirmed lack of safety regression (F vs E), plus real quality gains (grounding rose from ~68% under the full prompt to 99.7% under the compact prompt it was actually trained for). **Tradeoff:** fine-tuning requires a training pipeline, GPU time, and a held-out data-generation phase (Phase 7) — justified by the token-cost saving and quality improvement it delivers on top of the safety guarantees that RAG + the validator already provide independently.
 
 ### 8.5 Rule-Based Safety Validator over LLM-as-Judge
 
@@ -584,7 +588,7 @@ Covered in detail in §4.5 and §4.7 — retained here as a design decision: pas
 | **BGE-M3 (via Ollama)** | RAG query/chunk embedding (`llm/rag/embedder.py`, `ollama-bge-m3` spec) | Multilingual, multi-granularity dense embedding model, served through Ollama's REST API | State-of-the-art open dense embedder; serving through Ollama sidesteps a `torch.load` version restriction that broke the direct `sentence-transformers` path (§8.6) | Genuine semantic retrieval (not lexical matching), no GPU version conflicts, easy to swap/upgrade via Ollama | Requires Ollama running as an extra service; embedding quality still depends on chunk quality/granularity |
 | **FAISS** | Vector search over the KB index | Exact/approximate nearest-neighbor search over the 162-chunk embedding matrix | Industry-standard, fast, well-tested vector search | Very fast at this KB scale, simple integration via the project's `VectorStore` wrapper | Overkill at 162 chunks (a brute-force fallback exists and is equally correct here) — its value is architectural headroom for a much larger KB |
 | **Qwen3-4B-Instruct-2507** | LLM generation (`model_backends.py::QwenChatModel`) | Loaded via HuggingFace `transformers`, `device_map="auto"` | Strong instruction-following at a size (4B) that's fine-tunable and inference-affordable without a data-center GPU | Good instruction adherence, reasonable latency, open weights (auditable, self-hostable — no data leaves the machine) | Smaller than frontier closed models — quality/nuance ceiling is lower; still needs a capable GPU for comfortable latency |
-| **PEFT + QLoRA (LoRA adapters, 4-bit NF4)** | Phase-8 fine-tuning (`llm/finetune/qlora_train.py`) | Freeze the 4-bit-quantized base weights, train a small rank-16 adapter on top | Full fine-tuning of a 4B model is expensive and risks catastrophic forgetting of general instruction-following; LoRA trains ~a fraction of the parameters | Cheap to train (single run completed with a 24GB GPU tier), small adapter file (~132MB), swappable without touching the base model, enables the compact-prompt distillation objective | Adapter quality is bounded by training-data quality/size (540 examples here); LoRA can underperform full fine-tuning on tasks needing large representational shifts (not observed as a problem here, per Q1 results) |
+| **PEFT (LoRA adapters, bf16)** | Phase-8 fine-tuning (`llm/finetune/qlora_train.py`, run with `--precision bf16`) | Freeze the bf16 base weights, train a small rank-16 adapter on top (no quantization — the 24 GB RTX 3090 held the full bf16 base) | Full fine-tuning of a 4B model is expensive and risks catastrophic forgetting of general instruction-following; LoRA trains ~a fraction of the parameters | Cheap to train (single run completed with a 24GB GPU tier), small adapter file (~132MB), swappable without touching the base model, enables the compact-prompt distillation objective | Adapter quality is bounded by training-data quality/size (540 examples here); LoRA can underperform full fine-tuning on tasks needing large representational shifts (not observed as a problem here, per Q1 results) |
 | **Rule-based safety validator (pure Python)** | `llm/serving/safety_validator.py` | Regex + heuristic detectors, sentence-scoped, negation-aware | Deterministic guarantee > probabilistic judgment for a medical-safety gate (§8.5) | Zero extra inference cost, fully auditable, no false sense of security from "the LLM says it's fine" | Can miss genuinely novel unsafe phrasings outside its patterns — the ten scoring-detector fixes made during Q1 are direct evidence of this class of risk, all found by adversarial testing against real outputs |
 | **PostgreSQL 18 + SQLAlchemy + Alembic** | Research persistence (`backend/database/`) | JSONB columns for flexible nested data (raw inputs, full prediction, full guidance) + typed columns for fast common queries (risk_class, confidence) | Durable, queryable, production-grade relational database with native JSON support; Alembic gives explicit, versioned schema control | Real SQL querying over research data, JSONB keeps the schema flexible without constant migrations for every new field | An extra service to install/run/manage; the app degrades gracefully without it, so its absence is silent unless `/db/health` is checked |
 | **React 18 + Vite + Tailwind CSS** | Frontend | Component-based patient/admin views, hook-based local state, utility-first styling | Fast dev/build cycle (Vite), no heavyweight state-management library needed for this app's scope, rapid, consistent styling via Tailwind | Fast builds, small bundle (~200KB gzipped ~62KB), easy to reason about with plain hooks | No SSR/routing framework — acceptable for a single-page thesis demo app, would need revisiting for a larger multi-page product |
@@ -837,7 +841,7 @@ Nephro-AI/
 │   ├── data/                      # Held-out evaluation profiles
 │   ├── finetune/
 │   │   ├── data.py                # Loss-masked SFT dataset construction
-│   │   ├── qlora_train.py         # Phase-8 QLoRA training script
+│   │   ├── qlora_train.py         # Phase-8 LoRA training script (bf16 used; optional 4-bit mode)
 │   │   ├── evaluate_adapter.py
 │   │   └── adapters/v1/adapter/   # Trained LoRA adapter (adapter_config.json, adapter_model.safetensors)
 │   └── eval/
@@ -865,6 +869,7 @@ Nephro-AI/
 │
 ├── docs/
 │   ├── TECHNICAL_DOCUMENTATION.md          # This file
+│   ├── HARDWARE_AND_ENVIRONMENT.md         # Verified GPU / VRAM / library versions / precision
 │   └── FRONTEND_ELEMENTS_JUSTIFICATION.md  # Line-by-line math justification for every UI element
 │
 ├── misc/docs/                      # Phase-by-phase LLM development documentation (Phases 1-9)
@@ -919,10 +924,18 @@ Nephro-AI/
 | **Deployed configuration (Arm F): emergency-redirect recall** | **100%** |
 | Deployed configuration (Arm F): grounding (cited ≥1 source) | 99.7% |
 | Deployed configuration (Arm F): personalization score | 1.99 / 2 |
-| LLM generation temperature / top_p / max_new_tokens | 0.3 / 0.9 / 700 |
+| LLM generation temperature / top_p / max_new_tokens (live serving) | 0.3 / 0.9 / 700 |
+| LLM decoding in the Q1 evaluation | Greedy (deterministic), seed 42 |
+| **GPU model** | **NVIDIA GeForce RTX 3090** |
+| **VRAM** | **24 GB** (7.62 GiB used by the served model + adapter) |
+| **PyTorch version** | **2.5.1+cu121** (CUDA 12.1) |
+| **Inference precision** | **bfloat16**, no quantization (LoRA adapter weights float32) |
+| **transformers version** | **5.14.1** |
+| PEFT version | 0.19.1 |
+| Fine-tuning precision | bf16 LoRA, no quantization |
 | BGE-M3 embedding dimension | 1024 |
 | Database | PostgreSQL 18, configured and live |
 
 ---
 
-*This documentation reflects the final thesis state as of September 2026, incorporating the completed Phase 8 QLoRA fine-tuning, the final Q1 six-arm safety/quality ablation, the live PostgreSQL research-persistence setup, and the full-project consistency audit performed prior to defense.*
+*This documentation reflects the final thesis state as of September 2026, incorporating the completed Phase 8 LoRA fine-tuning (bf16), the final Q1 six-arm safety/quality ablation, the live PostgreSQL research-persistence setup, and the full-project consistency audit performed prior to defense.*

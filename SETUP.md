@@ -182,15 +182,27 @@ revert: `python -m llm.rag.embed_index --embedder hashing-tfidf`.
 ### 5b. HuggingFace transformers — Colab or dedicated GPU server (≥8 GB VRAM)
 
 ```bash
-pip install -r requirements-llm.txt        # torch, transformers, sentence-transformers, faiss
-python -m llm.rag.embed_index              # build the BGE-M3 + FAISS index
-# set CKD_LLM_MODEL=qwen in .env, then start the backend
+pip install -r requirements-llm.txt        # torch, transformers, peft, faiss
+ollama pull bge-m3
+python -m llm.rag.embed_index --embedder ollama-bge-m3   # build the BGE-M3 + FAISS index
+# set CKD_LLM_MODEL=qwen and CKD_LLM_ADAPTER=llm/finetune/adapters/v1/adapter in .env,
+# then start the backend
 ```
+
+> **Use `--embedder ollama-bge-m3` explicitly.** With torch < 2.6 the default
+> `sentence-transformers` BGE-M3 loader is blocked by a `torch.load` security
+> restriction and the `auto` embedder silently falls back to lexical TF-IDF.
 
 Downloads the full Qwen3-4B-Instruct-2507 model (~8 GB) on first run.
 Requires a CUDA GPU with ≥8 GB VRAM (or CPU offload in Colab with enough RAM).
 The frontend and safety pipeline are unchanged; the UI badge switches from
 `local demo` to the model spec.
+
+**Reference machine (verified — used for fine-tuning, the Q1 evaluation and
+live serving):** NVIDIA GeForce RTX 3090, 24 GB VRAM · PyTorch 2.5.1+cu121 ·
+transformers 5.14.1 · PEFT 0.19.1 · inference in bfloat16 (no quantization),
+7.6 GiB VRAM with the LoRA adapter attached. Full record:
+[docs/HARDWARE_AND_ENVIRONMENT.md](docs/HARDWARE_AND_ENVIRONMENT.md).
 
 ---
 

@@ -5,9 +5,10 @@
 - Benchmark: 300 profiles, `q1_benchmark/q1_profiles_300.jsonl`
 - Benchmark hash: `563c6a66931da2e76eda7c439f70adf6845deea8043bed1fc08502d5822b4fc5`
 - Run manifest: `q1_runs/q1_run_manifest.json`
-- Primary analysis: deterministic decoding, seed 42, n=300 profiles (the statistical unit throughout)
+- Primary analysis: deterministic (greedy) decoding, seed 42, n=300 profiles (the statistical unit throughout)
 - Full tables: `q1_report/tables/`. Figures: `q1_report/figures/` (8 figures per the evaluation plan)
-- **This is the final result set.** Generation ran three times (original → harness-fix → BGE-M3 retrieval fix) and scoring was corrected twice (six Q1-detector false positives, then two production-validator false positives). Every correction is documented in §3, with before/after numbers, so the audit trail is reproducible.
+- **Compute environment (all arms):** NVIDIA GeForce RTX 3090, 24 GB VRAM · PyTorch 2.5.1+cu121 · transformers 5.14.1 · PEFT 0.19.1 · inference precision **bfloat16**, no quantization (LoRA adapter weights float32; 7.62 GiB VRAM with the adapter attached) · Windows 10 Pro. Latency figures in §9 are specific to this machine. Full record: [docs/HARDWARE_AND_ENVIRONMENT.md](../docs/HARDWARE_AND_ENVIRONMENT.md).
+- **This is the final result set.** Generation ran three times (original → harness-fix → BGE-M3 retrieval fix) and scoring was corrected in successive rounds (eight Q1-detector false positives and two production-validator false positives — ten in total, §3.3). Every correction is documented in §3, with before/after numbers, so the audit trail is reproducible.
 
 ---
 

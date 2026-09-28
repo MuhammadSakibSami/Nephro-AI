@@ -44,7 +44,7 @@ ckd_risk_app/llm/
 One interface, `generate(messages) -> str`:
 - **`QwenChatModel`** — `Qwen/Qwen3-4B-Instruct-2507` (non-thinking instruct
   variant) via transformers. Low-temperature decoding (0.3), capped tokens. Has an
-  `adapter_path` hook so Phase 8 can load the QLoRA adapter with no API change.
+  `adapter_path` hook so Phase 8 can load the LoRA adapter with no API change.
 - **`MockGuidanceModel`** — reads the rendered prompt (risk level, top factors,
   retrieved chunk ids) and returns a complete, safe `GuidanceOutput`. An
   `unsafe_first=True` switch forces an unsafe first attempt to exercise the

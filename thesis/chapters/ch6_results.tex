@@ -512,9 +512,10 @@ This is the direct, measured payoff of the prompt-compression objective.
 
 Latency does not follow token count: arm F is the slowest at 30.9 s despite
 having the smallest prompt. This is because the LoRA adapter adds a
-per-token computation overhead on the local serving hardware, and because
-latency was measured on a shared development machine without batching or
-serving optimisation. The token reduction is the robust efficiency result; the
+per-token computation overhead on the local serving hardware (an unmerged
+adapter adds two extra low-rank matrix products per adapted layer), and because
+latency was measured on a single RTX 3090 workstation (Section~\ref{sec:env})
+without batching or serving optimisation. The token reduction is the robust efficiency result; the
 latency figures should be treated as indicative of this hardware only and are
 not the basis of any claim.
 

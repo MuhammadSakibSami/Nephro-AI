@@ -375,44 +375,44 @@ def fig_rag_pipeline():
 # ===========================================================================
 def fig_lora():
     fig, ax = blank_axes((7.0, 3.5))
-    ax.text(0.25, 0.94, "(a) QLoRA fine-tuning (Phase 8, training time)",
+    ax.text(0.25, 0.94, "(a) LoRA fine-tuning (Phase 8, training time)",
             ha="center", fontsize=8.8, fontweight="bold")
     ax.text(0.78, 0.94, "(b) Serving (inference time)", ha="center",
             fontsize=8.8, fontweight="bold")
     ax.plot([0.545, 0.545], [0.06, 0.90], color="#cccccc", lw=0.9, ls="--")
 
     box(ax, 0.035, 0.505, 0.195, 0.335,
-        "Base model\nQwen3-4B\n\nFROZEN\n\n4-bit NF4 quantised\n(bitsandbytes)",
-        fc="#eeeeee", ec="#888888", fs=7.3)
+        "Base model\nQwen3-4B\n(4.02 B params)\n\nFROZEN\n\nbfloat16\nno quantisation",
+        fc="#eeeeee", ec="#888888", fs=6.6)
     box(ax, 0.295, 0.505, 0.195, 0.335,
         "LoRA matrices\n$A \\in \\mathbb{R}^{r\\times d}$,  $B \\in \\mathbb{R}^{d\\times r}$\n"
-        "$r=16$,  $\\alpha=32$\n\nTRAINED\n(bf16)", fc="#eaf3ee", ec=C_LOW, fs=7.3)
+        "$r=16$,  $\\alpha=32$\n\nTRAINED\n33.0 M params (0.81%)", fc="#eaf3ee", ec=C_LOW, fs=6.6)
     arrow(ax, (0.232, 0.735), (0.293, 0.735))
     ax.text(0.2625, 0.757, "activations", fontsize=5.9, ha="center", color=C_GREY)
     arrow(ax, (0.293, 0.605), (0.232, 0.605), color=C_LOW)
     ax.text(0.2625, 0.627, "gradients", fontsize=5.9, ha="center", color=C_LOW)
     ax.text(0.2625, 0.425,
-            "quantisation shrinks the memory of the\n"
-            "frozen part only — it never changes\nwhat is being trained",
+            "RTX 3090 (24 GB) · bf16 mixed precision\n"
+            "AdamW · gradient checkpointing\n4-bit QLoRA mode not needed",
             ha="center", va="center", fontsize=6.4, color="#444444", linespacing=1.45)
     box(ax, 0.055, 0.115, 0.415, 0.135,
-        "saved artefact: adapter_model.safetensors\n≈132 MB · peft_type = LORA\n"
-        "precision-agnostic, base-model-independent", fc="#fdf7e8", ec=C_MOD, fs=6.9)
+        "saved artefact: adapter_model.safetensors\n132.2 MB · peft_type = LORA\n"
+        "separate from, and reusable with, the base", fc="#fdf7e8", ec=C_MOD, fs=6.9)
     arrow(ax, (0.393, 0.505), (0.31, 0.253))
 
     box(ax, 0.595, 0.505, 0.165, 0.335,
-        "Base model\nQwen3-4B\n\nFROZEN\n\nfull precision\n(torch_dtype\n= auto)",
+        "Base model\nQwen3-4B\n\nFROZEN\n\nbfloat16\n(torch_dtype\n= auto)",
         fc="#eeeeee", ec="#888888", fs=7.3)
     box(ax, 0.800, 0.505, 0.165, 0.335,
         "Same LoRA\nadapter\n\nattached via\nPeftModel\n(unchanged)",
         fc="#eaf3ee", ec=C_LOW, fs=7.3)
     arrow(ax, (0.762, 0.672), (0.798, 0.672))
     ax.text(0.7825, 0.425,
-            "the adapter file is reused as-is;\nit is not tied to the precision\nit was trained under",
+            "the adapter file is reused as-is;\nmeasured: 7.62 GiB VRAM,\nall weights on the GPU",
             ha="center", va="center", fontsize=6.4, color="#444444", linespacing=1.45)
     box(ax, 0.590, 0.115, 0.378, 0.135,
         "effective weights  $W' = W + \\frac{\\alpha}{r} BA$\n\n"
-        "no quantisation required at serving", fc="#eef3f8", ec=C_BLUE, fs=6.9)
+        "no quantisation at training or serving", fc="#eef3f8", ec=C_BLUE, fs=6.9)
     arrow(ax, (0.858, 0.505), (0.80, 0.253))
     save(fig, "fig_lora.png")
 

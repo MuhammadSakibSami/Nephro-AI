@@ -1,9 +1,24 @@
 # LLM Phase 8 — QLoRA Fine-Tuning
 
-**Status:** ✅ Pipeline built + validated offline. ⏳ Awaiting the real Phase-7 dataset to train.
+**Status:** ✅ DONE — adapter `llm/finetune/adapters/v1/adapter` trained 2026-07-27 and deployed.
 **Plan reference:** `LLM_PLAN.md` → Phase 8
 **Date implemented:** July 2026
 **Depends on:** Phase 7 (`train.jsonl` / `val.jsonl`)
+
+> **As actually run (v1 adapter) — verified from `checkpoint-102/training_args.bin`:**
+>
+> | Item | Value |
+> |---|---|
+> | GPU | NVIDIA GeForce RTX 3090, **24 GB VRAM** (local Windows workstation, not Colab) |
+> | PyTorch / transformers / PEFT | **2.5.1+cu121** / **5.14.1** / 0.19.1 |
+> | Training precision | **bf16 LoRA, no quantization** (`--precision bf16`, `bf16=True`, `optim=adamw_torch`) |
+> | Inference precision (serving) | **bfloat16** base weights, no quantization; adapter weights float32; 7.62 GiB VRAM |
+> | max_seq_len | 3072 (overridden from the tier default) |
+>
+> Despite this phase's name, the reported adapter is **not** a QLoRA (4-bit)
+> adapter: the 24 GB card held the full bf16 base, so the 4-bit default was
+> switched off. Describe it as *LoRA fine-tuning in bf16*. Full record:
+> `docs/HARDWARE_AND_ENVIRONMENT.md`.
 
 ---
 
@@ -14,9 +29,10 @@ guideline snippets, here is the ideal safe answer."* Phase 8 trains Qwen3-4B on
 them so the model produces that answer **by itself** — from a **short prompt**,
 with **no safety validator** patching it afterwards.
 
-We do **not** retrain the whole 4B model. We freeze it in 4-bit and train small
-LoRA adapter matrices (~0.5–1% of parameters). That is what "QLoRA" means, and
-it is why this fits on a modest GPU.
+We do **not** retrain the whole 4B model. We freeze it and train small LoRA
+adapter matrices (~0.5–1% of parameters). The script can hold the frozen base in
+4-bit ("QLoRA") so it fits a modest GPU; on the 24 GB RTX 3090 actually used, the
+base was kept in full bf16 instead, and only the LoRA matrices were trained.
 
 ---
 
@@ -74,12 +90,12 @@ Examples whose prompt alone fills the window (zero supervised tokens) are
 | Setting | Value |
 |---|---|
 | Base | `Qwen/Qwen3-4B-Instruct-2507` |
-| Quantization | 4-bit **NF4**, double-quant, bf16 compute (`--precision bf16` for non-quantized LoRA) |
+| Quantization | Script default: 4-bit **NF4**, double-quant, bf16 compute. **v1 run: none** (`--precision bf16`) |
 | LoRA | r=16, alpha=32, dropout 0.05 |
 | Targets | `q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj` |
 | Schedule | 3 epochs, lr 2e-4, cosine, warmup 3% |
 | Selection | best checkpoint by **val loss** (`load_best_model_at_end`) |
-| Memory | gradient checkpointing + paged AdamW 8-bit |
+| Memory | gradient checkpointing + paged AdamW 8-bit (4-bit mode); **v1 run: gradient checkpointing + `adamw_torch`** |
 
 **VRAM auto-detect** picks batch / accumulation / seq-len; every value is
 overridable:

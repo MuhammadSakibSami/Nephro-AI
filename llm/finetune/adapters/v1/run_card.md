@@ -27,6 +27,17 @@
 - Best val loss: 0.1546
 - Val loss trace: [0.1967, 0.1611, 0.1546]
 
+## Environment (verified 2026-09-28 from `checkpoint-102/training_args.bin` and the machine)
+
+- GPU: NVIDIA GeForce RTX 3090, 24 GB VRAM (the "medium" tier above), Windows 10 Pro
+- PyTorch 2.5.1+cu121 (CUDA 12.1) · transformers 5.14.1 · PEFT 0.19.1 · accelerate 1.14.0
+- Training precision: **bf16 LoRA, no quantization** — `bf16=True`, `optim=adamw_torch`,
+  gradient checkpointing on. The 4-bit NF4 (QLoRA) mode of `qlora_train.py` was **not**
+  used for this adapter; `bitsandbytes` is not installed.
+- Inference precision when served: base weights bfloat16, adapter weights float32,
+  no quantization; 7.62 GiB VRAM allocated.
+- Full record: `docs/HARDWARE_AND_ENVIRONMENT.md`
+
 Load with the existing serving hook:
 ```python
 from llm.serving.model_backends import QwenChatModel
