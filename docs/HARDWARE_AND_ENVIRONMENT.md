@@ -79,7 +79,7 @@ Measured by loading the model exactly as the backend does
 | Use | Decoding | Parameters |
 |---|---|---|
 | Q1 evaluation (all arms) | **Greedy / deterministic** (`do_sample=False`) | seed 42 |
-| Live serving (`/generate-guidance`) | Sampling | temperature 0.3, top-p 0.9 |
+| Live serving (`/generate-guidance`) | **Greedy** (backend sets temperature 0.0, matching Arm F) | k = 4 retrieved excerpts |
 | Both | — | `max_new_tokens = 700` |
 
 Observed end-to-end latency on this machine (Q1, per request, including

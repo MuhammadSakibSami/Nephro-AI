@@ -382,7 +382,7 @@ def fig_lora():
     ax.plot([0.545, 0.545], [0.06, 0.90], color="#cccccc", lw=0.9, ls="--")
 
     box(ax, 0.035, 0.505, 0.195, 0.335,
-        "Base model\nQwen3-4B\n(4.02 B params)\n\nFROZEN\n\nbfloat16\nno quantisation",
+        "Base model\nQwen3-4B\n(4.02 B params)\n\nFROZEN\n\nbfloat16\n(unquantised)",
         fc="#eeeeee", ec="#888888", fs=6.6)
     box(ax, 0.295, 0.505, 0.195, 0.335,
         "LoRA matrices\n$A \\in \\mathbb{R}^{r\\times d}$,  $B \\in \\mathbb{R}^{d\\times r}$\n"
@@ -392,8 +392,9 @@ def fig_lora():
     arrow(ax, (0.293, 0.605), (0.232, 0.605), color=C_LOW)
     ax.text(0.2625, 0.627, "gradients", fontsize=5.9, ha="center", color=C_LOW)
     ax.text(0.2625, 0.425,
-            "RTX 3090 (24 GB) · bf16 mixed precision\n"
-            "AdamW · gradient checkpointing\n4-bit QLoRA mode not needed",
+            "kept in bf16: the RTX 3090 (24 GB) had\n"
+            "headroom, so 4-bit quantisation (QLoRA)\n"
+            "was not required · AdamW, grad. checkpointing",
             ha="center", va="center", fontsize=6.4, color="#444444", linespacing=1.45)
     box(ax, 0.055, 0.115, 0.415, 0.135,
         "saved artefact: adapter_model.safetensors\n132.2 MB · peft_type = LORA\n"
@@ -673,7 +674,7 @@ def fig_finetune_loss():
         ax.annotate(f"{v:.4f}", (s, v), textcoords="offset points", xytext=(0, 9),
                     ha="center", fontsize=6.8, color=C_HIGH)
     ax.set_xlabel("Optimiser step"); ax.set_ylabel("Cross-entropy loss (answer tokens)")
-    ax.set_title("QLoRA fine-tuning: 3 epochs, 540 training examples")
+    ax.set_title("LoRA fine-tuning: 3 epochs, 540 training examples")
     ax.legend(fontsize=7.5, frameon=False)
     ax.set_ylim(0, max(tr) * 1.12)
     fig.tight_layout()

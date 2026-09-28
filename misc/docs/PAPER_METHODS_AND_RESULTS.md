@@ -340,12 +340,14 @@ The base model is **Qwen3-4B-Instruct-2507**, adapted with **LoRA**
 (r = 16, α = 32, dropout 0.05) applied to all seven projection matrices
 (`q,k,v,o,gate,up,down_proj`); 3 epochs, learning rate 2 × 10⁻⁴ with cosine decay
 and 3% warmup, effective batch size 16, maximum sequence length 3,072, seed 42.
-Training used **bf16 mixed precision without quantization** (optimizer AdamW,
-gradient checkpointing) on a single NVIDIA GeForce RTX 3090 (24 GB); the 24 GB
-card holds the full bf16 base, so 4-bit QLoRA was unnecessary and was not used,
-which also avoids adding quantization error to a small-data run. The adapter
-trains 33.0 M parameters (0.81% of the model). The best checkpoint is selected
-by validation loss.
+The frozen base was kept in **bf16** rather than 4-bit NF4 — the training
+script supports both (QLoRA's 4-bit mode is its default), but the 24 GB
+training GPU (a single NVIDIA GeForce RTX 3090; §3.12) had enough headroom that
+quantisation was not needed, and bf16 avoids the extra quantisation error 4-bit
+would add on a small, 540-example training set. Training used bf16 mixed
+precision with the adapter weights kept in float32, AdamW and gradient
+checkpointing. The adapter trains 33.0 M parameters (0.81% of the model). The
+best checkpoint is selected by validation loss.
 
 Loss is masked to the assistant turn only. The mask is computed by **prompt-prefix
 length** rather than by string search for a response template:

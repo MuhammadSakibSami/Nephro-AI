@@ -6,7 +6,7 @@
 
 > **⚑ THESIS-FIRST MVP MODE (June 2026).** Priority is the thesis + supervisor demo, so the project is split:
 > - **Thesis MVP (DONE):** Phases 1–6 + a minimal `/generate-guidance` endpoint with a local-demo fallback. **Phase 6 (real Qwen3 + BGE-M3 + validator) is FROZEN as the thesis LLM evaluation result.**
-> - **Paper extension (IN PROGRESS on a local GPU box):** Phase 7 (RAFT data — **done**, 540/60 train/val), Phase 8 (QLoRA — **done**, adapter trained + acceptance-checked), Phase 9 (ablation — **done** on automated axes; human/expert review still open). The original blockers (free-tier API quota + Qwen self-distillation CUDA OOM on Colab) are resolved by local GPU compute + 100% self-distillation. **Not required for the thesis.** The codebase is extensible throughout (pluggable model/teacher backends, `adapter_path` hook, frozen eval profiles).
+> - **Paper extension (IN PROGRESS on a local GPU box):** Phase 7 (RAFT data — **done**, 540/60 train/val), Phase 8 (LoRA fine-tuning — **done**, adapter trained + acceptance-checked; trained with `--precision bf16`, i.e. an unquantized bf16 base, not the QLoRA/4-bit default — the 24 GB training GPU didn't need the extra memory savings), Phase 9 (ablation — **done** on automated axes; human/expert review still open). The original blockers (free-tier API quota + Qwen self-distillation CUDA OOM on Colab) are resolved by local GPU compute + 100% self-distillation. **Not required for the thesis.** The codebase is extensible throughout (pluggable model/teacher backends, `adapter_path` hook, frozen eval profiles).
 > - See `THESIS_LLM_MVP_SUMMARY.md` for the supervisor-facing summary.
 
 > **Scope statement (use this wording in app + paper):**
@@ -43,7 +43,7 @@ Guideline RAG  (BGE-M3 embeddings + FAISS/Chroma)
    - CDC/NKF patient education (patient-friendly language)
    - KDIGO 2012                (background only — target-label justification)
    ↓
-Fine-tuned Qwen3-4B-Instruct-2507  (QLoRA; served via Ollama / llama.cpp GGUF)
+Fine-tuned Qwen3-4B-Instruct-2507  (LoRA; served via Ollama / llama.cpp GGUF)
    ↓
 Structured Draft Guidance  (evidence-cited, NO chain-of-thought)
    ↓
@@ -57,7 +57,7 @@ Safe Personalized Kidney-Risk Education  →  /generate-guidance API  →  Web f
 | Layer | Choice | Rationale |
 |---|---|---|
 | Base LLM | **Qwen3-4B-Instruct-2507** | Strong instruction following at 4B; fine-tunable on free/low-cost Colab; permissive license |
-| Fine-tuning | **QLoRA** (4-bit NF4 + LoRA adapters) | Fits in ≤16 GB VRAM; only adapter weights trained |
+| Fine-tuning | **LoRA** adapters; the training script supports either a 4-bit NF4 (QLoRA) or bf16 (unquantized) frozen base via `--precision` — **the actual run used bf16** (24 GB GPU) | 4-bit fits in ≤16 GB VRAM if needed; only adapter weights are trained either way |
 | Fine-tuning method | **RAFT** (Retrieval-Augmented Fine-Tuning), **structured output, no CoT** | Model learns to ground in retrieved guidelines + ignore distractors — but emits a fixed evidence-cited format, not visible medical reasoning |
 | Embeddings | **BGE-M3** (`BAAI/bge-m3`) | Top-tier retrieval, multilingual, long passages |
 | Vector store | **FAISS** (primary) / Chroma (fallback) | FAISS = fast, file-based; Chroma = easier metadata filtering |
@@ -99,7 +99,7 @@ ckd_risk_app/
       val.jsonl
       eval_profiles.jsonl   # held-out profiles for evaluation (never trained on)
     finetune/
-      qlora_train.py        # QLoRA SFT on Qwen3-4B (Colab)
+      qlora_train.py        # LoRA SFT on Qwen3-4B (4-bit/QLoRA or bf16 base via --precision)
       merge_and_export.py   # merge adapter → GGUF → quantize
       adapters/             # saved LoRA adapters
     serving/
@@ -131,7 +131,7 @@ Build a **base Qwen3 + RAG + guardrail MVP first**, evaluate it, *then* fine-tun
 5. **Phase 5** — MVP: base Qwen3 + RAG + guardrail (inference runtime)
 6. **Phase 6** — MVP evaluation on ~30 profiles (go/no-go for fine-tuning)
 7. **Phase 7** — RAFT training-data generation
-8. **Phase 8** — QLoRA fine-tuning
+8. **Phase 8** — LoRA fine-tuning
 9. **Phase 9** — Evaluation & ablation (incl. human/expert review)
 10. **Phase 10** — Serving (GGUF/Ollama) + app/frontend integration
 11. **Phase 11** — Paper write-up
@@ -405,15 +405,24 @@ Each phase: **Objective → Steps → Deliverable → Test/acceptance → Risks.
 
 ---
 
-### PHASE 8 — QLoRA Fine-Tuning  ⏳ PIPELINE BUILT — awaiting the real Phase-7 dataset
+### PHASE 8 — LoRA Fine-Tuning  ✅ DONE — trained on the GPU box
 
 > Depends on Phase 7 data. Loads via the existing `QwenChatModel(adapter_path=...)` hook, so no runtime change is needed.
+>
+> **Precision note:** the actual run used `--precision bf16` — an unquantized bf16
+> frozen base, plain **LoRA**, not the script's `4bit`/QLoRA default. The 24 GB
+> training GPU had enough headroom that 4-bit NF4 quantization wasn't needed, and
+> bf16 avoids the extra quantization error NF4 would add on a small, 540-example
+> training set. Result: 3 epochs, val loss 0.1967 → 0.1611 → **0.1546**
+> (`llm/finetune/adapters/v1/run_card.md`). The steps below describe the tool's
+> general QLoRA-capable design; "4-bit NF4" in step 1 is what the `4bit` mode
+> does and was not the mode actually used.
 
 **Objective:** Fine-tune Qwen3-4B to emit grounded, safe, structured guidance directly from a **compact prompt** — internalizing the format + safety so raw_unsafe → ~0 without the validator.
 
 **Implemented in:**
 - `ckd_risk_app/llm/finetune/data.py` — chat-template encoding + **assistant-only loss masking** by prompt-prefix length (tokenizer-version independent; raises if the template stops being prefix-stable), truncation/zero-supervision handling, length stats, padding collator.
-- `ckd_risk_app/llm/finetune/qlora_train.py` — 4-bit NF4 (double-quant) + LoRA (r=16, alpha=32, dropout 0.05, 7 target projections), 3 epochs / lr 2e-4 cosine, gradient checkpointing + paged AdamW 8-bit, best-checkpoint-on-val-loss. **VRAM auto-detect** sets batch/accum/seq-len (all overridable). Emits `adapter/`, `training_log.csv`, `training_curve.png`, `run_card.md`. `--dry-run` validates the data pipeline with no GPU.
+- `ckd_risk_app/llm/finetune/qlora_train.py` — LoRA (r=16, alpha=32, dropout 0.05, 7 target projections) on a frozen base that's either 4-bit NF4/double-quant (QLoRA, the default) or bf16/unquantized via `--precision` — **the real run used bf16**, 3 epochs / lr 2e-4 cosine, gradient checkpointing + paged AdamW 8-bit, best-checkpoint-on-val-loss. **VRAM auto-detect** sets batch/accum/seq-len (all overridable). Emits `adapter/`, `training_log.csv`, `training_curve.png`, `run_card.md`. `--dry-run` validates the data pipeline with no GPU.
 - `ckd_risk_app/llm/finetune/evaluate_adapter.py` — acceptance check: generates from the COMPACT prompt with the **validator OFF** and reports `raw_unsafe_rate` (headline), format, risk-mention, readability. Run with/without `--adapter` for the Phase-9 base-vs-fine-tuned pair.
 - `misc/notebooks/phase8_qlora_finetune.ipynb` — Colab mirror. Docs: `misc/docs/LLM_PHASE8_QLORA_FINETUNE.md`.
 
@@ -438,7 +447,7 @@ Each phase: **Objective → Steps → Deliverable → Test/acceptance → Risks.
 
 ### PHASE 9 — Evaluation & Ablation (paper's LLM results)
 
-> **✅ DONE (automated axes) — paper extension.** 4-arm ablation run on real Qwen3-4B-Instruct-2507 + the Phase-8 QLoRA adapter, on a **fresh** 30-profile set scored by the real trained ML model (`llm/eval/phase9_profiles.py`), not the hand-authored Phase-6 set — Phase 6 had two evaluation-harness bugs found and fixed here (see `docs/LLM_PHASE9_ABLATION_EVAL.md` §0). **Human/expert review is the one remaining open item.**
+> **✅ DONE (automated axes) — paper extension.** 4-arm ablation run on real Qwen3-4B-Instruct-2507 + the Phase-8 LoRA adapter (bf16-trained), on a **fresh** 30-profile set scored by the real trained ML model (`llm/eval/phase9_profiles.py`), not the hand-authored Phase-6 set — Phase 6 had two evaluation-harness bugs found and fixed here (see `docs/LLM_PHASE9_ABLATION_EVAL.md` §0). **Human/expert review is the one remaining open item.**
 
 **RESULT (base / base+RAG / base+RAG+validator / fine-tuned+RAG+validator, 30 real-model-scored profiles):**
 - raw_unsafe_rate: **0.133 / 0.067 / 0.100 / 0.033** — fine-tuning is the only arm that moves the raw (pre-validator) number, and moves it furthest; `diagnosis` and `nutrition_restriction` violations are fully eliminated in the fine-tuned arm, leaving only one hard emergency-redirect edge case.
@@ -499,7 +508,7 @@ Each phase: **Objective → Steps → Deliverable → Test/acceptance → Risks.
 
 **Objective:** Document the LLM component (feeds PLAN.md §2.12, §3.10).
 
-**Covers:** architecture, KB construction + source hierarchy + KDOQI restriction, RAFT data generation (no-CoT) + teacher transparency + profile separation, QLoRA setup, strict safety validator + before/after metrics, evaluation protocol + results + human review, limitations (synthetic training data, single/non-specialist rater, no prospective deployment), ethics statement, scope statement (education not counseling).
+**Covers:** architecture, KB construction + source hierarchy + KDOQI restriction, RAFT data generation (no-CoT) + teacher transparency + profile separation, LoRA fine-tuning setup (bf16, not QLoRA's 4-bit — see Phase 8), strict safety validator + before/after metrics, evaluation protocol + results + human review, limitations (synthetic training data, single/non-specialist rater, no prospective deployment), ethics statement, scope statement (education not counseling).
 
 **Deliverable:** Draft Methods + Results subsections + figures.
 
@@ -531,7 +540,7 @@ textstat (Flesch-Kincaid), ragas (optional), pandas, matplotlib
 | 5 MVP | 0.5 wk |
 | 6 MVP eval (go/no-go) | 0.25 wk |
 | 7 RAFT data | 1 wk |
-| 8 QLoRA fine-tune | 0.5–1 wk |
+| 8 LoRA fine-tune | 0.5–1 wk |
 | 9 Eval & ablation + human review | 1 wk |
 | 10 Serving + frontend | 0.5–1 wk |
 | 11 Write-up | ongoing |

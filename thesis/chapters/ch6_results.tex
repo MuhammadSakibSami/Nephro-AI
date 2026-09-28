@@ -213,7 +213,7 @@ component.}
 \textbf{RAG} & \textbf{Valid.} & \textbf{Isolates} \\
 \midrule
 A & base\_compact & base & compact & --- & --- & (reference) \\
-B & base\_rag & base & full & \checkmark & --- & B vs A: retrieval \\
+B & base\_rag & base & full & \checkmark & --- & B vs A: full prompt + retrieval \\
 C & base\_rag\_val & base & full & \checkmark & \checkmark & C vs B: validator (base) \\
 D & ft\_rag & fine-tuned & full & \checkmark & --- & D vs B: fine-tuning \\
 E & ft\_rag\_val & fine-tuned & full & \checkmark & \checkmark & E vs D: validator (tuned) \\
@@ -350,8 +350,8 @@ family). Bold rows are significant after correction.}
 \textbf{Contrast} & \textbf{Metric} & \textbf{$\Delta$ (pp)} &
 \textbf{95\% CI} & \textbf{McNemar $p$} & \textbf{Holm $p$} \\
 \midrule
-B vs A (RAG) & raw unsafe & $+2.00$ & $[-2.00, 6.00]$ & 0.418 & 1.000 \\
-B vs A (RAG) & emergency recall & $+10.00$ & $[-3.33, 25.00]$ & 0.263 & 1.000 \\
+B vs A (prompt + RAG) & raw unsafe & $+2.00$ & $[-2.00, 6.00]$ & 0.418 & 1.000 \\
+B vs A (prompt + RAG) & emergency recall & $+10.00$ & $[-3.33, 25.00]$ & 0.263 & 1.000 \\
 \textbf{C vs B (validator, base)} & \textbf{delivered unsafe} & $\bm{-10.33}$ &
 $\bm{[-14.00, -7.00]}$ & $\bm{9.3\times10^{-10}}$ & $\bm{<0.001}$ \\
 \textbf{C vs B (validator, base)} & \textbf{emergency recall} & $\bm{+25.00}$ &
@@ -387,7 +387,10 @@ comparisons in the entire evaluation that survive multiplicity correction, and
 they do so decisively.
 
 \textbf{Retrieval does not measurably change raw safety.} B vs A shows a
-non-significant $+2.00$ point change in raw unsafe rate. Retrieval was never
+non-significant $+2.00$ point change in raw unsafe rate. Because arm B also
+switches from the compact to the full prompt, this contrast measures the
+combined effect of the full prompt and retrieval rather than a pure retrieval
+effect; neither component, alone or together, is a safety lever. Retrieval was never
 intended as a safety mechanism---its purpose is grounding and personalisation,
 where its effect is large (Section~\ref{sec:q1_quality})---but it is worth
 recording that adding it did not improve safety, and if anything nudged the raw
@@ -424,12 +427,12 @@ quality.
 \textbf{Personal.} \\
 \midrule
 A & base\_compact & 0.0 & 0.0 & 23.0 & 88.7 & 8.56 & 1.993 \\
-B & base\_rag & 100.0 & 100.0 & 45.0 & 93.7 & 8.06 & 1.997 \\
-C & base\_rag\_val & 100.0 & 97.0 & 43.0 & 93.0 & 8.12 & 1.993 \\
-D & ft\_rag & 100.0 & 68.7 & 75.0 & 93.0 & 7.66 & 1.997 \\
-E & ft\_rag\_val & 100.0 & 67.3 & 73.0 & 92.0 & 7.67 & 1.997 \\
-\textbf{F} & \textbf{ft\_compact\_val} & 100.0 & \textbf{99.7} & 58.7 & 94.0 &
-7.88 & 1.993 \\
+B & base\_rag & 100.0 & 100.0 & 84.0 & 93.7 & 7.52 & 1.993 \\
+C & base\_rag\_val & 100.0 & 97.0 & 79.7 & 93.0 & 7.59 & 1.990 \\
+D & ft\_rag & 100.0 & 68.7 & 95.3 & 93.0 & 7.16 & 1.993 \\
+E & ft\_rag\_val & 100.0 & 67.3 & 93.3 & 92.0 & 7.20 & 1.993 \\
+\textbf{F} & \textbf{ft\_compact\_val} & 100.0 & \textbf{99.7} & 91.0 & 94.0 &
+7.31 & 1.993 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -460,15 +463,23 @@ prompt format it was not trained on degrades exactly the behaviour that was
 tuned. It is a useful negative result---fine-tuned models should be served with
 the prompt they were trained against.
 
-\textbf{Readability improved with fine-tuning.} Mean Flesch--Kincaid grade fell
-from 8.06 (arm B) to 7.66--7.88 in the fine-tuned arms, and the proportion of
-responses at or below grade 8 rose from 45\% to 58.7\% in the deployed
-configuration. Arm A's apparently middling 23\% is not meaningful, since its
-output is structurally malformed.
+\textbf{Readability improved with fine-tuning.} Readability is scored on the five
+patient-facing sections only; the internal grounding line of source
+identifiers is excluded because the patient never sees it. Mean Flesch--Kincaid
+grade fell from 7.52 (arm B) to 7.16 (arm D) under the same prompt, and the
+proportion of responses at or below grade 8 rose from 84.0\% to 95.3\% (paired
+difference $+11.3$ points, Holm-significant). The deployed configuration
+(arm F) reaches 91.0\% at a mean grade of 7.31; its difference from arm E
+(93.3\%) is not significant, so prompt compression carries no measurable
+readability cost. The validator slightly lowers readability (C vs B:
+$-4.3$ points, Holm-significant): the referral notices and fallback templates it
+inserts read at a higher grade level than the model's own prose. Arm A's 23\% is not meaningful, since its output is
+structurally malformed.
 
 Retrieval quality was measured on the shared retrieval configuration used by
-arms B--F: Recall@4 of 0.823, Precision@4 of 0.766, MRR of 0.919, nDCG@4 of
-0.917, and evidence topic coverage of 0.806. Every cited source identifier was
+arms B--F: Recall@4 of 0.806 (the fraction of each profile's expected evidence
+topics covered by at least one of the four retrieved passages), Precision@4 of
+0.766, MRR of 0.919 and nDCG@4 of 0.917. Every cited source identifier was
 valid (rate 1.000), confirming that the deterministic citation layer prevents
 invented references. Relevance here is judged by knowledge-base topic matching
 as a proxy; no human relevance labelling was performed.

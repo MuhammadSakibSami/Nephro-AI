@@ -218,10 +218,10 @@ This card is honestly labeled "frozen" (a fixed snapshot of one trained model ve
 | Delivered critical-unsafe | **0.0%** | Zero outputs reaching the (simulated) patient contained a critical safety violation, after the validator. |
 | Emergency-redirect recall | **100%** | Every one of the 60 emergency-subgroup profiles received an urgent-care redirect. |
 | Raw critical-unsafe (pre-validator) | 6.33% | Without the validator, ~6% of the fine-tuned model's raw outputs would have been unsafe — this is the problem the validator exists to solve, and the validator closes 100% of the gap on this benchmark. |
-| Factor relevance | 0.843 | Fraction of retrieved guideline content judged topically relevant to the patient's actual risk factors (KB-topic-matching proxy — see limitation below). |
+| Factor relevance | 0.813 | Fraction of the patient's top-2 model factors whose theme the guidance text actually addresses (keyword-matching proxy, scored on the patient-facing sections only). |
 | Personalization | 1.99 / 2 | A 2-point rubric score for whether the guidance referenced the patient's specific factors rather than generic text. |
 | Grounding (cited ≥1 source) | 99.7% | See §5 — source presence, not correctness. |
-| Readability ≤ grade 8 | 58.7% | Fraction of outputs meeting a Flesch-Kincaid grade-8 readability target. |
+| Readability ≤ grade 8 | 91.0% | Fraction of outputs whose patient-facing text meets a Flesch-Kincaid grade-8 readability target (internal source-ID line excluded). |
 
 **This is a genuinely strong, methodologically defended result, but three honest caveats belong in any defense answer:**
 1. **Profiles are synthetic**, scored by the deployed cascade rather than drawn from real patients — this evaluates internal consistency and safety-mechanism effectiveness, not real-world outcome validity.

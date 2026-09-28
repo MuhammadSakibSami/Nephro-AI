@@ -4,6 +4,12 @@
 component for the thesis. The component is **complete and demonstrable** as a
 minimal MVP; paper-grade fine-tuning is a documented, deferred extension.
 
+> **Update:** this document is a pre-paper-extension snapshot. Phases 7–9 and
+> the Q1 six-arm evaluation have since been completed on real hardware — see
+> `misc/docs/PAPER_METHODS_AND_RESULTS.md` and `results/q1_llm_evaluation_summary.md`
+> for current status and results. The "deferred" language below reflects the
+> state at the time this summary was written, not the current state.
+
 ---
 
 ## 1. What it does (scope statement)
@@ -141,9 +147,12 @@ when API/compute allow:
 - **Phase 7 — RAFT data generation** *(built; deferred)*: self-distillation bulk
   (base + RAG + validator) + ~20% Gemini-free-tier subset; safety-gated; trains a
   compact prompt. Code: `ckd_risk_app/llm/data/`, `notebooks/phase7_generate_dataset.ipynb`.
-- **Phase 8 — QLoRA fine-tuning** *(deferred)*: 4-bit Qwen3-4B + LoRA on the RAFT
-  data; loads via the existing `QwenChatModel(adapter_path=...)` hook — no runtime
-  change.
+- **Phase 8 — LoRA fine-tuning** *(deferred at time of writing; since completed —
+  see the update note above)*: LoRA on Qwen3-4B on the RAFT data (the training
+  script supports either a 4-bit/QLoRA or bf16 frozen base via `--precision`; the
+  real run used bf16, since the 24 GB training GPU didn't need 4-bit's memory
+  savings); loads via the existing `QwenChatModel(adapter_path=...)` hook — no
+  runtime change.
 - **Phase 9 — Evaluation & ablation** *(deferred)*: fine-tuned vs the frozen Phase-6
   base arm; headline = **raw_unsafe 0.10 → ~0 without the validator + lower
   inference cost**; plus RAG-vs-no-RAG and a small human/expert review.
@@ -162,5 +171,5 @@ local-demo and production model.
 | Real-model evaluation (Qwen3) | ✅ Done & frozen (Phase 6) |
 | `/generate-guidance` endpoint + local-demo mode | ✅ Done (minimal serving) |
 | Supervisor demo (3 cases) | ✅ Done |
-| RAFT data / QLoRA / ablation | ⏸ Deferred to paper extension (RAFT pipeline already built) |
+| RAFT data / LoRA fine-tuning / ablation | ✅ Since completed (paper extension) — see the update note above |
 | GGUF/Ollama packaging, web frontend | ⏸ Deferred |

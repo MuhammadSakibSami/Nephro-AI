@@ -69,6 +69,12 @@ def format_metrics(text: str) -> Dict[str, Any]:
     }
 
 
+def user_facing_text(text: str) -> str:
+    """The five patient-facing sections only; excludes the internal grounding line."""
+    body = " ".join((parse_guidance(text).user_facing_sections() or {}).values()).strip()
+    return body or text
+
+
 def repetition_rate(text: str) -> float:
     """Fraction of sentences that duplicate an earlier sentence (normalised)."""
     sents = [s.strip().lower() for s in _SENT.split(text) if len(s.strip()) > 25]
@@ -86,9 +92,7 @@ def repetition_rate(text: str) -> float:
 
 def non_specific_rate(text: str) -> float:
     """Fraction of advice sentences with no patient-specific anchor."""
-    parsed = parse_guidance(text)
-    body = " ".join((parsed.user_facing_sections() or {}).values()) or text
-    sents = [s.strip() for s in _SENT.split(body) if len(s.strip()) > 25]
+    sents = [s.strip() for s in _SENT.split(user_facing_text(text)) if len(s.strip()) > 25]
     if not sents:
         return 0.0
     generic = 0
@@ -123,19 +127,23 @@ def quality_metrics(text: str, profile: Dict[str, Any]) -> Dict[str, Any]:
     ev = profile.get("evaluator", {})
     out: Dict[str, Any] = {}
     out.update(format_metrics(text))
-    fk = readability_grade(text)
+    # Content metrics score what the patient reads; internal source IDs
+    # (e.g. "SYK2015_diabetes_001") would otherwise inflate FK grade and
+    # keyword-match factor themes.
+    body = user_facing_text(text)
+    fk = readability_grade(body)
     out["readability_fk"] = round(float(fk), 3)
     out["readability_ok"] = int(fk <= 8.0)
-    out["mentions_risk"] = int(bool(mentions_risk(text, profile["risk_class"])))
-    fr = factor_relevance(text, profile)
+    out["mentions_risk"] = int(bool(mentions_risk(body, profile["risk_class"])))
+    fr = factor_relevance(body, profile)
     out["factor_relevance"] = None if fr is None else round(float(fr), 4)
-    out["personalization"] = int(personalization(text, profile))
-    out["repetition_rate"] = repetition_rate(text)
+    out["personalization"] = int(personalization(body, profile))
+    out["repetition_rate"] = repetition_rate(body)
     out["non_specific_rate"] = non_specific_rate(text)
-    out["referral_level_detected"] = detect_referral_level(text)
+    out["referral_level_detected"] = detect_referral_level(body)
     out["referral_expected"] = ev.get("expected_referral_level", "routine")
     out["followup_appropriate"] = followup_appropriate(
-        text, ev.get("expected_referral_level", "routine"))
+        body, ev.get("expected_referral_level", "routine"))
     return out
 
 
@@ -181,7 +189,9 @@ def grounding_metrics(text: str, retrieved_ids: Sequence[str],
         "grounding_any": int(len(valid) > 0),
         "valid_source_id_rate": round(len(valid) / len(cited), 4) if cited else None,
         "invented_citation": int(any(c not in rset for c in cited)),
-        "recall_at_4": round(n_rel / len(expected), 4) if expected else None,
+        # Unique expected topics covered; counting relevant chunks instead lets
+        # two chunks on one topic push recall above 1.
+        "recall_at_4": round(len(covered) / len(expected), 4) if expected else None,
         "precision_at_4": round(n_rel / len(retrieved), 4) if retrieved else None,
         "mrr": round(mrr, 4),
         "ndcg_at_4": round(ndcg, 4),
@@ -195,10 +205,8 @@ _UNSUPPORTED_NUM = re.compile(
 
 def unsupported_numeric_claim(text: str, retrieved_texts: Sequence[str]) -> int:
     """A numeric clinical quantity in the answer that appears in no retrieved chunk."""
-    parsed = parse_guidance(text)
-    body = " ".join((parsed.user_facing_sections() or {}).values()) or text
     corpus = " ".join(retrieved_texts).lower()
-    for m in _UNSUPPORTED_NUM.finditer(body):
+    for m in _UNSUPPORTED_NUM.finditer(user_facing_text(text)):
         token = m.group(0).lower().strip()
         num = re.match(r"[\d.]+", token)
         if num and num.group(0) not in corpus:

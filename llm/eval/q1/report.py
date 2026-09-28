@@ -34,7 +34,7 @@ except ImportError:  # pragma: no cover
                                       _record_path, verify_reuse)
 
 PRIMARY_COMPARISONS = [
-    ("A", "B", "RAG contribution"),
+    ("A", "B", "Full-prompt + retrieval contrast"),
     ("B", "C", "Validator contribution (base)"),
     ("B", "D", "LoRA contribution (same full-RAG condition)"),
     ("D", "E", "Validator contribution (fine-tuned)"),
@@ -498,7 +498,7 @@ def make_figures(rows: List[Dict[str, Any]], out_dir: Path) -> List[Path]:
         data = [[r[key] for r in rows if r["arm"] == a and r.get(key) is not None]
                 for a in arms]
         data = [d if d else [0] for d in data]
-        ax.boxplot(data, labels=[a for a in arms], showfliers=False)
+        ax.boxplot(data, tick_labels=[a for a in arms], showfliers=False)
         ax.set_title(title); ax.grid(axis="y", alpha=.3)
     fig.suptitle("Inference cost by arm")
     _save(fig, "fig6_tokens_latency.png")

@@ -518,23 +518,27 @@ excluded from the generation pool to prevent leakage into the later evaluation.
 \label{sec:phase8}
 
 The base model is Qwen3-4B-Instruct-2507 \cite{qwen2025}. The adapter was
-trained with standard LoRA \cite{hu2022lora}: the base model's weights were
-frozen and held in bfloat16, while low-rank adapters were trained on the seven
-projection matrices of each transformer block. The training script also supports
-QLoRA \cite{dettmers2023qlora}, which would hold the frozen base in 4-bit
-NormalFloat; this was deliberately not used. The 24~GB GPU (Section~\ref{sec:env})
-holds the full bfloat16 base alongside the adapter's optimiser state, so
-quantisation would have saved memory that was not needed while adding
-quantisation error to a small-data run. The adapter trains 33.0~M parameters,
-0.81\% of the model. The relationship between the training-time and
+trained with LoRA \cite{hu2022lora}: the base model's weights were frozen and
+held in bfloat16 (unquantised), while low-rank adapters were trained on the
+seven projection matrices of each transformer block, with their weights kept in
+float32 and the forward and backward passes run under bfloat16 mixed precision.
+The training script also supports QLoRA \cite{dettmers2023qlora} (holding the
+frozen base in 4-bit NormalFloat quantisation), which is its default mode for
+GPUs with tighter memory budgets, but the 24\,GB training GPU
+(Section~\ref{sec:env}) had sufficient headroom that quantisation was not
+needed, and bfloat16 was used instead to avoid the additional quantisation error
+4-bit NF4 would add on a comparatively small, 540-example training set. The
+adapter trains 33.0~M parameters, 0.81\% of the model. The relationship between
+the training-time and
 serving-time configurations is shown in Figure~\ref{fig:lora}.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{fig_lora.png}
-\caption{LoRA fine-tuning versus serving. The frozen base is held in bfloat16
-in both phases; only the low-rank matrices are trained, and the saved adapter
-is reattached unchanged at serving.}
+\caption{LoRA fine-tuning versus serving. The frozen base is kept in bfloat16
+at both stages in this configuration (no quantisation was used); the saved
+artefact is an ordinary LoRA adapter, precision-independent of the base it is
+trained or served against.}
 \label{fig:lora}
 \end{figure}
 
@@ -555,7 +559,9 @@ Base model & Qwen3-4B-Instruct-2507 \\
 Adapter & LoRA, $r=16$, $\alpha=32$, dropout $0.05$ \\
 Target modules & \texttt{q\_proj, k\_proj, v\_proj, o\_proj, gate\_proj,
 up\_proj, down\_proj} \\
-Training precision & bfloat16 mixed precision; no quantisation \\
+Base precision (training) & bfloat16, unquantised (QLoRA's 4-bit NF4 mode was
+available but not needed given the 24\,GB training GPU) \\
+Adapter precision & float32 weights; bfloat16 mixed-precision compute \\
 Optimiser & AdamW (\texttt{adamw\_torch}); gradient checkpointing \\
 Optimisation & 3 epochs, learning rate $2\times10^{-4}$, cosine schedule,
 3\% warmup \\

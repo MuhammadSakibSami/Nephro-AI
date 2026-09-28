@@ -1,24 +1,31 @@
 # LLM Phase 8 — QLoRA Fine-Tuning
 
-**Status:** ✅ DONE — adapter `llm/finetune/adapters/v1/adapter` trained 2026-07-27 and deployed.
+**Status:** ✅ Pipeline built, validated offline, and **trained for real** on 2026-07-27 on
+the RTX 3090 GPU box (adapter `adapters/v1`, final val loss 0.1546 — see §7). Evaluated in
+Phase 9 and in the Q1 six-arm ablation (`results/q1_llm_evaluation_summary.md`); deployed.
 **Plan reference:** `LLM_PLAN.md` → Phase 8
 **Date implemented:** July 2026
 **Depends on:** Phase 7 (`train.jsonl` / `val.jsonl`)
 
+> **Precision note (added after the real run):** the actual training run used
+> `--precision bf16` — a plain **LoRA** adapter on an **unquantized bf16** frozen
+> base, not the script's `4bit`/QLoRA default. The 24 GB training GPU had enough
+> headroom that 4-bit NF4 quantization wasn't needed, and bf16 avoids the extra
+> quantization error NF4 would add on a small, 540-example training set. This
+> doc still describes the general QLoRA mechanism below (the tool supports
+> both), but the artifact actually produced is a bf16-trained LoRA adapter.
+>
 > **As actually run (v1 adapter) — verified from `checkpoint-102/training_args.bin`:**
 >
 > | Item | Value |
 > |---|---|
 > | GPU | NVIDIA GeForce RTX 3090, **24 GB VRAM** (local Windows workstation, not Colab) |
 > | PyTorch / transformers / PEFT | **2.5.1+cu121** / **5.14.1** / 0.19.1 |
-> | Training precision | **bf16 LoRA, no quantization** (`--precision bf16`, `bf16=True`, `optim=adamw_torch`) |
+> | Training precision | bf16 base, no quantization (`--precision bf16`, `bf16=True`, `optim=adamw_torch`); adapter weights kept in float32 |
 > | Inference precision (serving) | **bfloat16** base weights, no quantization; adapter weights float32; 7.62 GiB VRAM |
 > | max_seq_len | 3072 (overridden from the tier default) |
 >
-> Despite this phase's name, the reported adapter is **not** a QLoRA (4-bit)
-> adapter: the 24 GB card held the full bf16 base, so the 4-bit default was
-> switched off. Describe it as *LoRA fine-tuning in bf16*. Full record:
-> `docs/HARDWARE_AND_ENVIRONMENT.md`.
+> Full record: `docs/HARDWARE_AND_ENVIRONMENT.md`.
 
 ---
 
@@ -30,9 +37,11 @@ them so the model produces that answer **by itself** — from a **short prompt**
 with **no safety validator** patching it afterwards.
 
 We do **not** retrain the whole 4B model. We freeze it and train small LoRA
-adapter matrices (~0.5–1% of parameters). The script can hold the frozen base in
-4-bit ("QLoRA") so it fits a modest GPU; on the 24 GB RTX 3090 actually used, the
-base was kept in full bf16 instead, and only the LoRA matrices were trained.
+adapter matrices on top (~0.5–1% of parameters) — that's what makes this fit on
+a modest GPU regardless of precision. "QLoRA" specifically means doing this
+with the frozen base compressed to 4-bit; our actual run kept the frozen base
+in bf16 instead (no quantization — see the note above), because our training
+GPU had enough memory that we didn't need the extra compression.
 
 ---
 
@@ -58,7 +67,7 @@ Report honestly if raw-quality deltas are small; that is the expected outcome.
 llm/finetune/
   __init__.py
   data.py                # chat-template encoding + assistant-only loss masking
-  qlora_train.py         # 4-bit NF4 + LoRA SFT; VRAM auto-detect; curves + run card
+  qlora_train.py         # LoRA SFT (4-bit NF4 or bf16 base via --precision); VRAM auto-detect; curves + run card
   evaluate_adapter.py    # acceptance check: raw_unsafe with the validator OFF
   adapters/              # trained adapters (gitignored)
 misc/notebooks/
@@ -90,7 +99,7 @@ Examples whose prompt alone fills the window (zero supervised tokens) are
 | Setting | Value |
 |---|---|
 | Base | `Qwen/Qwen3-4B-Instruct-2507` |
-| Quantization | Script default: 4-bit **NF4**, double-quant, bf16 compute. **v1 run: none** (`--precision bf16`) |
+| Quantization | `--precision 4bit` (default): 4-bit **NF4**, double-quant, bf16 compute. `--precision bf16` (**what the real run used**): unquantized bf16 base, plain LoRA — no `bitsandbytes` quantization at all |
 | LoRA | r=16, alpha=32, dropout 0.05 |
 | Targets | `q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj` |
 | Schedule | 3 epochs, lr 2e-4, cosine, warmup 3% |
@@ -183,7 +192,8 @@ Verified without a GPU (fake tokenizer + the 9-row Phase-7 smoke dataset):
 | `evaluate_adapter` context rebuild on real rows | PASS (BP recovered 9/9; emergency row detected; all gold targets scan clean) |
 | Padding collator shapes + pad masked to `-100` | SKIPPED (no torch in the validation env) |
 
-(Validates plumbing and masking only — real training happens on the GPU box.)
+(Validates plumbing and masking only — see §7 below for the real training run,
+which has since completed with `--precision bf16` on a 24 GB GPU.)
 
 > **Found during validation:** Phase 7 writes an *empty* `val.jsonl` on small runs
 > because `int(n * val_frac)` rounds to 0 (e.g. n=9 → 0 val). That crashed the
@@ -214,10 +224,13 @@ Verified without a GPU (fake tokenizer + the 9-row Phase-7 smoke dataset):
 
 ## 7. Known open items
 
-1. **Run the real training** once Phase 7 finishes; commit `run_card.md` +
-   `training_curve.png` for the paper.
+1. ~~Run the real training once Phase 7 finishes; commit `run_card.md` +
+   `training_curve.png` for the paper.~~ **Done.** Trained with
+   `--precision bf16` on a 24 GB GPU (`llm/finetune/adapters/v1/run_card.md`):
+   3 epochs, val loss 0.1967 → 0.1611 → **0.1546**, 0 truncated examples.
 2. **Record both arms** (base and fine-tuned) from `evaluate_adapter` — this is
-   the Phase-9 Ablation-1 table.
+   the Phase-9 Ablation-1 table. **Done** — see `misc/docs/LLM_PHASE9_ABLATION_EVAL.md`
+   and the Q1 six-arm evaluation (`results/q1_llm_evaluation_summary.md`).
 3. **Watch for overfitting** — if val loss rises after epoch 1–2, drop to
    `--epochs 2`; the best checkpoint is retained regardless.
 4. **Self-distillation ceiling** — targets came largely from the base model, so
